@@ -30,6 +30,7 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 ## Git workflow (always)
 
 - Never commit to `main` or `develop` directly. Each change gets its own branch off `develop`: `feature/…`, `fix/…`, `chore/…` or `docs/…`, in kebab-case. The exception is `hotfix/…`, which branches off `main`.
+- For a roadmap item, name the branch `<type>/<change-id>` (the change ID from the roadmap) so its GitHub issue moves to in progress and closes on merge. After editing `context/foundation/roadmap.md`, the issues sync by hook; otherwise run `npm run roadmap:sync`. See `docs/development-process.md`.
 - Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
 - Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
