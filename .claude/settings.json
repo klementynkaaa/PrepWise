@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */context/foundation/roadmap.md) cd \"$CLAUDE_PROJECT_DIR\" && node scripts/sync-roadmap-issues.mjs 2>&1 | tail -20 || true ;; esac",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
