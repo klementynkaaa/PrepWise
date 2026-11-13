@@ -9,6 +9,7 @@ npm install
 npm run dev      # http://localhost:3000
 npm run build    # static export to out/ + service worker
 npm start        # serve the production build locally (test offline here)
+npm run test:e2e # browser tests (offline + accessibility); needs a prior npm run build
 ```
 
 Requires Node.js 22.
