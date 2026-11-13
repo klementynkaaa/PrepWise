@@ -410,7 +410,13 @@ function main() {
       numbers[item.id] = Number(url.split("/").pop());
     });
   }
-  if (!DRY_RUN) issues = findManagedIssues(repo);
+  if (!DRY_RUN) {
+    issues = findManagedIssues(repo);
+    // The label-filtered list can lag behind a just-created issue; fetch those directly.
+    for (const [id, number] of Object.entries(numbers)) {
+      issues[id] ??= gh(["api", `repos/${repo}/issues/${number}`]);
+    }
+  }
 
   // 5. Update every issue: title, body, labels, milestone, open/closed, dependencies.
   for (const item of items) {
