@@ -27,6 +27,13 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 3. **Works online and offline, the same way.** People normally use the app online. It must keep working with no connection, for example during a blackout. The profile, plan, action list and ticking behave the same in both cases, so never make a core feature depend on the network. Ship plan content and quantity rules as bundled static data, not as runtime fetches. The service worker (Serwist) precaches the app shell and every route after the first online visit. When the device is online, the service worker picks up new app versions in the background. When it's offline, the cached version keeps running and shows no error screens.
 4. **No accounts, auth, payments or sync** in v1 (see PRD Non-Goals).
 
+## Git workflow (always)
+
+- Never commit to `main` or `develop` directly. Each change gets its own branch off `develop`: `feature/…`, `fix/…`, `chore/…` or `docs/…`, in kebab-case. The exception is `hotfix/…`, which branches off `main`.
+- Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request.
+- Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
+- Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
+
 ## Build and offline setup
 
 - `npm run build` runs `next build` (static export to `out/`), then `scripts/build-sw.mjs`, which bundles `src/sw.ts` into `out/sw.js` and precaches every exported file. `npm start` serves `out/` locally. The service worker only registers in production builds, not in `next dev`.

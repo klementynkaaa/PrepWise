@@ -29,6 +29,10 @@ The first session should end with a personalised plan and a clear first step.
 - **Polish first.** All screens and guidance are in Polish at launch.
 - **Accessible to non-experts.** Text stays readable at large system font sizes, the app works with a screen reader, and specialist terms are explained.
 
+## Delivery foundation
+
+Before any feature is built, three things must be in place: CI/CD on GitHub Actions, reviewed mockups of every screen, and a design system. Details are in [Development process](development-process.md).
+
 ## Non-goals (v1)
 
 - Accounts, sync, family sharing or payments
