@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build && node scripts/build-sw.mjs",
     "start": "npx serve@14 out",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "next": "16.4.6",
