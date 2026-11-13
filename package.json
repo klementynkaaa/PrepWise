@@ -7,7 +7,9 @@
     "build": "next build && node scripts/build-sw.mjs",
     "start": "npx serve@14 out",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
+    "roadmap:sync:dry": "node scripts/sync-roadmap-issues.mjs --dry-run --show-body"
   },
   "dependencies": {
     "next": "16.4.6",
