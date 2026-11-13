@@ -20,7 +20,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 | Offline | Serwist service worker, built after the static export |
 | Storage | IndexedDB on the device (planned: one typed storage module) |
 | Hosting | Vercel (static files) |
-| CI/CD | GitHub Actions, auto-deploy on merge to `main` (planned) |
+| CI/CD | GitHub Actions (`.github/workflows/ci.yml`): checks on every PR; `develop` → Vercel preview, `main` → Vercel production |
 
 ## Key decisions
 
@@ -45,7 +45,12 @@ npm run dev      # development server (no service worker)
 npm run build    # static export to out/ + service worker
 npm start        # serve out/ locally to test the production/offline build
 npm run lint
+npm run typecheck  # generates Next.js route types, then tsc
 ```
+
+## Deployment
+
+GitHub Actions deploys with the Vercel CLI (`vercel pull` → `vercel build` → `vercel deploy --prebuilt`). `vercel.json` makes Vercel serve `out/` as plain static files, with clean URLs and no caching for `sw.js`. It also turns off Vercel's own Git deployments, so each merge deploys exactly once.
 
 ## Localisation and accessibility
 
