@@ -49,7 +49,7 @@ jobs:
           test -f out/manifest.webmanifest
 
   deploy:
-    name: Deploy to Vercel (${{ github.ref_name == 'main' && 'production' || 'preview' }})
+    name: Deploy to Vercel
     needs: checks
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
