@@ -22,14 +22,14 @@ feature/…  fix/…  chore/…  docs/…
        main ───▶ production deployment
 ```
 
-| Branch | Purpose | Rules |
-| --- | --- | --- |
-| `main` | Production. Always deployable. | Changes only through a release PR from `develop`, or a hotfix PR. No direct pushes. |
-| `develop` | Integration of finished work. | Changes only through PRs from work branches. No direct pushes. |
-| `feature/<short-name>` | New functionality | Branch from `develop`, PR back into `develop`. |
-| `fix/<short-name>` | Bug fixes | Branch from `develop`, PR back into `develop`. |
-| `chore/<short-name>`, `docs/<short-name>` | Tooling, config, docs | Branch from `develop`, PR back into `develop`. |
-| `hotfix/<short-name>` | Urgent production fix | Branch from `main`, PR into `main`, then merge `main` back into `develop`. |
+| Branch                                    | Purpose                        | Rules                                                                               |
+| ----------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------- |
+| `main`                                    | Production. Always deployable. | Changes only through a release PR from `develop`, or a hotfix PR. No direct pushes. |
+| `develop`                                 | Integration of finished work.  | Changes only through PRs from work branches. No direct pushes.                      |
+| `feature/<short-name>`                    | New functionality              | Branch from `develop`, PR back into `develop`.                                      |
+| `fix/<short-name>`                        | Bug fixes                      | Branch from `develop`, PR back into `develop`.                                      |
+| `chore/<short-name>`, `docs/<short-name>` | Tooling, config, docs          | Branch from `develop`, PR back into `develop`.                                      |
+| `hotfix/<short-name>`                     | Urgent production fix          | Branch from `main`, PR into `main`, then merge `main` back into `develop`.          |
 
 - **One change per branch.** Keep branches small and short-lived. Use kebab-case names, e.g. `feature/household-profile`.
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org/), e.g. `feat: add household profile form` or `fix: keep ticks after reload`.
@@ -38,10 +38,10 @@ feature/…  fix/…  chore/…  docs/…
 
 ## CI/CD (GitHub Actions)
 
-| Trigger | What runs |
-| --- | --- |
+| Trigger                               | What runs                                                                    |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
 | Pull request into `develop` or `main` | install, lint, type check, production build (static export + service worker) |
-| Merge into `develop` | the checks above, then a preview deployment on Vercel |
-| Merge into `main` | the checks above, then a production deployment on Vercel |
+| Merge into `develop`                  | the checks above, then a preview deployment on Vercel                        |
+| Merge into `main`                     | the checks above, then a production deployment on Vercel                     |
 
 A pull request can be merged only when all checks pass. Tests join the pipeline once they exist.

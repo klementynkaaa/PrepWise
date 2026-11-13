@@ -13,14 +13,14 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 ## Stack
 
-| Area | Choice |
-| --- | --- |
-| Framework | Next.js 16 (App Router), React 19, TypeScript (strict) |
-| Styling | Tailwind CSS 4 |
-| Offline | Serwist service worker, built after the static export |
-| Storage | IndexedDB on the device (planned: one typed storage module) |
-| Hosting | Vercel (static files) |
-| CI/CD | GitHub Actions (`.github/workflows/ci.yml`): checks on every PR; `develop` → Vercel preview, `main` → Vercel production |
+| Area      | Choice                                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                  |
+| Styling   | Tailwind CSS 4                                                                                                          |
+| Offline   | Serwist service worker, built after the static export                                                                   |
+| Storage   | IndexedDB on the device (planned: one typed storage module)                                                             |
+| Hosting   | Vercel (static files)                                                                                                   |
+| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): checks on every PR; `develop` → Vercel preview, `main` → Vercel production |
 
 ## Key decisions
 
