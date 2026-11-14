@@ -54,3 +54,10 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 - Business logic (quantities = per-person-per-day × people × days, priority tiers) lives in pure, unit-testable functions outside components.
 - Every recommended quantity carries a source label: "Official guidance" or "PREPWISE recommendation". Never present an estimate as official.
 - All user-facing text is in Polish (`<html lang="pl">`). Avoid jargon or explain it. Keep layouts readable at large system font sizes and usable with a screen reader.
+
+## Design system (UI rules)
+
+- Build screens only from `@/components/ui` and the token utilities in `src/app/globals.css`. No raw hex colours and no arbitrary Tailwind values (`[…]`).
+- A missing value or component is added to the PREPWISE Design System first, then to `globals.css` / `src/components/ui/`. Don't add one-off styles in a screen.
+- Every new component gets a Storybook story covering all its states (`src/components/ui/*.stories.tsx`); `npm run test:storybook` must pass (it fails on axe violations). Interactive components also get a Testing Library test (`npm run test:components`).
+- Empty, success, offline and error states always use `EmptyState`, which has one look: only the illustration, the words and an optional button change.
