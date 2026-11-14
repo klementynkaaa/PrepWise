@@ -24,9 +24,11 @@ const illustrations = {
   "not-found": "state",
   error: "state",
   "storage-error": "state",
+  "state-data-device": "state",
   "banner-water": "banner",
   "banner-install": "banner",
   "banner-plan-ready": "banner",
+  "banner-extend": "banner",
   "hero-welcome": "hero",
   "item-water": "item",
   "item-food": "item",
@@ -35,6 +37,8 @@ const illustrations = {
   "item-first-aid": "item",
   "item-candle": "item",
   "item-backpack": "item",
+  "item-pets": "item",
+  "item-medicine": "item",
   "divider-pattern": "divider",
 } as const satisfies Record<string, Group>;
 
@@ -51,7 +55,21 @@ export const stateIllustrationNames = illustrationNames.filter(
   (name): name is StateIllustrationName => illustrations[name] === "state",
 );
 
-export function Illustration({ name }: { name: IllustrationName }) {
+/** The banner art (360 × 140): background of a Banner. */
+export type BannerIllustrationName = {
+  [Name in IllustrationName]: (typeof illustrations)[Name] extends "banner" ? Name : never;
+}[IllustrationName];
+
+export const bannerIllustrationNames = illustrationNames.filter(
+  (name): name is BannerIllustrationName => illustrations[name] === "banner",
+);
+
+/**
+ * `cover` makes the art fill the height of its parent and crop from the left
+ * instead of keeping its own ratio. Banner uses it so a tall text block never
+ * leaves a strip under the art.
+ */
+export function Illustration({ name, cover }: { name: IllustrationName; cover?: boolean }) {
   const { width, height, look } = groups[illustrations[name]];
   return (
     // A static SVG from public/: next/image needs a server-side loader, which
@@ -63,7 +81,11 @@ export function Illustration({ name }: { name: IllustrationName }) {
       aria-hidden="true"
       width={width}
       height={height}
-      className={cn("block h-auto shrink-0 self-center", look)}
+      className={cn(
+        "block shrink-0 self-center",
+        cover ? "h-full object-cover object-right" : "h-auto",
+        look,
+      )}
     />
   );
 }

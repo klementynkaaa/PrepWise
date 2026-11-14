@@ -7,9 +7,12 @@ export {
   Illustration,
   illustrationNames,
   stateIllustrationNames,
+  bannerIllustrationNames,
+  type BannerIllustrationName,
   type IllustrationName,
   type StateIllustrationName,
 } from "./Illustration";
+export { Banner } from "./Banner";
 export { Alert, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar, Wordmark } from "./Page";
 export { Divider, KeyValueRow, ListSectionLabel, Panel, PanelList } from "./Panel";

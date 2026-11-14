@@ -98,9 +98,10 @@
   /* The only shadow */
   --shadow-panel: 0 1px 3px rgb(20 40 50 / 0.06);
 
-  /* Layout: one column, capped and centred. Rows stack below row-stack. */
+  /* Layout: one column, capped and centred. Rows stack below row-stack, banners below banner-stack. */
   --container-app: 32rem;
   --container-row-stack: 18rem;
+  --container-banner-stack: 20rem;
 }
 
 @theme inline {
