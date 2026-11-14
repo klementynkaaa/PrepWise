@@ -44,7 +44,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 - **Components** live in `src/components/ui/` (import from `@/components/ui`). Most render on the server with no client JS; only interactive ones (stepper, choices, checklist, tab bar, sheet, undo) are Client Components.
 - **Storybook** is the component showcase: every component and state has a story (`npm run storybook`). `npm run test:storybook` renders every story in Chromium and fails on accessibility violations; CI runs it. Storybook is a dev tool and is not part of the exported app.
 - **Light theme only.** Every screen is one phone-width column, capped at 32rem and centred.
-- **Large text:** plan, progress and checklist rows stack by their own width (container queries), not by screen width.
+- **Large text:** plan, progress and checklist rows and the banner stack by their own width (container queries), not by screen width.
 - **Duplicated value:** the `bg` colour `#EFF4F6` is repeated in `src/app/manifest.ts` and `viewport.themeColor` in `src/app/layout.tsx`, because they can't read CSS variables. Change all three together.
 - **Illustrations** are static SVGs in `public/illustrations/`, precached for offline use and always decorative.
 
