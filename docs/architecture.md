@@ -13,14 +13,14 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 ## Stack
 
-| Area      | Choice                                                                                                                              |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                              |
-| Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                               |
-| Offline   | Serwist service worker, built after the static export                                                                               |
-| Storage   | IndexedDB on the device (planned: one typed storage module)                                                                         |
-| Hosting   | Vercel (static files)                                                                                                               |
-| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → Vercel production |
+| Area      | Choice                                                                                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                                                                   |
+| Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                                                                    |
+| Offline   | Serwist service worker, built after the static export                                                                                                                    |
+| Storage   | IndexedDB on the device (planned: one typed storage module)                                                                                                              |
+| Hosting   | Vercel (static files)                                                                                                                                                    |
+| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → staged production, smoke check, approval, promote, tag |
 
 ## Key decisions
 
@@ -66,7 +66,11 @@ npm run test:storybook  # every story in Chromium, with accessibility checks
 
 ## Deployment
 
-GitHub Actions deploys with the Vercel CLI (`vercel pull` → `vercel build` → `vercel deploy --prebuilt`). `vercel.json` makes Vercel serve `out/` as plain static files, with clean URLs and no caching for `sw.js`. It also turns off Vercel's own Git deployments, so each merge deploys exactly once.
+GitHub Actions deploys with the Vercel CLI, and never rebuilds the app for a deployment. The tested `out/` (the artifact the browser tests ran against) is turned into `.vercel/output` by `scripts/vercel-output.mjs`, then shipped with `vercel pull` → `vercel deploy --prebuilt`. `vercel.json` makes Vercel serve the files as plain static files, with clean URLs and no caching for `sw.js`; the same rules are carried into the generated output. It also turns off Vercel's own Git deployments, so each merge deploys exactly once. `404.html` stays reachable (it is not redirected), because the service worker precaches it.
+
+- **`develop`:** a Vercel preview deployment.
+- **`main`:** a staged production deployment (`--prod --skip-domain`, not on the production domain), then smoke and health checks against it, then the owner's approval in the `production` GitHub environment, then `vercel promote`, which assigns the production domain without rebuilding. A health check on the production domain and a release tag follow. See `docs/development-process.md`.
+- **`version.json`:** every build writes `out/version.json` with the commit SHA. The health check compares it with the commit being released, which proves which version a URL serves. It is not precached, so it is always read from the network.
 
 ## Localisation and accessibility
 

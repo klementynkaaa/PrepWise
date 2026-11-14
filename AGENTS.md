@@ -29,10 +29,11 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 
 ## Git workflow (always)
 
-- Never commit to `main` or `develop` directly. Each change gets its own branch off `develop`: `feature/…`, `fix/…`, `chore/…` or `docs/…`, in kebab-case. The exception is `hotfix/…`, which branches off `main`.
+- Never commit to `main` or `develop` directly. Each change gets its own branch off `develop`: `feature/…`, `bugfix/…`, `refactor/…`, `chore/…` or `docs/…`, in kebab-case. The exception is `hotfix/…`, which branches off `main` and goes into `main`.
 - For a roadmap item, name the branch `<type>/<change-id>` (the change ID from the roadmap) so its GitHub issue moves to in progress and closes on merge. After editing `context/foundation/roadmap.md`, the issues sync by hook; otherwise run `npm run roadmap:sync`. See `docs/development-process.md`.
-- Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request.
-- Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
+- Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request (title `chore(release): …`), merged with a merge commit. The `develop protection` and `main protection` rulesets block direct pushes and wrong source branches.
+- After every release or hotfix, open a sync PR from `main` into `develop` and merge it with a **merge commit**, never squash. Otherwise the next release PR shows as behind `main`. See `docs/development-process.md`.
+- Commit messages and PR titles follow Conventional Commits. The `PR conventions` check enforces the PR title, the branch name and the allowed source branch. Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `build`, `revert`.
 - Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
 
 ## Before opening a PR
