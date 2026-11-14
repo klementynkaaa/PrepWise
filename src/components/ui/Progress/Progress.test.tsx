@@ -1,0 +1,28 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { ProgressBarRow, ProgressRing } from "./Progress";
+
+describe("ProgressRing", () => {
+  it("renders its label as one text node and is read in words", () => {
+    render(<ProgressRing done={12} total={38} />);
+    const label = screen.getByText("12/38");
+    expect(label.childNodes).toHaveLength(1);
+    expect(screen.getByRole("img", { name: "Gotowe 12 z 38" })).toBeInTheDocument();
+  });
+});
+
+describe("ProgressBarRow", () => {
+  it("always shows the count, with the percentage beside it", () => {
+    render(<ProgressBarRow name="Woda i jedzenie" detail="brakuje wody" done={4} total={7} />);
+    expect(screen.getByText(/4 z 7/)).toHaveTextContent("4 z 7 · brakuje wody");
+    expect(screen.getByText("57%")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Gotowe 4 z 7" })).toBeInTheDocument();
+  });
+
+  it("shows Gotowe instead of 100%", () => {
+    render(<ProgressBarRow name="Ciepło" done={3} total={3} />);
+    expect(screen.getByText("Gotowe")).toBeInTheDocument();
+    expect(screen.queryByText("100%")).not.toBeInTheDocument();
+    expect(screen.getByText("3 z 3")).toBeInTheDocument();
+  });
+});
