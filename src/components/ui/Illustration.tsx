@@ -64,7 +64,12 @@ export const bannerIllustrationNames = illustrationNames.filter(
   (name): name is BannerIllustrationName => illustrations[name] === "banner",
 );
 
-export function Illustration({ name }: { name: IllustrationName }) {
+/**
+ * `cover` makes the art fill the height of its parent and crop from the left
+ * instead of keeping its own ratio. Banner uses it so a tall text block never
+ * leaves a strip under the art.
+ */
+export function Illustration({ name, cover }: { name: IllustrationName; cover?: boolean }) {
   const { width, height, look } = groups[illustrations[name]];
   return (
     // A static SVG from public/: next/image needs a server-side loader, which
@@ -76,7 +81,11 @@ export function Illustration({ name }: { name: IllustrationName }) {
       aria-hidden="true"
       width={width}
       height={height}
-      className={cn("block h-auto shrink-0 self-center", look)}
+      className={cn(
+        "block shrink-0 self-center",
+        cover ? "h-full object-cover object-right" : "h-auto",
+        look,
+      )}
     />
   );
 }

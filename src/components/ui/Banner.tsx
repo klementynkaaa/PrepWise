@@ -21,7 +21,7 @@ export function Banner({ title, children, illustration, titleAs: Title = "p" }: 
     <div className="@container overflow-hidden rounded-lg bg-notice-bg">
       <div className="grid">
         <div className="col-start-1 row-start-1 @max-banner-stack:row-start-2">
-          <Illustration name={illustration} />
+          <Illustration name={illustration} cover />
         </div>
         <div className="col-start-1 row-start-1 flex w-1/2 flex-col justify-center gap-1 p-4 @max-banner-stack:w-full">
           <Title className="text-heading-sm text-ink">{title}</Title>
