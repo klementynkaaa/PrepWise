@@ -24,6 +24,14 @@ Branch: feature/, bugfix/, refactor/, chore/, docs/ (into develop) or hotfix/ (i
 - [ ] `npm run build`, then `npm run test:e2e`
 - [ ] `npm run test:storybook` (if a component changed)
 
+## UI change?
+
+<!-- Keep one line and delete the others. -->
+
+- [ ] No UI change.
+- [ ] UI change: detailed mockup agreed (or deviation noted), Design System updated first, a Storybook story per state, `npm run test:storybook` passes.
+- [ ] UI change without a story, because: <!-- one line, and add the `no-story-needed` label -->
+
 ## Related issue
 
 Closes #

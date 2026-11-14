@@ -10,6 +10,8 @@ No feature work (household profile, plan, action list) starts until these three 
 
 Features are then built against the approved mockups using only design-system tokens and components.
 
+The mockups are direction, not contract; the details are settled per change. Every change that touches UI starts with a detailed mockup of the screens and states it adds or alters (change mode of the mockup step). A new component or variant is drawn with all its states, added to the Design System first, then built with a Storybook story per state and a short usage note. Illustrations follow the same path: Design System first, always decorative, never on list rows. A change is done when the mockup is agreed (or its deviation noted), the component is in the Design System, every state has a story, and the quality gates pass.
+
 ## Branches
 
 ```
@@ -82,6 +84,8 @@ Deployment runs only when all five gates pass. Every deployment ships the `out/`
 | Dependency audit                      | `Dependency audit`               | `npm run audit`                                                        | a high or critical advisory is found (a hotfix may bypass it, see Releases)                                                       |
 | Secret scan                           | `Secret scan`                    | none (runs in CI)                                                      | a secret appears in the commits being introduced                                                                                  |
 | PR conventions                        | `PR conventions`                 | `node scripts/check-pr.mjs` (needs `PR_TITLE`, `HEAD_REF`, `BASE_REF`) | the PR title isn't Conventional, the branch name is outside the allowed prefixes, or the source branch isn't allowed for the base |
+
+The same `PR conventions` job also runs `node scripts/check-ui-stories.mjs`: a PR that changes a component in `src/components/ui/` must change a `*.stories.tsx` there too, unless it carries the `no-story-needed` label. PRs that touch no component are not affected.
 
 These six job names are the required checks in the `develop protection` and `main protection` rulesets. A pull request can be merged only when all of them pass. A job skipped on a draft reports success, which is safe only because a draft can't be merged and CI runs again when the PR is marked ready.
 

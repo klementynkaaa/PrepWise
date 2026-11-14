@@ -62,3 +62,15 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 - A missing value or component is added to the PREPWISE Design System first, then to `globals.css` / `src/components/ui/`. Don't add one-off styles in a screen.
 - Every new component gets a Storybook story covering all its states (`src/components/ui/*.stories.tsx`); `npm run test:storybook` must pass (it fails on axe violations). Interactive components also get a Testing Library test (`npm run test:components`).
 - Empty, success, offline and error states always use `EmptyState`, which has one look: only the illustration, the words and an optional button change.
+
+## UI changes: mockup, component, Storybook (every change that touches UI)
+
+The agreed mockups (`context/foundation/mockups.md`, if present) are direction, not contract. They show the look and structure; the details are decided per change, while building it. For each change that adds or alters UI:
+
+1. **Mockup first, in detail.** Run `/10x-mockup <change-id>` (change mode, before `/10x-plan`) for every screen and state the change adds or alters, including empty, loading, error, offline and large-text states. If the change adds a new component or a new variant, draw it with all its states in the mockup and in the Design System before any code. If a drawn artboard turns out wrong during the build, change it and say so in the change notes.
+2. **Design System, then code.** A new token, component, variant or illustration goes into the PREPWISE Design System first, then into `globals.css`, `src/components/ui/` and (for illustrations) `public/illustrations/` plus the names in `Illustration.tsx`. Never a one-off style in a screen.
+3. **Storybook documents it.** Each new or changed component gets a `*.stories.tsx` with a story per state (default, pressed/focus, disabled, error, long text, large text where it applies), `tags: ["autodocs"]`, and a short Polish description of when to use it and when not. Interactive components also get a Testing Library test. `npm run test:storybook` must pass (axe violations fail it).
+4. **Illustrations follow the Design System rules:** decorative (`alt=""`, `aria-hidden`), never on list rows, state scenes only via `EmptyState`, banners with a short title and one sentence, only the approved colours. A new scene or item is drawn in the same flat style and added to the Design System Illustrations group first.
+5. **Docs stay in sync.** Add each new route to `e2e/routes.ts`; if the change alters a rule or the architecture, update the matching file in `docs/`. If the Design System README or `mockups.md` placement list changes, update it in the same change.
+
+Done means: the mockup is agreed or its deviation noted, the component is in the Design System, every state has a story, and `format:check`, `lint`, `typecheck`, `test`, `test:storybook` pass.
