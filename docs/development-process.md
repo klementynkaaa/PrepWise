@@ -96,6 +96,10 @@ A release is a pull request from `develop` into `main`.
 
 A release left waiting for approval keeps its run in progress. The next push to `main` (a hotfix included) queues behind it, without even running its gates, and a third push replaces the queued one. To ship something newer, approve or reject the waiting release first.
 
+### If promotion fails
+
+`Promote to production` can fail after you approve; nothing goes live in that case, and `Tag release` is skipped. Read the step's log: the script prints the HTTP status of the Vercel call. A 401 or 403 means the Vercel token lacks access to the project; a 404 means the staged deployment or project ID is wrong. Fix the cause (for a workflow or script bug, with a `hotfix/…` PR into `main`), then let the new `main` run stage and promote again. Re-running the failed job reuses the old workflow file, so it only helps for a temporary Vercel error.
+
 ### Sync after every release or hotfix
 
 The merge commit of a release or hotfix PR exists on `main` but not on `develop`. Without a sync, the next release PR is behind `main` and can't be merged. After every release or hotfix:
@@ -108,7 +112,7 @@ CI doesn't open the sync PR itself, because a PR opened with the default workflo
 
 ### Hotfix
 
-Branch `hotfix/<short-name>` off `main` and open a PR into `main`. It runs the same gates, the same staging, smoke check, approval and promotion, and needs the sync PR afterwards. For a hotfix only, a failing dependency audit doesn't block the PR: the job passes with a warning annotation and a step-summary line naming the hotfix branch. This bypass has not yet been exercised end to end.
+Branch `hotfix/<short-name>` off `main` and open a PR into `main`. It runs the same gates, the same staging, smoke check, approval and promotion, and needs the sync PR afterwards. For a hotfix only, a failing dependency audit doesn't block the PR: the job passes with a warning annotation and a step-summary line naming the hotfix branch. The hotfix path has been used end to end (the first release needed two hotfixes), but the audit bypass has never triggered, because `npm audit` passed both times; it is untested.
 
 ### Rolling back
 
