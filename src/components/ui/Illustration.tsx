@@ -42,6 +42,15 @@ export type IllustrationName = keyof typeof illustrations;
 
 export const illustrationNames = Object.keys(illustrations) as IllustrationName[];
 
+/** The state scenes (240 × 200): empty lists, offline, errors, done. */
+export type StateIllustrationName = {
+  [Name in IllustrationName]: (typeof illustrations)[Name] extends "state" ? Name : never;
+}[IllustrationName];
+
+export const stateIllustrationNames = illustrationNames.filter(
+  (name): name is StateIllustrationName => illustrations[name] === "state",
+);
+
 export function Illustration({ name }: { name: IllustrationName }) {
   const { width, height, look } = groups[illustrations[name]];
   return (

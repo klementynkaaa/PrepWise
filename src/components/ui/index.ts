@@ -3,7 +3,13 @@
 export { Button, ButtonLink, type ButtonSize, type ButtonVariant } from "./Button";
 export { Icon, type IconName } from "./icons";
 export { EmptyState } from "./EmptyState";
-export { Illustration, illustrationNames, type IllustrationName } from "./Illustration";
+export {
+  Illustration,
+  illustrationNames,
+  stateIllustrationNames,
+  type IllustrationName,
+  type StateIllustrationName,
+} from "./Illustration";
 export { Alert, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar, Wordmark } from "./Page";
 export { Divider, KeyValueRow, ListSectionLabel, Panel, PanelList } from "./Panel";
