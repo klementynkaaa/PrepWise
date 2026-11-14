@@ -1,8 +1,10 @@
 name: CI/CD
 
-# Pull requests into develop/main: lint, type check, build.
-# Push to develop (merged PR): checks, then a Vercel preview deployment.
-# Push to main (merged release PR): checks, then a Vercel production deployment.
+# Pull requests into develop/main run every gate: lint, type check and build;
+# unit and integration tests with a coverage floor; browser tests (offline and
+# accessibility); dependency audit; secret scan.
+# Push to develop (merged PR): all gates, then a Vercel preview deployment.
+# Push to main (merged release PR): all gates, then a Vercel production deployment.
 on:
   pull_request:
     branches: [develop, main]
@@ -210,7 +212,7 @@ jobs:
 
   deploy:
     name: Deploy to Vercel
-    needs: checks
+    needs: [checks, tests, e2e, audit, secrets]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15

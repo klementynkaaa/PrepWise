@@ -35,6 +35,12 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
 - Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
 
+## Before opening a PR
+
+- Run `npm run format:check`, `npm run lint`, `npm run typecheck` and `npm test`. After `npm run build`, also run `npm run test:e2e`. CI runs the same gates, plus a dependency audit and a secret scan (see `docs/development-process.md`).
+- Add every new route to `e2e/routes.ts`, so the offline and accessibility tests cover it.
+- Put new business logic in `src/lib/` with unit tests. Coverage there must stay at or above the 80% floor.
+
 ## Build and offline setup
 
 - `npm run build` runs `next build` (static export to `out/`), then `scripts/build-sw.mjs`, which bundles `src/sw.ts` into `out/sw.js` and precaches every exported file. `npm start` serves `out/` locally. The service worker only registers in production builds, not in `next dev`.

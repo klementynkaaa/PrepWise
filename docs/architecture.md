@@ -13,14 +13,14 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 ## Stack
 
-| Area      | Choice                                                                                                                  |
-| --------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                  |
-| Styling   | Tailwind CSS 4                                                                                                          |
-| Offline   | Serwist service worker, built after the static export                                                                   |
-| Storage   | IndexedDB on the device (planned: one typed storage module)                                                             |
-| Hosting   | Vercel (static files)                                                                                                   |
-| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): checks on every PR; `develop` → Vercel preview, `main` → Vercel production |
+| Area      | Choice                                                                                                                              |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                              |
+| Styling   | Tailwind CSS 4                                                                                                                      |
+| Offline   | Serwist service worker, built after the static export                                                                               |
+| Storage   | IndexedDB on the device (planned: one typed storage module)                                                                         |
+| Hosting   | Vercel (static files)                                                                                                               |
+| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → Vercel production |
 
 ## Key decisions
 
@@ -46,6 +46,10 @@ npm run build    # static export to out/ + service worker
 npm start        # serve out/ locally to test the production/offline build
 npm run lint
 npm run typecheck  # generates Next.js route types, then tsc
+npm run format:check
+npm test           # unit + integration tests (Vitest)
+npm run test:coverage  # same, with the coverage floor
+npm run test:e2e   # browser tests (Playwright); needs a prior npm run build
 ```
 
 ## Deployment
