@@ -27,44 +27,43 @@ function SegmentHarness({ onChange }: { onChange?: (v: Day) => void }) {
   );
 }
 
-describe.each([["SegmentedControl", "Na ile dni", () => render(<SegmentHarness />)]])(
-  "%s",
-  (_name, groupName, setup) => {
-    it("is a radiogroup where only the checked radio is tabbable", () => {
-      setup();
-      expect(screen.getByRole("radiogroup", { name: groupName })).toBeInTheDocument();
-      const radios = screen.getAllByRole("radio");
-      expect(radios.map((r) => r.getAttribute("tabindex"))).toEqual(["0", "-1", "-1"]);
-      expect(screen.getByRole("radio", { name: "72 h" })).toHaveAttribute("aria-checked", "true");
-    });
+describe("SegmentedControl", () => {
+  const groupName = "Na ile dni";
+  const setup = () => render(<SegmentHarness />);
+  it("is a radiogroup where only the checked radio is tabbable", () => {
+    setup();
+    expect(screen.getByRole("radiogroup", { name: groupName })).toBeInTheDocument();
+    const radios = screen.getAllByRole("radio");
+    expect(radios.map((r) => r.getAttribute("tabindex"))).toEqual(["0", "-1", "-1"]);
+    expect(screen.getByRole("radio", { name: "72 h" })).toHaveAttribute("aria-checked", "true");
+  });
 
-    it("moves selection and focus with arrow keys, wrapping around", async () => {
-      setup();
-      await userEvent.tab();
-      expect(screen.getByRole("radio", { name: "72 h" })).toHaveFocus();
+  it("moves selection and focus with arrow keys, wrapping around", async () => {
+    setup();
+    await userEvent.tab();
+    expect(screen.getByRole("radio", { name: "72 h" })).toHaveFocus();
 
-      await userEvent.keyboard("{ArrowRight}");
-      const seven = screen.getByRole("radio", { name: "7 dni" });
-      expect(seven).toHaveFocus();
-      expect(seven).toHaveAttribute("aria-checked", "true");
-      expect(seven).toHaveAttribute("tabindex", "0");
+    await userEvent.keyboard("{ArrowRight}");
+    const seven = screen.getByRole("radio", { name: "7 dni" });
+    expect(seven).toHaveFocus();
+    expect(seven).toHaveAttribute("aria-checked", "true");
+    expect(seven).toHaveAttribute("tabindex", "0");
 
-      await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
-      expect(screen.getByRole("radio", { name: "14 dni" })).toHaveFocus();
-      expect(screen.getByRole("radio", { name: "14 dni" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(screen.getByRole("radio", { name: "14 dni" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "14 dni" })).toHaveAttribute("aria-checked", "true");
 
-      await userEvent.keyboard("{ArrowRight}");
-      expect(screen.getByRole("radio", { name: "72 h" })).toHaveFocus();
-    });
+    await userEvent.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", { name: "72 h" })).toHaveFocus();
+  });
 
-    it("selects with a click", async () => {
-      setup();
-      await userEvent.click(screen.getByRole("radio", { name: "14 dni" }));
-      expect(screen.getByRole("radio", { name: "14 dni" })).toHaveAttribute("aria-checked", "true");
-      expect(screen.getByRole("radio", { name: "72 h" })).toHaveAttribute("aria-checked", "false");
-    });
-  },
-);
+  it("selects with a click", async () => {
+    setup();
+    await userEvent.click(screen.getByRole("radio", { name: "14 dni" }));
+    expect(screen.getByRole("radio", { name: "14 dni" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "72 h" })).toHaveAttribute("aria-checked", "false");
+  });
+});
 
 describe("SegmentedControl onChange", () => {
   it("receives the new value", async () => {
