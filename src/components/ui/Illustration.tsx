@@ -55,6 +55,15 @@ export const stateIllustrationNames = illustrationNames.filter(
   (name): name is StateIllustrationName => illustrations[name] === "state",
 );
 
+/** The banner art (360 × 140): background of a Banner. */
+export type BannerIllustrationName = {
+  [Name in IllustrationName]: (typeof illustrations)[Name] extends "banner" ? Name : never;
+}[IllustrationName];
+
+export const bannerIllustrationNames = illustrationNames.filter(
+  (name): name is BannerIllustrationName => illustrations[name] === "banner",
+);
+
 export function Illustration({ name }: { name: IllustrationName }) {
   const { width, height, look } = groups[illustrations[name]];
   return (
