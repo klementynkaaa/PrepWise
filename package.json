@@ -16,7 +16,8 @@
     "test:e2e": "playwright test",
     "typecheck": "next typegen && tsc --noEmit",
     "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
-    "roadmap:sync:dry": "node scripts/sync-roadmap-issues.mjs --dry-run --show-body"
+    "roadmap:sync:dry": "node scripts/sync-roadmap-issues.mjs --dry-run --show-body",
+    "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
     "next": "16.4.6",
@@ -45,5 +46,10 @@
     "tailwindcss": "4.3.3",
     "typescript": "^5",
     "vitest": "5.1.0"
+  },
+  "overrides": {
+    "@serwist/build": {
+      "zod": "^4.6.6"
+    }
   }
 }
