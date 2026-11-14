@@ -14,7 +14,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Single: Story = {};
 
-/** All 21, at their group's size. Screen readers skip them. */
+/** All 25, at their group's size. Screen readers skip them. */
 export const All: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-3">

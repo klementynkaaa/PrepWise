@@ -24,9 +24,11 @@ const illustrations = {
   "not-found": "state",
   error: "state",
   "storage-error": "state",
+  "state-data-device": "state",
   "banner-water": "banner",
   "banner-install": "banner",
   "banner-plan-ready": "banner",
+  "banner-extend": "banner",
   "hero-welcome": "hero",
   "item-water": "item",
   "item-food": "item",
@@ -35,6 +37,8 @@ const illustrations = {
   "item-first-aid": "item",
   "item-candle": "item",
   "item-backpack": "item",
+  "item-pets": "item",
+  "item-medicine": "item",
   "divider-pattern": "divider",
 } as const satisfies Record<string, Group>;
 
