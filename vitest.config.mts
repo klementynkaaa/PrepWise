@@ -32,6 +32,13 @@ export default defineConfig({
           include: ["src/**/*.test.tsx"],
         },
       },
+      {
+        test: {
+          name: "scripts",
+          environment: "node",
+          include: ["scripts/**/*.test.mjs"],
+        },
+      },
     ],
     coverage: {
       provider: "v8",

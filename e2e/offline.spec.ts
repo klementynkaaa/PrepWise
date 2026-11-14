@@ -33,3 +33,17 @@ test("an uncached URL shows the Polish offline page", async ({ page, context }) 
     page.getByRole("heading", { level: 1, name: "Brak połączenia z internetem" }),
   ).toBeVisible();
 });
+
+test("@smoke every route returns 200 in Polish and the service worker takes control", async ({
+  page,
+}) => {
+  for (const route of routes) {
+    const response = await page.goto(route.path);
+    expect(response?.status(), route.path).toBe(200);
+    await expect(page.locator("html")).toHaveAttribute("lang", "pl");
+    await expect(page.locator("main")).toBeVisible();
+  }
+
+  await page.goto("/");
+  await waitForControlledPage(page);
+});

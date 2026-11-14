@@ -3,10 +3,15 @@ name: CI/CD
 # Pull requests into develop/main run every gate: lint, type check and build;
 # unit and integration tests with a coverage floor; browser tests (offline and
 # accessibility); dependency audit; secret scan.
+# Draft PRs run only the fast gates (build, unit and integration tests); marking
+# a PR ready for review runs CI again with every gate.
 # Push to develop (merged PR): all gates, then a Vercel preview deployment.
-# Push to main (merged release PR): all gates, then a Vercel production deployment.
+# Push to main (merged release PR): all gates, then the tested export goes to a
+# staged Vercel production deployment, smoke and health checks run on it, the
+# owner approves, it is promoted to production, and the release is tagged.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [develop, main]
   push:
     branches: [develop, main]
@@ -57,6 +62,7 @@ jobs:
           test -f out/offline.html
           test -f out/sw.js
           test -f out/manifest.webmanifest
+          test -f out/version.json
 
       - name: Upload export for browser tests
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -101,6 +107,7 @@ jobs:
   e2e:
     name: Browser tests (offline + a11y)
     needs: checks
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -156,8 +163,12 @@ jobs:
 
   audit:
     name: Dependency audit
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -165,12 +176,47 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # A hotfix is a PR from hotfix/*, or the push to main that merged one.
+      - name: Detect hotfix
+        id: hotfix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          head_ref=""
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            head_ref="$PR_HEAD_REF"
+          elif [ "$REF_NAME" = "main" ]; then
+            head_ref=$(gh api "repos/$GH_REPO/commits/$SHA/pulls" --jq '[.[] | select(.merged_at != null)][0].head.ref // ""')
+          fi
+          echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
+          echo "is_hotfix=$(REF="$head_ref" node scripts/is-hotfix.mjs)" >> "$GITHUB_OUTPUT"
+
       # Fails on high or critical advisories in production and dev dependencies.
+      # Only a hotfix may pass with a failing audit, and it is always annotated.
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        env:
+          IS_HOTFIX: ${{ steps.hotfix.outputs.is_hotfix }}
+          HOTFIX_REF: ${{ steps.hotfix.outputs.head_ref }}
+        run: |
+          if npm audit --audit-level=high; then
+            exit 0
+          fi
+          if [ "$IS_HOTFIX" = "true" ]; then
+            echo "::warning::Dependency audit bypassed for hotfix $HOTFIX_REF"
+            echo "Dependency audit bypassed for hotfix $HOTFIX_REF" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          exit 1
 
   secrets:
     name: Secret scan
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -219,21 +265,21 @@ jobs:
           path: ${{ runner.temp }}/gitleaks-report.json
           if-no-files-found: ignore
 
-  deploy:
-    name: Deploy to Vercel
+  preview:
+    name: Deploy preview
     needs: [checks, tests, e2e, audit, secrets]
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref_name == 'develop'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
+      name: preview
       url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_ENV: ${{ github.ref_name == 'main' && 'production' || 'preview' }}
-      PROD_FLAG: ${{ github.ref_name == 'main' && '--prod' || '' }}
     steps:
       - name: Skip when Vercel secrets are missing
         if: env.VERCEL_TOKEN == '' || env.VERCEL_ORG_ID == '' || env.VERCEL_PROJECT_ID == ''
@@ -246,7 +292,17 @@ jobs:
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         with:
           node-version-file: .nvmrc
-          cache: npm
+
+      # The artifact the browser tests ran against, not a rebuild.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        with:
+          name: out
+          path: out
+
+      - name: Build Output from out/
+        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
+        run: node scripts/vercel-output.mjs
 
       - name: Install Vercel CLI
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
@@ -254,16 +310,212 @@ jobs:
 
       - name: Pull Vercel project settings
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
-        run: vercel pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
-
-      - name: Build
-        if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
-        run: vercel build $PROD_FLAG --token="$VERCEL_TOKEN"
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
 
       - name: Deploy
         id: deploy
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         run: |
-          url=$(vercel deploy --prebuilt $PROD_FLAG --token="$VERCEL_TOKEN")
+          set -euo pipefail
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Deployed ($VERCEL_ENV): $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview deployed: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  # Staged production deployment: built from the tested artifact, not on the
+  # production domain yet. `production` promotes it after smoke and approval.
+  staging:
+    name: Deploy staging
+    needs: [checks, tests, e2e, audit, secrets]
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    environment:
+      name: staging
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Require Vercel secrets
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set; cannot deploy to production."
+              exit 1
+            fi
+          done
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: out
+          path: out
+
+      - name: Build Output from out/
+        run: node scripts/vercel-output.mjs
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@65.15.0
+
+      - name: Pull Vercel project settings
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Deploy (staged, not on the production domain)
+        id: deploy
+        run: |
+          set -euo pipefail
+          url=$(vercel deploy --prebuilt --prod --skip-domain --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Staging deployment: $url" >> "$GITHUB_STEP_SUMMARY"
+
+  smoke:
+    name: Smoke & health (staging)
+    needs: staging
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium with system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --no-shell chromium
+
+      - name: Install system dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # No Playwright report or trace artifacts are uploaded from this job: they
+      # record request headers, and the bypass secret travels in one.
+      - name: Smoke and health checks
+        env:
+          SMOKE_BASE_URL: ${{ needs.staging.outputs.url }}
+          EXPECTED_SHA: ${{ github.sha }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: npm run test:smoke
+
+  production:
+    name: Promote to production
+    needs: [staging, smoke]
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    # Waits for the required reviewer (the owner) before any step runs.
+    # No job-level concurrency group: the workflow-level group already
+    # serializes main runs.
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Require Vercel secrets and production URL
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID PRODUCTION_URL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set; cannot promote to production."
+              exit 1
+            fi
+          done
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@65.15.0
+
+      # Assigns the production domains to the already-built staging deployment;
+      # nothing is rebuilt.
+      - name: Promote staging deployment
+        env:
+          STAGING_URL: ${{ needs.staging.outputs.url }}
+        run: vercel promote "$STAGING_URL" --yes --token="$VERCEL_TOKEN"
+
+      # The health spec only makes HTTP requests, so no browser is installed.
+      - name: Health check on the production domain
+        env:
+          SMOKE_BASE_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECTED_SHA: ${{ github.sha }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: npx playwright test e2e/health.spec.ts
+
+  release:
+    name: Tag release
+    needs: production
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag=$(node scripts/release-tag.mjs)
+          gh release create "$tag" --target "$RELEASE_SHA" --generate-notes --title "$tag"
+          release_url=$(gh release view "$tag" --json url --jq .url)
+          {
+            echo "### Released $tag"
+            echo
+            echo "Release: $release_url"
+            echo
+            echo "Sync \`main\` back into \`develop\` (merge commit, never squash):"
+            echo
+            echo '```sh'
+            echo "gh pr create --base develop --head main --title \"chore(release): sync main into develop\" --body \"Sync after $tag.\""
+            echo "gh pr merge <number> --merge"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
