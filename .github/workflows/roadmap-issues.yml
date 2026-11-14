@@ -1,0 +1,102 @@
+name: Roadmap issues
+
+# Moves roadmap issues along as pull requests progress:
+#   PR opened / reopened  -> linked issue gets "status: in-progress"
+#   PR merged             -> linked issue is closed as completed
+#   PR closed, not merged -> linked issue goes back to "status: ready"
+#
+# A PR is linked to an issue by its branch name (<type>/<change-id>, matching
+# the "change-id" marker that scripts/sync-roadmap-issues.mjs writes into each
+# roadmap issue) or by "Closes #N" / "Fixes #N" / "Resolves #N" in its body.
+# Run `npm run roadmap:sync` locally to copy this progress back into the roadmap.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, edited, closed]
+    branches: [develop]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: roadmap-issues-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Update linked roadmap issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Fork PRs get a read-only token; skip them rather than fail.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ACTION: ${{ github.event.action }}
+      MERGED: ${{ github.event.pull_request.merged }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - name: Find linked issues
+        id: find
+        run: |
+          set -euo pipefail
+          numbers=""
+
+          # 1. Closing keywords in the PR body.
+          refs=$(printf '%s' "${PR_BODY:-}" | grep -oiE '\b(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' || true)
+          numbers="$numbers $refs"
+
+          # 2. Change ID from the branch name: feature/household-profile -> household-profile.
+          change_id="${HEAD_REF#*/}"
+          if [ -n "$change_id" ] && [ "$change_id" != "$HEAD_REF" ]; then
+            by_branch=$(gh api --paginate "repos/$GH_REPO/issues?state=all&labels=roadmap&per_page=100" \
+              --jq ".[] | select(.pull_request == null) | select(.body != null and (.body | contains(\"<!-- change-id: $change_id -->\"))) | .number")
+            numbers="$numbers $by_branch"
+          fi
+
+          numbers=$(echo $numbers | tr ' ' '\n' | grep -E '^[0-9]+$' | sort -un | tr '\n' ' ' || true)
+          echo "Linked issues: ${numbers:-none}"
+          echo "numbers=$numbers" >> "$GITHUB_OUTPUT"
+
+      - name: Update issues
+        if: steps.find.outputs.numbers != ''
+        env:
+          NUMBERS: ${{ steps.find.outputs.numbers }}
+        run: |
+          set -euo pipefail
+          for n in $NUMBERS; do
+            issue=$(gh issue view "$n" --json state,labels,comments)
+            # Only touch roadmap issues; other issues follow GitHub's own closing keywords.
+            if ! echo "$issue" | jq -e '.labels | map(.name) | index("roadmap")' > /dev/null; then
+              echo "#$n is not a roadmap issue; skipping."
+              continue
+            fi
+            state=$(echo "$issue" | jq -r .state)
+            already_commented=$(echo "$issue" | jq --arg url "$PR_URL" '[.comments[].body | select(contains($url))] | length')
+
+            if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
+              gh issue edit "$n" --remove-label "status: in-progress" --remove-label "status: ready" \
+                --remove-label "status: proposed" --remove-label "status: blocked" || true
+              if [ "$state" = "OPEN" ]; then
+                gh issue close "$n" --reason completed --comment "Done in $PR_URL."
+              fi
+              echo "#$n: done"
+            elif [ "$ACTION" = "closed" ]; then
+              if [ "$state" = "OPEN" ]; then
+                gh issue edit "$n" --remove-label "status: in-progress" --add-label "status: ready"
+              fi
+              echo "#$n: back to ready (PR closed without merging)"
+            else
+              if [ "$state" = "OPEN" ]; then
+                gh issue edit "$n" --add-label "status: in-progress" \
+                  --remove-label "status: ready" --remove-label "status: proposed"
+                if [ "$already_commented" = "0" ]; then
+                  gh issue comment "$n" --body "Work started in $PR_URL."
+                fi
+              fi
+              echo "#$n: in progress"
+            fi
+          done

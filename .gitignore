@@ -42,3 +42,11 @@ next-env.d.ts
 
 # local working notes (PRD, shape notes, plans) — public summary lives in docs/
 /context/
+
+# playwright
+/playwright-report/
+/test-results/
+
+# storybook
+/storybook-static/
+*storybook.log

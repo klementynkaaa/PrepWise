@@ -8,14 +8,14 @@ These rules decide which supplies a household needs and in what order. Keep them
 recommended quantity = amount per person per day × number of people × number of days
 ```
 
-- **Duration:** the initial plan covers the first **72 hours** (3 days).
+- **Duration:** the initial plan covers the first **72 hours** (3 days), the official baseline. The household can extend it to **7 or 14 days**; quantities scale with the number of days, and the longer period is shown as the household's own choice, not an official requirement. When the period grows, items whose quantity increases go back on the list as not yet done; the rest keep their tick.
 - **Adults** use the standard per-person amounts.
 - **Children** get age-appropriate food, clothing, medication and hygiene supplies.
 - **Elderly people** get extra items for mobility, medication and specific care needs.
 - **Pets** get separate food and water amounts, based on animal type and size.
 - **Declared medical needs** add the relevant supplies.
 
-*Example (illustrative, figure not yet verified):* at 3 L of drinking water per person per day, a household of three needs 3 × 3 × 3 = **27 L** for 72 hours.
+_Example (illustrative, figure not yet verified):_ at 3 L of drinking water per person per day, a household of three needs 3 × 3 × 3 = **27 L** for 72 hours.
 
 ## Source labelling
 

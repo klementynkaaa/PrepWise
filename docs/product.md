@@ -29,12 +29,27 @@ The first session should end with a personalised plan and a clear first step.
 - **Polish first.** All screens and guidance are in Polish at launch.
 - **Accessible to non-experts.** Text stays readable at large system font sizes, the app works with a screen reader, and specialist terms are explained.
 
+## Delivery foundation
+
+Before any feature is built, three things must be in place: CI/CD on GitHub Actions, reviewed mockups of every screen, and a design system. Details are in [Development process](development-process.md).
+
 ## Non-goals (v1)
 
 - Accounts, sync, family sharing or payments
 - Step-by-step instructions for what to do during or after a crisis (v1 is about preparing)
 - Markets outside Poland
-- Inventory tracking, storage boxes or QR codes, expiry reminders or notifications
+- Inventory tracking, storage boxes or QR codes, expiry and maintenance tracking
+- Push notifications
+
+## Next milestone (planned)
+
+After v1, still on the device and still offline:
+
+- **Inventory:** record what you have and how much, so partly stocked items and "enough for X days" become possible.
+- **Storage places:** named places or boxes with their contents, an optional photo, and printable QR labels.
+- **Expiry and rotation:** what expires soon, "used → restock", and upkeep for equipment such as charging a powerbank.
+- **Readiness per emergency:** how ready the household is for each chosen emergency, with what's still short.
+- **First-hour checklists:** short steps for the first hour of a blackout or flood, from official Polish sources.
 
 ## Known limitations and open questions
 
