@@ -29,7 +29,7 @@ async function call(method, url) {
       code = (await res.json())?.error?.code ?? "";
     } catch {}
     throw new Error(
-      `${method} ${new URL(url).pathname.split("/").slice(0, 4).join("/")} -> ${res.status} ${code}`.trim(),
+      `${method} ${new URL(url).pathname.split("/").slice(0, 3).join("/")} -> ${res.status} ${code}`.trim(),
     );
   }
   return res;
