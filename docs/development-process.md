@@ -49,13 +49,13 @@ Deployment runs only when all five gates pass.
 
 ### Quality gates
 
-| Gate                       | Job name (check name)            | Local command                                | Fails when                                                    |
-| -------------------------- | -------------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
-| Format, lint, types, build | `Lint, type check, build`        | `format:check`, `lint`, `typecheck`, `build` | formatting, a lint or type error, or the export is incomplete |
-| Unit and integration tests | `Unit & integration tests`       | `npm run test:coverage`                      | a test fails or coverage drops below the floor                |
-| Offline and accessibility  | `Browser tests (offline + a11y)` | `npm run test:e2e` (after `npm run build`)   | an offline, installability or accessibility check fails       |
-| Dependency audit           | `Dependency audit`               | `npm run audit`                              | a high or critical advisory is found                          |
-| Secret scan                | `Secret scan`                    | none (runs in CI)                            | a secret appears in the commits being introduced              |
+| Gate                                  | Job name (check name)            | Local command                                                        | Fails when                                                                                                   |
+| ------------------------------------- | -------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Format, lint, types, build            | `Lint, type check, build`        | `format:check`, `lint`, `typecheck`, `build`, `build-storybook`      | formatting, a lint or type error, the export is incomplete, or Storybook doesn't build                       |
+| Unit, integration and component tests | `Unit & integration tests`       | `npm run test:coverage`                                              | a test fails or coverage drops below the floor                                                               |
+| Offline and accessibility             | `Browser tests (offline + a11y)` | `npm run test:e2e` (after `npm run build`), `npm run test:storybook` | an offline, installability or accessibility check fails, or a Storybook story has an accessibility violation |
+| Dependency audit                      | `Dependency audit`               | `npm run audit`                                                      | a high or critical advisory is found                                                                         |
+| Secret scan                           | `Secret scan`                    | none (runs in CI)                                                    | a secret appears in the commits being introduced                                                             |
 
 These five job names are the check names that branch protection (roadmap item F-03) must require on `develop` and `main`. Only `Lint, type check, build` is required today. A pull request can be merged only when all required checks pass.
 

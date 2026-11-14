@@ -9,8 +9,10 @@ npm install
 npm run dev      # http://localhost:3000
 npm run build    # static export to out/ + service worker
 npm start        # serve the production build locally (test offline here)
-npm test         # unit + integration tests
+npm test         # unit, integration and component tests
 npm run test:e2e # browser tests (offline + accessibility); needs a prior npm run build
+npm run storybook # component showcase (http://localhost:6006)
+npm run test:storybook # every story in Chromium, with accessibility checks
 ```
 
 Requires Node.js 22.

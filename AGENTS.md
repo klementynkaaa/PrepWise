@@ -37,7 +37,7 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 
 ## Before opening a PR
 
-- Run `npm run format:check`, `npm run lint`, `npm run typecheck` and `npm test`. After `npm run build`, also run `npm run test:e2e`. CI runs the same gates, plus a dependency audit and a secret scan (see `docs/development-process.md`).
+- Run `npm run format:check`, `npm run lint`, `npm run typecheck` and `npm test`. After `npm run build`, also run `npm run test:e2e`. After changing a component, run `npm run test:storybook`. CI runs the same gates, plus a dependency audit and a secret scan (see `docs/development-process.md`).
 - Add every new route to `e2e/routes.ts`, so the offline and accessibility tests cover it.
 - Put new business logic in `src/lib/` with unit tests. Coverage there must stay at or above the 80% floor.
 
