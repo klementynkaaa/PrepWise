@@ -30,6 +30,8 @@ export function cleanUrlOverrides(htmlFiles) {
   return overrides;
 }
 
+export const HTML_REDIRECT_SRC = "^/(?!404\\.html/?$)(.*)\\.html/?$";
+
 export function toBuildOutputConfig(vercelJson, htmlFiles = []) {
   const routes = [];
   const config = { version: 3, routes };
@@ -42,7 +44,9 @@ export function toBuildOutputConfig(vercelJson, htmlFiles = []) {
         status: 308,
         headers: { Location: "/$1" },
       },
-      { src: "^/(.*)\\.html/?$", status: 308, headers: { Location: "/$1" } },
+      // 404.html stays reachable at its own path: redirecting it to /404 would answer
+      // 404, and the service worker precaches it, so its install would fail.
+      { src: HTML_REDIRECT_SRC, status: 308, headers: { Location: "/$1" } },
     );
     config.overrides = cleanUrlOverrides(htmlFiles);
   }

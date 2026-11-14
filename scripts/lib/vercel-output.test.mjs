@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanUrlOverrides, toBuildOutputConfig } from "./vercel-output.mjs";
+import { HTML_REDIRECT_SRC, cleanUrlOverrides, toBuildOutputConfig } from "./vercel-output.mjs";
 
 const vercelJson = {
   cleanUrls: true,
@@ -45,10 +45,16 @@ describe("toBuildOutputConfig", () => {
 
   it("serves /offline from offline.html and redirects the .html form", () => {
     expect(config.overrides).toEqual({ "offline.html": { path: "offline" } });
-    const redirect = config.routes.find((r) => r.src === "^/(.*)\\.html/?$");
+    const redirect = config.routes.find((r) => r.src === HTML_REDIRECT_SRC);
     expect(redirect).toMatchObject({ status: 308, headers: { Location: "/$1" } });
     expect(new RegExp(redirect.src).test("/offline.html")).toBe(true);
     expect(new RegExp(redirect.src).test("/offline")).toBe(false);
+  });
+
+  it("does not redirect /404.html, so the precached file answers 200", () => {
+    const redirect = config.routes.find((r) => r.src === HTML_REDIRECT_SRC);
+    expect(new RegExp(redirect.src).test("/404.html")).toBe(false);
+    expect(new RegExp(redirect.src).test("/_not-found.html")).toBe(true);
   });
 
   it("keeps 404.html in place and routes errors to it", () => {
