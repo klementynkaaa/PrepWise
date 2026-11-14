@@ -18,7 +18,7 @@ test("app has no installability errors", async ({ baseURL }, testInfo) => {
   }
 });
 
-test("manifest is Polish, standalone and has 192 and 512 icons", async ({ request }) => {
+test("@smoke manifest is Polish, standalone and has 192 and 512 icons", async ({ request }) => {
   const response = await request.get("/manifest.webmanifest");
   expect(response.ok()).toBe(true);
   const manifest = (await response.json()) as {

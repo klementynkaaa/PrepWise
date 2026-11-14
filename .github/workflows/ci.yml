@@ -57,6 +57,7 @@ jobs:
           test -f out/offline.html
           test -f out/sw.js
           test -f out/manifest.webmanifest
+          test -f out/version.json
 
       - name: Upload export for browser tests
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
