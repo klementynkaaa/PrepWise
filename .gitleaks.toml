@@ -1,0 +1,14 @@
+# Gitleaks configuration for the "Secret scan" CI job.
+# Extends the built-in default ruleset.
+[extend]
+useDefault = true
+
+# Allowlist: intentionally empty. An allowlist hides findings from the scan,
+# so every entry needs a written justification (why it is not a secret) and
+# must be as narrow as possible (one commit, path or regex), never a broad
+# pattern. Gitleaks rejects an empty [[allowlists]] table, so add one only
+# together with its first entry, for example:
+#
+# [[allowlists]]
+# description = "Why this is not a secret"
+# commits = ["<full commit sha>"]

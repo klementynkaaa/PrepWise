@@ -22,7 +22,7 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
    - no `cookies()`, `headers()`, `proxy.ts`/middleware, rewrites, redirects, custom headers, ISR or Draft Mode
    - no dynamic routes without `generateStaticParams()`, and no `dynamicParams: true`
    - no `next/image` with the default loader; use `images: { unoptimized: true }` or plain `<img>`
-   The full list is in `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`. If a feature seems to need a server, stop and ask; don't work around it.
+     The full list is in `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`. If a feature seems to need a server, stop and ask; don't work around it.
 2. **Household data never leaves the device.** No backend, database service, analytics, telemetry or third-party API receives profile, plan or checklist data. Persist state in IndexedDB on the client, with a single typed storage module. Do not use `localStorage` for app data.
 3. **Works online and offline, the same way.** People normally use the app online. It must keep working with no connection, for example during a blackout. The profile, plan, action list and ticking behave the same in both cases, so never make a core feature depend on the network. Ship plan content and quantity rules as bundled static data, not as runtime fetches. The service worker (Serwist) precaches the app shell and every route after the first online visit. When the device is online, the service worker picks up new app versions in the background. When it's offline, the cached version keeps running and shows no error screens.
 4. **No accounts, auth, payments or sync** in v1 (see PRD Non-Goals).
@@ -34,6 +34,12 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 - Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request.
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
 - Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
+
+## Before opening a PR
+
+- Run `npm run format:check`, `npm run lint`, `npm run typecheck` and `npm test`. After `npm run build`, also run `npm run test:e2e`. CI runs the same gates, plus a dependency audit and a secret scan (see `docs/development-process.md`).
+- Add every new route to `e2e/routes.ts`, so the offline and accessibility tests cover it.
+- Put new business logic in `src/lib/` with unit tests. Coverage there must stay at or above the 80% floor.
 
 ## Build and offline setup
 

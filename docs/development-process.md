@@ -39,13 +39,25 @@ feature/…  fix/…  chore/…  docs/…
 
 ## CI/CD (GitHub Actions)
 
-| Trigger                               | What runs                                                                    |
-| ------------------------------------- | ---------------------------------------------------------------------------- |
-| Pull request into `develop` or `main` | install, lint, type check, production build (static export + service worker) |
-| Merge into `develop`                  | the checks above, then a preview deployment on Vercel                        |
-| Merge into `main`                     | the checks above, then a production deployment on Vercel                     |
+| Trigger                               | What runs                                              |
+| ------------------------------------- | ------------------------------------------------------ |
+| Pull request into `develop` or `main` | every quality gate below                               |
+| Merge into `develop`                  | the same gates, then a preview deployment on Vercel    |
+| Merge into `main`                     | the same gates, then a production deployment on Vercel |
 
-A pull request can be merged only when all checks pass. Tests join the pipeline once they exist.
+Deployment runs only when all five gates pass.
+
+### Quality gates
+
+| Gate                       | Job name (check name)            | Local command                                | Fails when                                                    |
+| -------------------------- | -------------------------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| Format, lint, types, build | `Lint, type check, build`        | `format:check`, `lint`, `typecheck`, `build` | formatting, a lint or type error, or the export is incomplete |
+| Unit and integration tests | `Unit & integration tests`       | `npm run test:coverage`                      | a test fails or coverage drops below the floor                |
+| Offline and accessibility  | `Browser tests (offline + a11y)` | `npm run test:e2e` (after `npm run build`)   | an offline, installability or accessibility check fails       |
+| Dependency audit           | `Dependency audit`               | `npm run audit`                              | a high or critical advisory is found                          |
+| Secret scan                | `Secret scan`                    | none (runs in CI)                            | a secret appears in the commits being introduced              |
+
+These five job names are the check names that branch protection (roadmap item F-03) must require on `develop` and `main`. Only `Lint, type check, build` is required today. A pull request can be merged only when all required checks pass.
 
 ## Roadmap and issues
 

@@ -15,7 +15,7 @@ recommended quantity = amount per person per day × number of people × number o
 - **Pets** get separate food and water amounts, based on animal type and size.
 - **Declared medical needs** add the relevant supplies.
 
-*Example (illustrative, figure not yet verified):* at 3 L of drinking water per person per day, a household of three needs 3 × 3 × 3 = **27 L** for 72 hours.
+_Example (illustrative, figure not yet verified):_ at 3 L of drinking water per person per day, a household of three needs 3 × 3 × 3 = **27 L** for 72 hours.
 
 ## Source labelling
 

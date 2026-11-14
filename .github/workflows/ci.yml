@@ -1,8 +1,10 @@
 name: CI/CD
 
-# Pull requests into develop/main: lint, type check, build.
-# Push to develop (merged PR): checks, then a Vercel preview deployment.
-# Push to main (merged release PR): checks, then a Vercel production deployment.
+# Pull requests into develop/main run every gate: lint, type check and build;
+# unit and integration tests with a coverage floor; browser tests (offline and
+# accessibility); dependency audit; secret scan.
+# Push to develop (merged PR): all gates, then a Vercel preview deployment.
+# Push to main (merged release PR): all gates, then a Vercel production deployment.
 on:
   pull_request:
     branches: [develop, main]
@@ -32,6 +34,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Format
+        run: npm run format:check
+
       - name: Lint
         run: npm run lint
 
@@ -48,9 +53,166 @@ jobs:
           test -f out/sw.js
           test -f out/manifest.webmanifest
 
+      - name: Upload export for browser tests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: out
+          path: out/
+          retention-days: 1
+          if-no-files-found: error
+
+  tests:
+    name: Unit & integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node scripts/coverage-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+
+  e2e:
+    name: Browser tests (offline + a11y)
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: out
+          path: out
+
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium with system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --no-shell chromium
+
+      - name: Install system dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      # Fails on high or critical advisories in production and dev dependencies.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      # SHA-256 of gitleaks_8.30.1_linux_x64.tar.gz, from the release's checksums file.
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      BASE_REF: ${{ github.base_ref }}
+      PUSH_BEFORE: ${{ github.event.before }}
+      PUSH_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks (pinned, checksum verified)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check -
+          mkdir "$RUNNER_TEMP/gitleaks"
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/gitleaks" gitleaks
+
+      - name: Scan the commits being introduced
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            range="origin/${BASE_REF}..HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            range="${PUSH_BEFORE}..${PUSH_SHA}"
+          else
+            range=""
+          fi
+          echo "Scanning range: ${range:-full history}"
+          "$RUNNER_TEMP/gitleaks/gitleaks" git \
+            --config .gitleaks.toml \
+            --redact \
+            --report-format json \
+            --report-path "$RUNNER_TEMP/gitleaks-report.json" \
+            ${range:+--log-opts="$range"} \
+            .
+
+      - name: Upload redacted report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: gitleaks-report
+          path: ${{ runner.temp }}/gitleaks-report.json
+          if-no-files-found: ignore
+
   deploy:
     name: Deploy to Vercel
-    needs: checks
+    needs: [checks, tests, e2e, audit, secrets]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 15
