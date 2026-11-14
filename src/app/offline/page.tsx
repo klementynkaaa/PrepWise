@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink, EmptyState, PageShell } from "@/components/ui";
 
 export const metadata = { title: "Brak połączenia" };
 
@@ -6,15 +6,18 @@ export const metadata = { title: "Brak połączenia" };
 // Every regular PREPWISE page is saved, so this should be rare.
 export default function OfflinePage() {
   return (
-    <main className="mx-auto flex max-w-md flex-1 flex-col justify-center gap-4 p-6">
-      <h1 className="text-2xl font-semibold">Brak połączenia z internetem</h1>
-      <p>
-        Ta strona nie jest zapisana na Twoim urządzeniu. Twój plan i lista zakupów działają bez
-        internetu.
-      </p>
-      <Link href="/" className="underline">
-        Wróć do strony głównej
-      </Link>
-    </main>
+    <PageShell>
+      <main className="flex flex-1 flex-col justify-center px-4 py-6">
+        <EmptyState
+          illustration="offline"
+          headingLevel={1}
+          title="Brak połączenia z internetem"
+          action={<ButtonLink href="/">Wróć do strony głównej</ButtonLink>}
+        >
+          Ta strona nie jest zapisana na Twoim urządzeniu. Twój plan i lista zakupów działają bez
+          internetu.
+        </EmptyState>
+      </main>
+    </PageShell>
   );
 }

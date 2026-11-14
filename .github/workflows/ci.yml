@@ -46,8 +46,13 @@ jobs:
       - name: Build (static export + service worker)
         run: npm run build
 
+      - name: Build Storybook
+        run: npm run build-storybook
+
       - name: Verify export
         run: |
+          test ! -e out/system.html
+          test ! -e out/iframe.html
           test -f out/index.html
           test -f out/offline.html
           test -f out/sw.js
@@ -134,6 +139,10 @@ jobs:
 
       - name: Browser tests
         run: npm run test:e2e
+
+      # Every Storybook story rendered in Chromium; any axe violation fails.
+      - name: Story tests (components + a11y)
+        run: npm run test:storybook
 
       - name: Upload Playwright report
         if: failure()

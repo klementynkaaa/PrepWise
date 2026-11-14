@@ -16,7 +16,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 | Area      | Choice                                                                                                                              |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                              |
-| Styling   | Tailwind CSS 4                                                                                                                      |
+| Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                               |
 | Offline   | Serwist service worker, built after the static export                                                                               |
 | Storage   | IndexedDB on the device (planned: one typed storage module)                                                                         |
 | Hosting   | Vercel (static files)                                                                                                               |
@@ -38,6 +38,16 @@ browser ── first visit (online) ──▶ static host (Vercel)
 - **Fallback:** any page not saved on the device shows a Polish offline page (`/offline`).
 - **First visit:** the app needs one online visit before it can work offline.
 
+## Design system
+
+- **Tokens** live in `src/app/globals.css` (`@theme`). Tailwind's default colours, text sizes, radii, shadows and fonts are removed, so only system values exist. The source of truth is the PREPWISE Design System; a missing value is added there first.
+- **Components** live in `src/components/ui/` (import from `@/components/ui`). Most render on the server with no client JS; only interactive ones (stepper, choices, checklist, tab bar, sheet, undo) are Client Components.
+- **Storybook** is the component showcase: every component and state has a story (`npm run storybook`). `npm run test:storybook` renders every story in Chromium and fails on accessibility violations; CI runs it. Storybook is a dev tool and is not part of the exported app.
+- **Light theme only.** Every screen is one phone-width column, capped at 32rem and centred.
+- **Large text:** plan, progress and checklist rows stack by their own width (container queries), not by screen width.
+- **Duplicated value:** the `bg` colour `#EFF4F6` is repeated in `src/app/manifest.ts` and `viewport.themeColor` in `src/app/layout.tsx`, because they can't read CSS variables. Change all three together.
+- **Illustrations** are static SVGs in `public/illustrations/`, precached for offline use and always decorative.
+
 ## Build and run
 
 ```bash
@@ -47,9 +57,11 @@ npm start        # serve out/ locally to test the production/offline build
 npm run lint
 npm run typecheck  # generates Next.js route types, then tsc
 npm run format:check
-npm test           # unit + integration tests (Vitest)
+npm test           # unit, integration and component tests (Vitest)
 npm run test:coverage  # same, with the coverage floor
 npm run test:e2e   # browser tests (Playwright); needs a prior npm run build
+npm run storybook       # component showcase on http://localhost:6006
+npm run test:storybook  # every story in Chromium, with accessibility checks
 ```
 
 ## Deployment

@@ -1,17 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
-// Fonts are downloaded at build time and served from the app itself, so they
-// work offline. `latin-ext` covers Polish characters (ą, ć, ę, ł, ń, ó, ś, ź, ż).
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin", "latin-ext"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Plus Jakarta Sans is the system's only family. It's downloaded at build time
+// and served from the app itself, so it works offline. `latin-ext` covers
+// Polish characters (ą, ć, ę, ł, ń, ó, ś, ź, ż).
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin", "latin-ext"],
 });
 
@@ -34,13 +30,16 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
 };
 
+// Light theme only in v1. themeColor duplicates the `bg` token (#EFF4F6)
+// because metadata can't read CSS variables.
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#EFF4F6",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pl" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="pl" className={`${plusJakarta.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
         <ServiceWorkerRegister />

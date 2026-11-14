@@ -23,11 +23,20 @@ export default defineConfig({
           include: ["src/**/*.int.test.ts"],
         },
       },
+      {
+        ...shared,
+        test: {
+          name: "components",
+          environment: "jsdom",
+          setupFiles: ["src/test/setup-dom.ts"],
+          include: ["src/**/*.test.tsx"],
+        },
+      },
     ],
     coverage: {
       provider: "v8",
       include: ["src/lib/**"],
-      exclude: ["src/**/*.test.ts"],
+      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
       reporter: ["text", "json-summary", "html"],
       reportsDirectory: "coverage",
       thresholds: { lines: 80 },
