@@ -41,7 +41,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 ## Design system
 
 - **Tokens** live in `src/app/globals.css` (`@theme`). Tailwind's default colours, text sizes, radii, shadows and fonts are removed, so only system values exist. The source of truth is the PREPWISE Design System; a missing value is added there first.
-- **Components** live in `src/components/ui/` (import from `@/components/ui`). Most render on the server with no client JS; only interactive ones (stepper, choices, checklist, tab bar, sheet, undo) are Client Components.
+- **Components** live in `src/components/ui/`, one folder per component with its story and test (`ui/<Name>/`); shared helpers are in `ui/_shared/`. Import from `@/components/ui` only. Most render on the server with no client JS; only interactive ones (stepper, choices, checklist, tab bar, sheet, undo) are Client Components.
 - **Storybook** is the component showcase: every component and state has a story (`npm run storybook`). `npm run test:storybook` renders every story in Chromium and fails on accessibility violations; CI runs it. Storybook is a dev tool and is not part of the exported app.
 - **Light theme only.** Every screen is one phone-width column, capped at 32rem and centred.
 - **Large text:** plan, progress and checklist rows and the banner stack by their own width (container queries), not by screen width.

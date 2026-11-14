@@ -85,7 +85,7 @@ Deployment runs only when all five gates pass. Every deployment ships the `out/`
 | Secret scan                           | `Secret scan`                    | none (runs in CI)                                                      | a secret appears in the commits being introduced                                                                                  |
 | PR conventions                        | `PR conventions`                 | `node scripts/check-pr.mjs` (needs `PR_TITLE`, `HEAD_REF`, `BASE_REF`) | the PR title isn't Conventional, the branch name is outside the allowed prefixes, or the source branch isn't allowed for the base |
 
-The same `PR conventions` job also runs `node scripts/check-ui-stories.mjs`: a PR that changes a component in `src/components/ui/` must change a `*.stories.tsx` there too, unless it carries the `no-story-needed` label. PRs that touch no component are not affected.
+The same `PR conventions` job also runs `node scripts/check-ui-stories.mjs`: a PR that changes a component in `src/components/ui/` must change a `*.stories.tsx` under `src/components/ui/<Name>/` too, unless it carries the `no-story-needed` label. PRs that touch no component are not affected.
 
 These six job names are the required checks in the `develop protection` and `main protection` rulesets. A pull request can be merged only when all of them pass. A job skipped on a draft reports success, which is safe only because a draft can't be merged and CI runs again when the PR is marked ready.
 

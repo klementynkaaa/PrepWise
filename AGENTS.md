@@ -59,8 +59,8 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 ## Design system (UI rules)
 
 - Build screens only from `@/components/ui` and the token utilities in `src/app/globals.css`. No raw hex colours and no arbitrary Tailwind values (`[…]`).
-- A missing value or component is added to the PREPWISE Design System first, then to `globals.css` / `src/components/ui/`. Don't add one-off styles in a screen.
-- Every new component gets a Storybook story covering all its states (`src/components/ui/*.stories.tsx`); `npm run test:storybook` must pass (it fails on axe violations). Interactive components also get a Testing Library test (`npm run test:components`).
+- A missing value or component is added to the PREPWISE Design System first, then to `globals.css` / `src/components/ui/`, one folder per component (component, story and test together; `index.ts` re-exports it). Don't add one-off styles in a screen.
+- Every new component gets a Storybook story covering all its states (`src/components/ui/<Name>/<Name>.stories.tsx`); `npm run test:storybook` must pass (it fails on axe violations). Interactive components also get a Testing Library test (`npm run test:components`).
 - Empty, success, offline and error states always use `EmptyState`, which has one look: only the illustration, the words and an optional button change.
 
 ## UI changes: mockup, component, Storybook (every change that touches UI)

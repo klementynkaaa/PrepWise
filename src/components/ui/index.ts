@@ -1,7 +1,7 @@
 // PREPWISE design system components. Screens build only from these and the
 // token utilities in src/app/globals.css.
 export { Button, ButtonLink, type ButtonSize, type ButtonVariant } from "./Button";
-export { Icon, type IconName } from "./icons";
+export { Icon, type IconName } from "./Icon";
 export { EmptyState } from "./EmptyState";
 export {
   Illustration,
