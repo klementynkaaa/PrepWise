@@ -464,15 +464,17 @@ jobs:
 
       - run: npm ci
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@65.15.0
-
-      # Assigns the production domains to the already-built staging deployment;
-      # nothing is rebuilt.
+      # Promotes through the REST API: `vercel promote` loads the token's user first and
+      # fails with "User not found (404)" for this token. Assigns the production domains
+      # to the already-built staging deployment (nothing is rebuilt), then waits until
+      # the production domain serves this commit.
       - name: Promote staging deployment
         env:
           STAGING_URL: ${{ needs.staging.outputs.url }}
-        run: vercel promote "$STAGING_URL" --yes --token="$VERCEL_TOKEN"
+          EXPECTED_SHA: ${{ github.sha }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/vercel-promote.mjs
 
       # The health spec only makes HTTP requests, so no browser is installed.
       - name: Health check on the production domain
