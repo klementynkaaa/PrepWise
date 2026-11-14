@@ -4,9 +4,11 @@
 
 export const NO_STORY_LABEL = "no-story-needed";
 
-const COMPONENT = /^src\/components\/ui\/[^/]+\.tsx$/;
+// Layout: src/components/ui/<Folder>/<File>.tsx. Shared helpers live in `_shared/` as .ts
+// files and each folder has an `index.ts`, so neither matches.
+const COMPONENT = /^src\/components\/ui\/[^/]+\/[^/]+\.tsx$/;
 const NOT_COMPONENT = /\.(stories|test)\.tsx$/;
-const STORY = /^src\/components\/ui\/[^/]+\.stories\.tsx$/;
+const STORY = /^src\/components\/ui\/[^/]+\/[^/]+\.stories\.tsx$/;
 
 export function isComponentFile(path) {
   return COMPONENT.test(path) && !NOT_COMPONENT.test(path);
