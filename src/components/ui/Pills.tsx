@@ -9,7 +9,7 @@ const sources: Record<Source, { short: string; spoken: string; look: string }> =
   official: {
     short: "Oficjalne",
     spoken: "źródło: zalecenie oficjalne",
-    look: "bg-accent-tint-strong text-accent",
+    look: "bg-accent-tint-strong-solid text-accent",
   },
   prepwise: {
     short: "PREPWISE",

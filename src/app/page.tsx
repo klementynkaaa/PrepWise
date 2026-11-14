@@ -1,69 +1,19 @@
-import Image from "next/image";
+import { Illustration, PageBody, PageHeader, PageShell, Wordmark } from "@/components/ui";
 
+// A calm placeholder until the real Start screen (S-01) lands.
 export default function Home() {
   return (
-    <div className="bg-zinc-50 dark:bg-black flex flex-1 flex-col items-center justify-center font-sans">
-      <main className="bg-white dark:bg-black flex w-full max-w-3xl flex-1 flex-col items-center justify-between px-16 py-32 sm:items-start">
-        <Image
-          className="h-5 w-[100px] dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="text-3xl text-black dark:text-zinc-50 max-w-xs leading-10 font-semibold tracking-tight">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] font-mono dark:bg-white/[.08] px-1.5 py-0.5 text-[0.9em]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-md leading-8">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="text-zinc-950 dark:text-zinc-50 font-medium"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="text-zinc-950 dark:text-zinc-50 font-medium"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="text-base flex flex-col gap-4 font-medium sm:flex-row">
-          <a
-            className="bg-foreground text-background flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="h-[14px] w-4 dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="border-black/[.08] hover:bg-black/[.04] dark:border-white/[.145] flex h-12 w-full items-center justify-center rounded-full border border-solid px-5 transition-colors hover:border-transparent md:w-[158px] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <PageShell>
+      <div className="px-5 pt-4 pb-2">
+        <Wordmark />
+      </div>
+      <PageHeader
+        title="Przygotuj dom na trudne dni"
+        lead="PREPWISE pomoże Ci krok po kroku zebrać zapasy awaryjne dla całego domu — także bez internetu."
+      />
+      <PageBody>
+        <Illustration name="hero-welcome" />
+      </PageBody>
+    </PageShell>
   );
 }

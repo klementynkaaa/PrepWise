@@ -140,3 +140,12 @@
 @utility grid-cols-row {
   grid-template-columns: minmax(0, 1fr) auto;
 }
+
+/* The accent tints are translucent. On a surface that is already tinted (the
+   "Najpierw" plan row) they stack and accent text drops below 4.5:1. This
+   paints the strong tint over solid white, so it reads the same everywhere. */
+@utility bg-accent-tint-strong-solid {
+  background:
+    linear-gradient(var(--color-accent-tint-strong), var(--color-accent-tint-strong)),
+    var(--color-surface);
+}

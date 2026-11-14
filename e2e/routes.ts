@@ -3,4 +3,5 @@
 export const routes: { path: string; name: string }[] = [
   { path: "/", name: "home" },
   { path: "/offline", name: "offline" },
+  { path: "/system", name: "system" },
 ];
