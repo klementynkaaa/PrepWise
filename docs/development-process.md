@@ -95,10 +95,14 @@ A release is a pull request from `develop` into `main`.
 
 1. **Open the release PR** from `develop` into `main`. Its title is `chore(release): <short description>`, for example `chore(release): 2026-11-20`. Wait for all six checks, then merge it with a **merge commit**. The branch must be up to date with `main`, which is why the sync PR below matters.
 2. **CI deploys and checks.** On `main`, CI runs the gates again, then deploys the tested `out/` as a staged production deployment (not on the production domain yet). `Smoke & health (staging)` loads every route, checks the manifest and service worker, and checks that `/version.json` shows the commit being released.
-3. **Approve production.** `Promote to production` waits for the owner. Open the run in the GitHub Actions tab, choose **Review deployments**, select `production` and approve or reject. Approving runs `vercel promote`, which puts the staged deployment on the production domain without rebuilding, then checks health on the production domain.
+3. **Approve production.** `Promote to production` waits for the owner. Open the run in the GitHub Actions tab, choose **Review deployments**, select `production` and approve or reject. Approving runs `scripts/vercel-promote.mjs`, which calls the Vercel REST API (the CLI's `vercel promote` fails for this token) and puts the staged deployment on the production domain without rebuilding, then checks health on the production domain.
 4. **Tag and release.** `Tag release` creates the tag and a GitHub Release with generated notes. The tag is a CalVer tag `vYYYY.MM.DD` using the Europe/Warsaw date. A later release the same day gets `.2`, `.3` and so on, for example `v2026.11.20.2`.
 
 A release left waiting for approval keeps its run in progress. The next push to `main` (a hotfix included) queues behind it, without even running its gates, and a third push replaces the queued one. To ship something newer, approve or reject the waiting release first.
+
+### If promotion fails
+
+`Promote to production` can fail after you approve; nothing goes live in that case, and `Tag release` is skipped. Read the step's log: the script prints the HTTP status of the Vercel call. A 401 or 403 means the Vercel token lacks access to the project; a 404 means the staged deployment or project ID is wrong. Fix the cause (for a workflow or script bug, with a `hotfix/…` PR into `main`), then let the new `main` run stage and promote again. Re-running the failed job reuses the old workflow file, so it only helps for a temporary Vercel error.
 
 ### Sync after every release or hotfix
 
@@ -112,7 +116,7 @@ CI doesn't open the sync PR itself, because a PR opened with the default workflo
 
 ### Hotfix
 
-Branch `hotfix/<short-name>` off `main` and open a PR into `main`. It runs the same gates, the same staging, smoke check, approval and promotion, and needs the sync PR afterwards. For a hotfix only, a failing dependency audit doesn't block the PR: the job passes with a warning annotation and a step-summary line naming the hotfix branch. This bypass has not yet been exercised end to end.
+Branch `hotfix/<short-name>` off `main` and open a PR into `main`. It runs the same gates, the same staging, smoke check, approval and promotion, and needs the sync PR afterwards. For a hotfix only, a failing dependency audit doesn't block the PR: the job passes with a warning annotation and a step-summary line naming the hotfix branch. The hotfix path has been used end to end (the first release needed two hotfixes), but the audit bypass has never triggered, because `npm audit` passed both times; it is untested.
 
 ### Rolling back
 
