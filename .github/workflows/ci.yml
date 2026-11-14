@@ -3,10 +3,13 @@ name: CI/CD
 # Pull requests into develop/main run every gate: lint, type check and build;
 # unit and integration tests with a coverage floor; browser tests (offline and
 # accessibility); dependency audit; secret scan.
+# Draft PRs run only the fast gates (build, unit and integration tests); marking
+# a PR ready for review runs CI again with every gate.
 # Push to develop (merged PR): all gates, then a Vercel preview deployment.
 # Push to main (merged release PR): all gates, then a Vercel production deployment.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [develop, main]
   push:
     branches: [develop, main]
@@ -102,6 +105,7 @@ jobs:
   e2e:
     name: Browser tests (offline + a11y)
     needs: checks
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -157,8 +161,12 @@ jobs:
 
   audit:
     name: Dependency audit
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -166,12 +174,47 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # A hotfix is a PR from hotfix/*, or the push to main that merged one.
+      - name: Detect hotfix
+        id: hotfix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          head_ref=""
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            head_ref="$PR_HEAD_REF"
+          elif [ "$REF_NAME" = "main" ]; then
+            head_ref=$(gh api "repos/$GH_REPO/commits/$SHA/pulls" --jq '[.[] | select(.merged_at != null)][0].head.ref // ""')
+          fi
+          echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
+          echo "is_hotfix=$(REF="$head_ref" node scripts/is-hotfix.mjs)" >> "$GITHUB_OUTPUT"
+
       # Fails on high or critical advisories in production and dev dependencies.
+      # Only a hotfix may pass with a failing audit, and it is always annotated.
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        env:
+          IS_HOTFIX: ${{ steps.hotfix.outputs.is_hotfix }}
+          HOTFIX_REF: ${{ steps.hotfix.outputs.head_ref }}
+        run: |
+          if npm audit --audit-level=high; then
+            exit 0
+          fi
+          if [ "$IS_HOTFIX" = "true" ]; then
+            echo "::warning::Dependency audit bypassed for hotfix $HOTFIX_REF"
+            echo "Dependency audit bypassed for hotfix $HOTFIX_REF" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          exit 1
 
   secrets:
     name: Secret scan
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
