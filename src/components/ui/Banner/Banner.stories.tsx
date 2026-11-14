@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Banner } from "./Banner";
-import { bannerIllustrationNames } from "./Illustration";
+import { bannerIllustrationNames } from "../Illustration";
 
 const meta = {
   title: "Podstawy/Banner",

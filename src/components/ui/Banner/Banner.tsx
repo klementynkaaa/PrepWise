@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Illustration, type BannerIllustrationName } from "./Illustration";
+import { Illustration, type BannerIllustrationName } from "../Illustration";
 
 type BannerProps = {
   title: ReactNode;

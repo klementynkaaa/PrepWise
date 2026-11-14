@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Banner } from "./Banner";
-import { bannerIllustrationNames } from "./Illustration";
+import { bannerIllustrationNames } from "../Illustration";
 
 describe("Banner", () => {
   it("renders the title and the sentence", () => {
