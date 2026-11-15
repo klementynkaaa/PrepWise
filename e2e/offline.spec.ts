@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { routes } from "./routes";
+import { seedCompleteProfile } from "./seed";
 
 async function waitForControlledPage(page: Page) {
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -12,19 +13,36 @@ async function waitForControlledPage(page: Page) {
 }
 
 test("service worker controls the page and routes render offline", async ({ page, context }) => {
-  await page.goto("/");
+  await page.goto("/pl");
   await waitForControlledPage(page);
 
   await context.setOffline(true);
+  let seeded = false;
   for (const route of routes) {
+    if (route.profile && !seeded) {
+      await seedCompleteProfile(page);
+      seeded = true;
+    }
     await page.goto(route.path);
     await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("main[aria-busy]")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute("lang", "pl");
   }
 });
 
-test("an uncached URL shows the Polish offline page", async ({ page, context }) => {
+test("reloading / offline still ends at /pl", async ({ page, context }) => {
+  await page.goto("/pl");
+  await waitForControlledPage(page);
+
+  await context.setOffline(true);
   await page.goto("/");
+  await expect(page).toHaveURL(/\/pl$/);
+  await expect(page.locator("main")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "pl");
+});
+
+test("an uncached URL shows the Polish offline page", async ({ page, context }) => {
+  await page.goto("/pl");
   await waitForControlledPage(page);
 
   await context.setOffline(true);
@@ -44,6 +62,6 @@ test("@smoke every route returns 200 in Polish and the service worker takes cont
     await expect(page.locator("main")).toBeVisible();
   }
 
-  await page.goto("/");
+  await page.goto("/pl");
   await waitForControlledPage(page);
 });

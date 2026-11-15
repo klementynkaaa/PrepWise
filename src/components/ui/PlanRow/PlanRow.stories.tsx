@@ -12,6 +12,7 @@ const meta = {
     quantity: "27 l",
     formula: "3 l × 3 osoby × 3 dni",
     source: "official",
+    sourceLabels: { short: "Oficjalne", spoken: "źródło: zalecenie oficjalne" },
   },
   argTypes: { source: { control: "inline-radio", options: ["official", "prepwise"] } },
   decorators: [
@@ -29,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /** The first thing to do: highlighted, labelled "Najpierw". */
-export const First: Story = { args: { first: true } };
+export const First: Story = { args: { firstLabel: "Najpierw" } };
 
 export const PrepwiseEstimate: Story = {
   args: {
@@ -37,6 +38,7 @@ export const PrepwiseEstimate: Story = {
     quantity: "4,5 l",
     formula: "0,5 l × 1 zwierzę × 3 dni · na 10 kg wagi",
     source: "prepwise",
+    sourceLabels: { short: "PREPWISE", spoken: "źródło: rekomendacja PREPWISE" },
   },
 };
 
@@ -46,13 +48,16 @@ export const AsLink: Story = { args: { href: "/" } };
 export const PriorityGroup: Story = {
   render: () => (
     <>
-      <PriorityHeader tier={1}>Woda i jedzenie</PriorityHeader>
+      <PriorityHeader tier={1} tierLabel="Priorytet 1">
+        Woda i jedzenie
+      </PriorityHeader>
       <PlanRow
-        first
+        firstLabel="Najpierw"
         name="Woda pitna"
         quantity="27 l"
         formula="3 l × 3 osoby × 3 dni"
         source="official"
+        sourceLabels={{ short: "Oficjalne", spoken: "źródło: zalecenie oficjalne" }}
       />
       <Divider />
       <PlanRow
@@ -60,6 +65,7 @@ export const PriorityGroup: Story = {
         quantity="27 porcji"
         formula="3 posiłki × 3 osoby × 3 dni"
         source="official"
+        sourceLabels={{ short: "Oficjalne", spoken: "źródło: zalecenie oficjalne" }}
       />
       <Divider />
       <PlanRow
@@ -67,6 +73,7 @@ export const PriorityGroup: Story = {
         quantity="4,5 l"
         formula="0,5 l × 1 zwierzę × 3 dni · na 10 kg wagi"
         source="prepwise"
+        sourceLabels={{ short: "PREPWISE", spoken: "źródło: rekomendacja PREPWISE" }}
       />
     </>
   ),

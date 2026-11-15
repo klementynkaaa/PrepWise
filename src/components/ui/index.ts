@@ -32,3 +32,7 @@ export { SegmentedControl, type ChoiceOption } from "./SegmentedControl";
 export { Stepper } from "./Stepper";
 export { TabBar, type TabItem } from "./TabBar";
 export { UndoBar } from "./UndoBar";
+export { OptionRadio } from "./OptionRadio";
+export { OptionGroup } from "./OptionGroup";
+export { SummaryRow } from "./SummaryRow";
+export { StepPage } from "./StepPage";

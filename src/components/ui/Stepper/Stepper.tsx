@@ -15,12 +15,12 @@ type StepperProps = {
   /** Shown under the stepper and read as its description. */
   error?: string;
   /**
-   * Polish names for the buttons, e.g. "Mniej dorosłych" / "Więcej dorosłych".
-   * Polish inflection can't be derived from the label, so pass them when you
-   * can; the fallback is "Zmniejsz: <label>" / "Zwiększ: <label>".
+   * Accessible names of the buttons, e.g. "Mniej dorosłych" / "Więcej
+   * dorosłych". Required: inflection can't be derived from the label, and the
+   * component holds no words of its own.
    */
-  decreaseLabel?: string;
-  increaseLabel?: string;
+  decreaseLabel: string;
+  increaseLabel: string;
 };
 
 const button = "inline-flex size-touch shrink-0 items-center justify-center rounded-full";
@@ -35,8 +35,8 @@ export function Stepper({
   max,
   onChange,
   error,
-  decreaseLabel = `Zmniejsz: ${label}`,
-  increaseLabel = `Zwiększ: ${label}`,
+  decreaseLabel,
+  increaseLabel,
 }: StepperProps) {
   const labelId = useId();
   const errorId = useId();

@@ -69,11 +69,14 @@ At the end of a task, name the skills you used in one line.
 - Business logic (quantities = per-person-per-day × people × days, priority tiers) lives in pure, unit-testable functions outside components.
 - Every recommended quantity carries a source label: "Official guidance" or "PREPWISE recommendation". Never present an estimate as official.
 - All user-facing text is in Polish (`<html lang="pl">`). Avoid jargon or explain it. Keep layouts usable with a screen reader.
+- User-facing text lives in `messages/`, never in components, routes or features.
+- Build every href with the locale helper (`localePath` in `src/i18n/paths.ts`); never type `/pl/...` by hand.
 
 ## Design system (UI rules)
 
 - Build screens only from `@/components/ui` and the token utilities in `src/app/globals.css`. Import components from `@/components/ui` only, never from a component's folder. No raw hex colours and no arbitrary Tailwind values (`[…]`).
 - Each component lives in its own folder, `src/components/ui/<Name>/`, with its component, story and test; `index.ts` re-exports it. Helpers shared between components go in `src/components/ui/_shared/`.
+- Step screens carry no illustration: title and subtext only.
 - Empty, success, offline and error states always use `EmptyState`, which has one look: only the illustration, the words and an optional button change.
 
 ## UI changes: mockup, component, Storybook (every change that touches UI)

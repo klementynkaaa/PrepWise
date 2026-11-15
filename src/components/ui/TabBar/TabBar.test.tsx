@@ -4,6 +4,7 @@ import { TabBar } from "./TabBar";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/plan" }));
 
+const label = "Główna nawigacja";
 const tabs = [
   { href: "/", label: "Start", icon: "home" },
   { href: "/plan", label: "Plan", icon: "plan" },
@@ -13,20 +14,20 @@ const tabs = [
 
 describe("TabBar", () => {
   it("marks the current route as the current page", () => {
-    render(<TabBar items={tabs} />);
+    render(<TabBar label={label} items={tabs} />);
     expect(screen.getByRole("navigation", { name: "Główna nawigacja" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Start" })).not.toHaveAttribute("aria-current");
   });
 
   it("accepts an explicit current route", () => {
-    render(<TabBar items={tabs} currentHref="/" />);
+    render(<TabBar label={label} items={tabs} currentHref="/" />);
     expect(screen.getByRole("link", { name: "Start" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Plan" })).not.toHaveAttribute("aria-current");
   });
 
   it("keeps aria-current only on the current tab", () => {
-    render(<TabBar items={tabs} />);
+    render(<TabBar label={label} items={tabs} />);
     const links = screen.getAllByRole("link");
     const current = links.filter((l) => l.getAttribute("aria-current") === "page");
     expect(current).toHaveLength(1);

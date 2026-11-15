@@ -16,7 +16,10 @@ const meta = {
       },
     },
   },
-  args: { saveState: "saved" },
+  args: {
+    saveState: "saved",
+    saveLabels: { saved: "Zapisane w telefonie", offline: "Offline · wszystko działa" },
+  },
   argTypes: { saveState: { control: "inline-radio", options: ["saved", "offline"] } },
 } satisfies Meta<typeof AppHeader>;
 

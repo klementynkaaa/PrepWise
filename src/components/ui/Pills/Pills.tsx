@@ -5,27 +5,26 @@ const pill = "inline-flex shrink-0 rounded-full px-2 py-0.5 text-label whitespac
 
 export type Source = "official" | "prepwise";
 
-const sources: Record<Source, { short: string; spoken: string; look: string }> = {
-  official: {
-    short: "Oficjalne",
-    spoken: "źródło: zalecenie oficjalne",
-    look: "bg-accent-tint-strong-solid text-accent",
-  },
-  prepwise: {
-    short: "PREPWISE",
-    spoken: "źródło: rekomendacja PREPWISE",
-    look: "bg-surface-sunken text-ink-muted inset-ring inset-ring-line",
-  },
+const sourceLooks: Record<Source, string> = {
+  official: "bg-accent-tint-strong-solid text-accent",
+  prepwise: "bg-surface-sunken text-ink-muted inset-ring inset-ring-line",
 };
 
 /**
  * Where a quantity comes from. Every quantity carries one. Shown short, read
  * out in full.
  */
-export function SourcePill({ source }: { source: Source }) {
-  const { short, spoken, look } = sources[source];
+export function SourcePill({
+  source,
+  labels,
+}: {
+  source: Source;
+  /** Short text shown, and the full text read out, e.g. "Oficjalne" / "źródło: zalecenie oficjalne". */
+  labels: { short: string; spoken: string };
+}) {
+  const { short, spoken } = labels;
   return (
-    <span className={cn(pill, look)}>
+    <span className={cn(pill, sourceLooks[source])}>
       <span aria-hidden="true">{short}</span>
       <span className="sr-only">{spoken}</span>
     </span>

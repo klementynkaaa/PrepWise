@@ -16,10 +16,10 @@ export function TextLink({ href, children }: TextLinkProps) {
   );
 }
 
-type BackLinkProps = { href: string; children?: ReactNode };
+type BackLinkProps = { href: string; children: ReactNode };
 
 /** The back link at the top of a step. */
-export function BackLink({ href, children = "Wstecz" }: BackLinkProps) {
+export function BackLink({ href, children }: BackLinkProps) {
   return (
     <Link
       href={href}

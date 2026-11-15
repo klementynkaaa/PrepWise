@@ -15,7 +15,10 @@ const meta = {
       },
     },
   },
-  args: { state: "saved" },
+  args: {
+    state: "saved",
+    labels: { saved: "Zapisane w telefonie", offline: "Offline · wszystko działa" },
+  },
   argTypes: { state: { control: "inline-radio", options: ["saved", "offline"] } },
 } satisfies Meta<typeof SaveStatus>;
 
@@ -27,7 +30,11 @@ export const Offline: Story = { args: { state: "offline" } };
 
 /** Read as "Priorytet 2: Światło i łączność". */
 export const Priority: Story = {
-  render: () => <PriorityHeader tier={2}>Światło i łączność</PriorityHeader>,
+  render: () => (
+    <PriorityHeader tier={2} tierLabel="Priorytet 2">
+      Światło i łączność
+    </PriorityHeader>
+  ),
 };
 
 /** A fixed fact: same pill, but plain text (no live region). */

@@ -8,7 +8,7 @@ test("app has no installability errors", async ({ baseURL }, testInfo) => {
   });
   try {
     const page = await context.newPage();
-    await page.goto(baseURL ?? "/");
+    await page.goto(`${baseURL ?? ""}/pl`);
     await page.evaluate(() => navigator.serviceWorker.ready);
     const client = await context.newCDPSession(page);
     const { installabilityErrors } = await client.send("Page.getInstallabilityErrors");

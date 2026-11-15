@@ -19,7 +19,7 @@ export const Step: Story = {
   render: () => (
     <div className="flex min-h-dvh flex-col">
       <PageShell>
-        <TopBar back={{ href: "/" }} step="Krok 1 z 4" />
+        <TopBar back={{ href: "/", label: "Wstecz" }} step="Krok 1 z 4" />
         <PageHeader
           eyebrow="Twój dom"
           title="Kto mieszka z Tobą?"

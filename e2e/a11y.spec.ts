@@ -1,12 +1,17 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { routes } from "./routes";
+import { seedCompleteProfile } from "./seed";
 
 const blocking = ["serious", "critical"];
 
 for (const route of routes) {
   test(`accessibility: ${route.name} (${route.path})`, async ({ page }, testInfo) => {
+    if (route.profile) await seedCompleteProfile(page);
     await page.goto(route.path);
+    await expect(page.locator("main")).toBeVisible();
+    // Wait for the screen itself: pages first show a neutral held page while storage is read.
+    await expect(page.locator("main[aria-busy]")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute("lang", "pl");
 
     const { violations } = await new AxeBuilder({ page })

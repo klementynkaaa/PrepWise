@@ -18,6 +18,7 @@ function SheetHarness({ onClose }: { onClose: () => void }) {
           setOpen(false);
         }}
         title="Na 7 dni"
+        closeLabel="Zamknij"
       >
         <p>Ilości wzrosną.</p>
       </BottomSheet>

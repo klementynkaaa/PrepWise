@@ -3,12 +3,14 @@ import { cn } from "../_shared/cn";
 
 type PriorityHeaderProps = {
   tier: number;
+  /** Spoken in full before the name, e.g. "Priorytet 2". Not shown. */
+  tierLabel: string;
   children: ReactNode;
   level?: 2 | 3;
 };
 
 /** Heading of a priority panel: the number in a circle, then the name. */
-export function PriorityHeader({ tier, children, level = 2 }: PriorityHeaderProps) {
+export function PriorityHeader({ tier, tierLabel, children, level = 2 }: PriorityHeaderProps) {
   const Heading = level === 2 ? "h2" : "h3";
   return (
     <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
@@ -18,7 +20,7 @@ export function PriorityHeader({ tier, children, level = 2 }: PriorityHeaderProp
       >
         {tier}
       </span>
-      <span className="sr-only">Priorytet {tier}: </span>
+      <span className="sr-only">{tierLabel}: </span>
       {children}
     </Heading>
   );
@@ -26,9 +28,9 @@ export function PriorityHeader({ tier, children, level = 2 }: PriorityHeaderProp
 
 export type SaveState = "saved" | "offline";
 
-const saveStates: Record<SaveState, { label: string; dot: string }> = {
-  saved: { label: "Zapisane w telefonie", dot: "bg-accent" },
-  offline: { label: "Offline · wszystko działa", dot: "bg-control-border" },
+const saveDots: Record<SaveState, string> = {
+  saved: "bg-accent",
+  offline: "bg-control-border",
 };
 
 /** The shared pill: a dot and a short text. The role is the caller's choice. */
@@ -48,11 +50,17 @@ function Chip({ dot, role, children }: { dot: string; role?: "status"; children:
  * Where the data is. Never "synchronizacja": nothing leaves the phone.
  * Display only; the screen decides the state.
  */
-export function SaveStatus({ state }: { state: SaveState }) {
-  const { label, dot } = saveStates[state];
+export function SaveStatus({
+  state,
+  labels,
+}: {
+  state: SaveState;
+  /** The words for each state, e.g. "Zapisane w telefonie". */
+  labels: Record<SaveState, string>;
+}) {
   return (
-    <Chip role="status" dot={dot}>
-      {label}
+    <Chip role="status" dot={saveDots[state]}>
+      {labels[state]}
     </Chip>
   );
 }
