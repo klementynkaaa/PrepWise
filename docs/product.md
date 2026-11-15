@@ -35,7 +35,7 @@ Before any feature is built, three things must be in place: CI/CD on GitHub Acti
 
 ## Non-goals (v1)
 
-- Accounts, sync, family sharing or payments
+- Accounts, sync, family sharing or payments (household accounts and sharing are planned after v1)
 - Step-by-step instructions for what to do during or after a crisis (v1 is about preparing)
 - Markets outside Poland
 - Inventory tracking, storage boxes or QR codes, expiry and maintenance tracking
@@ -55,4 +55,5 @@ After v1, still on the device and still offline:
 
 - **Ticks can go stale.** A ticked item may later be used up or expire. Inventory and expiry tracking would fix this and are planned for later.
 - **Data is lost with the device.** Reinstalling the app or changing phones loses data, because there's no backup in v1.
+- **Accounts come later.** After v1, household members will get accounts so they can share the plan and manage supplies together. That means storing household data off the device, which changes the architecture; it will be decided before that milestone starts.
 - **Baseline figures aren't verified yet.** The per-person, per-day amounts (water, food, etc.) and their official Polish sources still need checking before the plan content ships.
