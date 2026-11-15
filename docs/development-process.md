@@ -6,7 +6,7 @@ No feature work (household profile, plan, action list) starts until these three 
 
 1. **CI/CD.** GitHub Actions runs on every pull request and deploys automatically (see below).
 2. **Mockups.** Every screen and state in the first-session flow and the action list is drawn and reviewed before it's built.
-3. **Design system.** Colour, typography and spacing tokens, plus the shared components the mockups use. It's built for large system font sizes, screen readers and Polish text from day one.
+3. **Design system.** Colour, typography and spacing tokens, plus the shared components the mockups use. It's built for screen readers and Polish text from day one.
 
 Features are then built against the approved mockups using only design-system tokens and components.
 
@@ -164,12 +164,12 @@ A pull request is linked to its issue by its branch name (`<type>/<change-id>`) 
 
 Labels on roadmap issues:
 
-| Label                                                                            | Meaning                                             |
-| -------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `roadmap`                                                                        | Managed by the sync. Only these issues are touched. |
-| `type: foundation` / `type: slice`                                               | Groundwork, or a user-visible end-to-end piece.     |
-| `status: proposed` / `status: ready` / `status: in-progress` / `status: blocked` | Where the item stands. Closed means done.           |
-| `stream: …`                                                                      | Items that share a chain of prerequisites.          |
-| `north star`                                                                     | The slice that proves the product works.            |
+| Label                                                                                                 | Meaning                                             |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `roadmap`                                                                                             | Managed by the sync. Only these issues are touched. |
+| `type: foundation` / `type: slice`                                                                    | Groundwork, or a user-visible end-to-end piece.     |
+| `status: proposed` / `status: ready` / `status: planning` / `status: in-progress` / `status: blocked` | Where the item stands. Closed means done.           |
+| `stream: …`                                                                                           | Items that share a chain of prerequisites.          |
+| `north star`                                                                                          | The slice that proves the product works.            |
 
 Prerequisites also appear as native "blocked by" links between issues. Only the roadmap items are published; open questions and parked ideas stay in the local notes, because the repository is public.

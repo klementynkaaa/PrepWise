@@ -30,7 +30,7 @@ const ROADMAP_PATH = resolve(
 );
 
 const MANAGED_LABEL = "roadmap";
-const STATUS_VALUES = ["proposed", "ready", "in-progress", "blocked", "done"];
+const STATUS_VALUES = ["proposed", "ready", "planning", "in-progress", "blocked", "done"];
 
 const LABELS = {
   [MANAGED_LABEL]: ["0e8a16", "Tracked in the product roadmap; synced automatically"],
@@ -42,6 +42,7 @@ const LABELS = {
   "north star": ["fbca04", "The slice that proves the product works"],
   "status: proposed": ["ededed", "On the roadmap; not ready to plan yet"],
   "status: ready": ["c2e0c6", "Prerequisites met; ready to plan and build"],
+  "status: planning": ["d4c5f9", "A plan exists; implementation has not started"],
   "status: in-progress": ["0052cc", "A pull request for this change is open"],
   "status: blocked": ["b60205", "Waiting on a blocker or an open decision"],
 };

@@ -79,7 +79,7 @@ jobs:
 
             if [ "$ACTION" = "closed" ] && [ "$MERGED" = "true" ]; then
               gh issue edit "$n" --remove-label "status: in-progress" --remove-label "status: ready" \
-                --remove-label "status: proposed" --remove-label "status: blocked" || true
+                --remove-label "status: proposed" --remove-label "status: planning" --remove-label "status: blocked" || true
               if [ "$state" = "OPEN" ]; then
                 gh issue close "$n" --reason completed --comment "Done in $PR_URL."
               fi
@@ -92,7 +92,8 @@ jobs:
             else
               if [ "$state" = "OPEN" ]; then
                 gh issue edit "$n" --add-label "status: in-progress" \
-                  --remove-label "status: ready" --remove-label "status: proposed"
+                  --remove-label "status: ready" --remove-label "status: proposed" \
+                  --remove-label "status: planning"
                 if [ "$already_commented" = "0" ]; then
                   gh issue comment "$n" --body "Work started in $PR_URL."
                 fi
