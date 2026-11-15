@@ -14,7 +14,7 @@ The household manager: the person who organises the home and is starting to prep
 
 The first session should end with a personalised plan and a clear first step.
 
-1. **Describe the household:** adults, children, elderly people, pets and special medical needs, plus whether you live in a flat or a house. Household size follows from this.
+1. **Describe the household:** four short steps. Who lives here (adults, seniors, children, small children), pets (skipped when there are none), whether you live in a flat or a house, and special needs (regular medicines, powered medical equipment, trouble walking, a special diet or allergy). Household size follows from this. The saved profile is shown in an overview where each answer can be changed.
 2. **See the plan:** every plan starts from the official 72-hour baseline. Specific emergencies (blackout, flooding, water disruption, severe weather, evacuation) are optional add-ons, each explained in plain language.
 3. **Browse by priority:** supplies are grouped by priority category (e.g. "Water and food"). Each item shows what is needed, how much and why.
 4. **Get an action list:** a prioritised shopping list of what to get first and what to do next.

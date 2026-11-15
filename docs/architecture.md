@@ -17,8 +17,9 @@ browser ── first visit (online) ──▶ static host (Vercel)
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                                                                   |
 | Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                                                                    |
+| Text      | next-intl with one Polish dictionary, `messages/pl.json`                                                                                                                 |
 | Offline   | Serwist service worker, built after the static export                                                                                                                    |
-| Storage   | IndexedDB on the device (planned: one typed storage module)                                                                                                              |
+| Storage   | IndexedDB on the device, behind one typed storage interface (`src/lib/household`)                                                                                        |
 | Hosting   | Vercel (static files)                                                                                                                                                    |
 | CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → staged production, smoke check, approval, promote, tag |
 
@@ -29,6 +30,17 @@ browser ── first visit (online) ──▶ static host (Vercel)
 - **Next.js over a lighter client-only option.** Chosen for popularity and tooling. The trade-off: agents tend to reach for server features by default, so the restrictions are written into `AGENTS.md`.
 - **Content ships with the app.** Plan content and quantity rules are bundled as static data and never fetched at runtime, so they are available during a blackout.
 - **`cacheComponents` is disabled.** It conflicts with the `force-static` route config that static export requires.
+
+## Routes and text
+
+- **Locale routes.** Every screen lives under `/pl/...` (`src/app/[locale]/`), so adding a language later moves no URL. Links are built only with the locale helper (`localePath` in `src/i18n/paths.ts`), never typed by hand.
+- **Two root layouts.** `src/app/(root)/` holds `/` and `/offline`, which sit outside the locale; `src/app/[locale]/` holds everything else. `/` is a static page that forwards to `/pl` (a server redirect is not possible in a static export): a meta refresh, a client-side replace and a visible link as the last fallback.
+- **One dictionary.** All user-facing text lives in `messages/pl.json`, not in components, routes or features. Screens read it through next-intl, so a second language is a second file.
+
+## Household data
+
+- **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation today is IndexedDB on the device; an in-memory one serves tests. Data read back is validated at the boundary.
+- **Shared database later.** A database shared between household members would store data off the device and change this architecture. It is a separate, later change; the interface is the seam where it would plug in.
 
 ## Offline behaviour
 
@@ -76,4 +88,4 @@ GitHub Actions deploys with the Vercel CLI, and never rebuilds the app for a dep
 
 ## Localisation and accessibility
 
-The UI is in Polish (`<html lang="pl">`). Fonts are self-hosted with Polish characters. Layouts must work with a screen reader.
+The UI is in Polish (`<html lang="pl">`), with the text kept in `messages/pl.json`. Fonts are self-hosted with Polish characters. Layouts must work with a screen reader.
