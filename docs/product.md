@@ -14,7 +14,7 @@ The household manager: the person who organises the home and is starting to prep
 
 The first session should end with a personalised plan and a clear first step.
 
-1. **Describe the household:** adults, children, elderly people, pets and special medical needs. Household size follows from this.
+1. **Describe the household:** adults, children, elderly people, pets and special medical needs, plus whether you live in a flat or a house. Household size follows from this.
 2. **See the plan:** every plan starts from the official 72-hour baseline. Specific emergencies (blackout, flooding, water disruption, severe weather, evacuation) are optional add-ons, each explained in plain language.
 3. **Browse by priority:** supplies are grouped by priority category (e.g. "Water and food"). Each item shows what is needed, how much and why.
 4. **Get an action list:** a prioritised shopping list of what to get first and what to do next.
@@ -27,7 +27,7 @@ The first session should end with a personalised plan and a clear first step.
 - **Household data stays on the device.** Nothing about the household is sent anywhere.
 - **Works offline.** The profile, plan, list and ticking all work with no connection.
 - **Polish first.** All screens and guidance are in Polish at launch.
-- **Accessible to non-experts.** Text stays readable at large system font sizes, the app works with a screen reader, and specialist terms are explained.
+- **Accessible to non-experts.** The app works with a screen reader, and specialist terms are explained.
 
 ## Delivery foundation
 
@@ -50,6 +50,11 @@ After v1, still on the device and still offline:
 - **Expiry and rotation:** what expires soon, "used → restock", and upkeep for equipment such as charging a powerbank.
 - **Readiness per emergency:** how ready the household is for each chosen emergency, with what's still short.
 - **First-hour checklists:** short steps for the first hour of a blackout or flood, from official Polish sources.
+
+## Later versions (v2 or v3, idea only)
+
+- **Product capture:** scan a product's barcode or enter its expiry date when adding it to the inventory, including your own medicines.
+- **Change alerts:** the app tells you when something needs replacing or is about to expire. How it would notify you with the app closed is not decided.
 
 ## Known limitations and open questions
 

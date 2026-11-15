@@ -72,7 +72,7 @@ export const PriorityGroup: Story = {
   ),
 };
 
-/** Narrow container: what 200 % text does to a row. */
+/** Narrow container: how a row stacks. */
 export const Stacked: Story = {
   decorators: [
     (Story) => (
