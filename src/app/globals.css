@@ -38,6 +38,9 @@
   --color-disabled-bg: #dde3e6;
   --color-disabled-ink: #6e757b;
   --color-scrim: rgb(26 28 31 / 0.45);
+  /* Logo mark tints (from the owner's logo): the ring track and the pocket. */
+  --color-mark-track: #d2e2e8;
+  --color-mark-pocket: #a5c5d1;
 
   /* Text styles (size / line height / weight / tracking) */
   --text-display: 1.875rem;
@@ -76,7 +79,14 @@
   --text-number--line-height: 1.5rem;
   --text-number--font-weight: 700;
 
-  --tracking-wordmark: 0.06em;
+  --text-logo-sm: 1.125rem;
+  --text-logo-sm--line-height: 1;
+  --text-logo-sm--font-weight: 800;
+  --text-logo-sm--letter-spacing: 0.127em;
+  --text-logo-lg: 1.875rem;
+  --text-logo-lg--line-height: 1;
+  --text-logo-lg--font-weight: 800;
+  --text-logo-lg--letter-spacing: 0.127em;
 
   /*
    * Spacing: the default --spacing (0.25rem) makes p-1…p-8 equal the system's

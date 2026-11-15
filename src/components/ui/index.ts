@@ -1,6 +1,7 @@
 // PREPWISE design system components. Screens build only from these and the
 // token utilities in src/app/globals.css.
 export { Button, ButtonLink, type ButtonSize, type ButtonVariant } from "./Button";
+export { Logo, type LogoSize } from "./Logo";
 export { Icon, type IconName } from "./Icon";
 export { EmptyState } from "./EmptyState";
 export {
@@ -14,7 +15,7 @@ export {
 } from "./Illustration";
 export { Banner } from "./Banner";
 export { Alert, Notice, Tip } from "./Notices";
-export { PageBody, PageFooter, PageHeader, PageShell, TopBar, Wordmark } from "./Page";
+export { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
 export { Divider, KeyValueRow, ListSectionLabel, Panel, PanelList } from "./Panel";
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";
 export { PlanRow } from "./PlanRow";

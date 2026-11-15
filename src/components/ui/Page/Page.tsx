@@ -50,7 +50,3 @@ export function PageBody({ children }: { children: ReactNode }) {
 export function PageFooter({ children }: { children: ReactNode }) {
   return <div className="mt-auto flex flex-col gap-1 px-4 pt-3 pb-2.5">{children}</div>;
 }
-
-export function Wordmark() {
-  return <span className="text-control font-extrabold tracking-wordmark">PREPWISE</span>;
-}
