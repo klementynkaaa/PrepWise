@@ -17,9 +17,13 @@ const preview: Preview = {
     a11y: { test: "error" },
   },
   decorators: [
-    (Story) => (
-      // The app column on the mist background, in Polish.
-      <div lang="pl" className={`${plusJakarta.variable} mx-auto max-w-app font-sans text-ink`}>
+    (Story, { parameters }) => (
+      // The app column on the mist background, in Polish. A fullscreen story
+      // draws its own column, so full-width parts (the tab bar) can span the window.
+      <div
+        lang="pl"
+        className={`${plusJakarta.variable} font-sans text-ink ${parameters.layout === "fullscreen" ? "" : "mx-auto max-w-app"}`}
+      >
         <Story />
       </div>
     ),

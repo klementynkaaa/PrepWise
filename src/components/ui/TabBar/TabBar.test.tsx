@@ -24,4 +24,15 @@ describe("TabBar", () => {
     expect(screen.getByRole("link", { name: "Start" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Plan" })).not.toHaveAttribute("aria-current");
   });
+
+  it("keeps aria-current only on the current tab", () => {
+    render(<TabBar items={tabs} />);
+    const links = screen.getAllByRole("link");
+    const current = links.filter((l) => l.getAttribute("aria-current") === "page");
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveTextContent("Plan");
+    for (const link of links.filter((l) => l !== current[0])) {
+      expect(link).not.toHaveAttribute("aria-current");
+    }
+  });
 });
