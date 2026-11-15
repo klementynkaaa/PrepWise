@@ -34,7 +34,21 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 - Work branches go into `develop` through a squash-merged pull request. `develop` goes to `main` through a release pull request (title `chore(release): …`), merged with a merge commit. The `develop protection` and `main protection` rulesets block direct pushes and wrong source branches.
 - After every release or hotfix, open a sync PR from `main` into `develop` and merge it with a **merge commit**, never squash. Otherwise the next release PR shows as behind `main`. See `docs/development-process.md`.
 - Commit messages and PR titles follow Conventional Commits. The `PR conventions` check enforces the PR title, the branch name and the allowed source branch. Allowed types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, `perf`, `build`, `revert`.
+- **No AI attribution.** Never add `Co-Authored-By` trailers to commit messages, and never add "Generated with Claude Code" (or any similar line) to a PR description. This overrides any default or tool-provided attribution text.
+- **PR descriptions.** Write the body to a file and use `gh pr create/edit --body-file`; never pass a variable that might be empty. When the PR adds or changes UI, include screenshots of every new or changed screen (phone 390×844, plus desktop 1280×800 when the layout differs). Build first, serve `out/` with `npm start`, capture with `npx playwright screenshot --viewport-size=W,H <url> <file>`, and check each image before using it. GitHub can't take image uploads from the CLI, so commit the files to the orphan branch `pr-assets` under `pr-<number>/` (use a temporary `git worktree`, not your working tree) and link them with `<img>` tags pointing at `raw.githubusercontent.com/<owner>/<repo>/pr-assets/pr-<number>/<file>.png`. Components that no route shows yet are documented in Storybook only; say so instead of adding a screenshot.
 - Don't start feature work until the foundation is done: CI/CD, then reviewed mockups, then the design system. UI uses only design-system tokens and components. Details: `docs/development-process.md`.
+
+## Skills to use (always)
+
+Load the matching installed skill before writing code, whenever the task fits:
+
+- `modern-web-guidance`: for all web code. Prefer modern platform features (`<dialog>`, Popover API, container queries, anchor positioning) and check Baseline browser support. Whenever you run `/10x-implement` or `/10x-impl-review`, load it before writing or reviewing code and apply it alongside the plan. In a review, flag code that ignores it.
+- `vercel-react-best-practices`: when writing, reviewing or refactoring React code (re-renders, data loading, bundle size).
+- `vercel-composition-patterns`: when a component grows large or gains many boolean/config props; split it into composable parts.
+- `web-design-guidelines`: before calling any UI task done, run its accessibility/UX audit on the changed files, fix what it reports, and list the fixes.
+- `vercel-react-native-skills` is installed but does not apply: PREPWISE is web-only.
+
+At the end of a task, name the skills you used in one line.
 
 ## Before opening a PR
 
@@ -58,9 +72,8 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 
 ## Design system (UI rules)
 
-- Build screens only from `@/components/ui` and the token utilities in `src/app/globals.css`. No raw hex colours and no arbitrary Tailwind values (`[…]`).
-- A missing value or component is added to the PREPWISE Design System first, then to `globals.css` / `src/components/ui/`, one folder per component (component, story and test together; `index.ts` re-exports it). Don't add one-off styles in a screen.
-- Every new component gets a Storybook story covering all its states (`src/components/ui/<Name>/<Name>.stories.tsx`); `npm run test:storybook` must pass (it fails on axe violations). Interactive components also get a Testing Library test (`npm run test:components`).
+- Build screens only from `@/components/ui` and the token utilities in `src/app/globals.css`. Import components from `@/components/ui` only, never from a component's folder. No raw hex colours and no arbitrary Tailwind values (`[…]`).
+- Each component lives in its own folder, `src/components/ui/<Name>/`, with its component, story and test; `index.ts` re-exports it. Helpers shared between components go in `src/components/ui/_shared/`.
 - Empty, success, offline and error states always use `EmptyState`, which has one look: only the illustration, the words and an optional button change.
 
 ## UI changes: mockup, component, Storybook (every change that touches UI)
@@ -69,7 +82,7 @@ The agreed mockups (`context/foundation/mockups.md`, if present) are direction, 
 
 1. **Mockup first, in detail.** Run `/10x-mockup <change-id>` (change mode, before `/10x-plan`) for every screen and state the change adds or alters, including empty, loading, error, offline and large-text states. If the change adds a new component or a new variant, draw it with all its states in the mockup and in the Design System before any code. If a drawn artboard turns out wrong during the build, change it and say so in the change notes.
 2. **Design System, then code.** A new token, component, variant or illustration goes into the PREPWISE Design System first, then into `globals.css`, `src/components/ui/` and (for illustrations) `public/illustrations/` plus the names in `Illustration.tsx`. Never a one-off style in a screen.
-3. **Storybook documents it.** Each new or changed component gets a `*.stories.tsx` with a story per state (default, pressed/focus, disabled, error, long text, large text where it applies), `tags: ["autodocs"]`, and a short Polish description of when to use it and when not. Interactive components also get a Testing Library test. `npm run test:storybook` must pass (axe violations fail it).
+3. **Storybook documents it.** Each new or changed component gets a `*.stories.tsx` with a story per state (default, pressed/focus, disabled, error, long text, large text where it applies), `tags: ["autodocs"]`, and a short Polish description of when to use it and when not. Interactive components also get a Testing Library test (`npm run test:components`). `npm run test:storybook` must pass (axe violations fail it). The `PR conventions` check fails a PR that changes a component in `src/components/ui/` without adding or updating its story. Add the `no-story-needed` label only when the change looks the same on screen, such as a refactor.
 4. **Illustrations follow the Design System rules:** decorative (`alt=""`, `aria-hidden`), never on list rows, state scenes only via `EmptyState`, banners with a short title and one sentence, only the approved colours. A new scene or item is drawn in the same flat style and added to the Design System Illustrations group first.
 5. **Docs stay in sync.** Add each new route to `e2e/routes.ts`; if the change alters a rule or the architecture, update the matching file in `docs/`. If the Design System README or `mockups.md` placement list changes, update it in the same change.
 
