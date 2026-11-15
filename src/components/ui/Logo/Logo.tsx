@@ -1,7 +1,8 @@
-export type LogoSize = "sm" | "lg";
+export type LogoSize = "sm" | "md" | "lg";
 
 const sizes = {
   sm: { mark: 20, name: "text-logo-sm", gap: "gap-1.5" },
+  md: { mark: 32, name: "text-logo-md", gap: "gap-2" },
   lg: { mark: 40, name: "text-logo-lg", gap: "gap-3" },
 } as const satisfies Record<LogoSize, { mark: number; name: string; gap: string }>;
 
