@@ -6,7 +6,9 @@
   },
   "common": {
     "back": "Wstecz",
-    "backToHome": "Wróć do strony głównej"
+    "backToHome": "Wróć do strony głównej",
+    "loading": "Wczytywanie",
+    "next": "Dalej"
   },
   "welcome": {
     "title": "Spokój zaczyna się od przygotowania.",
@@ -16,8 +18,191 @@
   },
   "start": {
     "metaTitle": "Start",
-    "title": "Tu powstanie plan dla domu",
-    "body": "Ten krok pojawi się w kolejnej wersji aplikacji."
+    "title": "Domowy plan na nieprzewidziane dni.",
+    "lead": "Co przygotować, ile i dlaczego — według polskich zaleceń.",
+    "stepsLabel": "Co czeka po kolei",
+    "steps": {
+      "people": "Kto mieszka w domu",
+      "needs": "Rodzaj domu i szczególne potrzeby",
+      "plan": "Gotowy plan i lista zakupów"
+    },
+    "action": "Stwórz plan",
+    "duration": "Wypełnienie zajmuje około 3 minut."
+  },
+  "steps": {
+    "label": "Krok {current} z {total}",
+    "next": "Dalej",
+    "people": {
+      "metaTitle": "Kto mieszka w domu",
+      "title": "Kto mieszka w domu?",
+      "lead": "Liczą się wszyscy, którzy na co dzień mieszkają w domu, także osoba wypełniająca plan.",
+      "groups": {
+        "adults": {
+          "label": "Dorośli",
+          "hint": "18–64 lata",
+          "decrease": "Mniej dorosłych",
+          "increase": "Więcej dorosłych"
+        },
+        "seniors": {
+          "label": "Seniorzy",
+          "hint": "65 lat i więcej",
+          "decrease": "Mniej seniorów",
+          "increase": "Więcej seniorów"
+        },
+        "children": {
+          "label": "Dzieci",
+          "hint": "4–17 lat",
+          "decrease": "Mniej dzieci",
+          "increase": "Więcej dzieci"
+        },
+        "smallChildren": {
+          "label": "Małe dzieci",
+          "hint": "0–3 lata",
+          "decrease": "Mniej małych dzieci",
+          "increase": "Więcej małych dzieci"
+        }
+      },
+      "pets": {
+        "question": "Czy w domu są zwierzęta?",
+        "yes": "Tak",
+        "no": "Nie",
+        "hint": "Jeśli nie, ten krok zostanie pominięty."
+      },
+      "total": "Razem: {count, plural, one {# osoba} few {# osoby} many {# osób} other {# osoby}}",
+      "needOne": "Do przejścia dalej potrzebna jest co najmniej jedna osoba."
+    },
+    "pets": {
+      "metaTitle": "Zwierzęta w domu",
+      "title": "Jakie zwierzęta mieszkają w domu?",
+      "lead": "Ilość wody i karmy zależy od rodzaju i wielkości zwierzęcia. Zero oznacza brak takiego zwierzęcia.",
+      "kinds": {
+        "smallDog": {
+          "label": "Pies mały",
+          "hint": "do 10 kg",
+          "decrease": "Mniej małych psów",
+          "increase": "Więcej małych psów"
+        },
+        "mediumDog": {
+          "label": "Pies średni",
+          "hint": "10–25 kg",
+          "decrease": "Mniej średnich psów",
+          "increase": "Więcej średnich psów"
+        },
+        "largeDog": {
+          "label": "Pies duży",
+          "hint": "ponad 25 kg",
+          "decrease": "Mniej dużych psów",
+          "increase": "Więcej dużych psów"
+        },
+        "cat": {
+          "label": "Kot",
+          "decrease": "Mniej kotów",
+          "increase": "Więcej kotów"
+        },
+        "otherSmall": {
+          "label": "Inne małe zwierzę",
+          "hint": "np. królik, ptak, chomik",
+          "decrease": "Mniej innych małych zwierząt",
+          "increase": "Więcej innych małych zwierząt"
+        }
+      }
+    },
+    "housing": {
+      "metaTitle": "Rodzaj domu",
+      "title": "Gdzie mieszkają domownicy?",
+      "lead": "Rodzaj domu wpływa na to, co warto mieć pod ręką.",
+      "legend": "Rodzaj domu",
+      "options": {
+        "flat": {
+          "label": "Mieszkanie w bloku",
+          "description": "Blok lub kamienica."
+        },
+        "house": {
+          "label": "Dom jednorodzinny",
+          "description": "Własny dom, także z ogrodem."
+        }
+      },
+      "required": "Do przejścia dalej potrzebny jest wybór rodzaju domu."
+    },
+    "needs": {
+      "metaTitle": "Szczególne potrzeby",
+      "title": "Czy ktoś potrzebuje czegoś szczególnego?",
+      "lead": "Jeśli coś dotyczy kogoś z domowników, można to zaznaczyć. Zaznaczać nic nie trzeba.",
+      "legend": "Szczególne potrzeby domowników",
+      "options": {
+        "regularMedicines": {
+          "label": "Leki przyjmowane na stałe",
+          "description": "Także na alergię. Np. na ciśnienie, tarczycę, astmę.",
+          "note": "Plan doda przypomnienie o zapasie leków na wybrane dni. Ilość ustala się samodzielnie, bo leki mają różne dawki."
+        },
+        "medicalEquipment": {
+          "label": "Sprzęt medyczny na prąd",
+          "description": "Np. koncentrator tlenu, inhalator elektryczny."
+        },
+        "limitedMobility": {
+          "label": "Trudności z chodzeniem",
+          "description": "Ktoś porusza się wolno, o kulach lub na wózku."
+        },
+        "specialDiet": {
+          "label": "Specjalna dieta lub alergia",
+          "description": "Np. bez glutenu, alergia na orzechy.",
+          "note": "Plan przypomni, żeby zapas jedzenia był zgodny z dietą."
+        }
+      },
+      "privacy": "Wystarczy zaznaczyć rodzaj potrzeby, bez diagnoz i szczegółów. Zwykłe leki, np. na ból głowy czy brzucha, trafią do planu same."
+    }
+  },
+  "overview": {
+    "metaTitle": "Profil domu",
+    "title": "Profil domu",
+    "status": {
+      "saved": "Zapisane na tym telefonie",
+      "offline": "Bez internetu — wszystko działa"
+    },
+    "change": "Zmień",
+    "changeLabel": "Zmień: {row}",
+    "none": "Brak",
+    "rows": {
+      "people": "Domownicy",
+      "pets": "Zwierzęta",
+      "housing": "Miejsce zamieszkania",
+      "needs": "Szczególne potrzeby"
+    },
+    "peopleLine": "{groups} · razem {total, plural, one {# osoba} few {# osoby} many {# osób} other {# osoby}}",
+    "counts": {
+      "adults": "{count, plural, one {# dorosły} few {# dorosłych} many {# dorosłych} other {# dorosłego}}",
+      "seniors": "{count, plural, one {# senior} few {# seniorów} many {# seniorów} other {# seniora}}",
+      "children": "{count, plural, one {# dziecko} few {# dzieci} many {# dzieci} other {# dziecka}}",
+      "smallChildren": "{count, plural, one {# małe dziecko} few {# małych dzieci} many {# małych dzieci} other {# małego dziecka}}",
+      "smallDog": "{count, plural, one {# pies mały} few {# psy małe} many {# psów małych} other {# psa małego}}",
+      "mediumDog": "{count, plural, one {# pies średni} few {# psy średnie} many {# psów średnich} other {# psa średniego}}",
+      "largeDog": "{count, plural, one {# pies duży} few {# psy duże} many {# psów dużych} other {# psa dużego}}",
+      "cat": "{count, plural, one {# kot} few {# koty} many {# kotów} other {# kota}}",
+      "otherSmall": "{count, plural, one {# inne małe zwierzę} few {# inne małe zwierzęta} many {# innych małych zwierząt} other {# innego małego zwierzęcia}}"
+    },
+    "needs": {
+      "regularMedicines": "Leki przyjmowane na stałe",
+      "medicalEquipment": "Sprzęt medyczny na prąd",
+      "limitedMobility": "Trudności z chodzeniem",
+      "specialDiet": "Dieta lub alergia"
+    },
+    "unavailable": {
+      "title": "Nie można odczytać zapisanych danych",
+      "body": "Przeglądarka blokuje pamięć aplikacji. Zwykle dzieje się tak w trybie prywatnym.",
+      "action": "Wróć do początku"
+    },
+    "housing": {
+      "flat": "Mieszkanie w bloku",
+      "house": "Dom jednorodzinny"
+    }
+  },
+  "saveError": {
+    "title": "Nie udało się zapisać",
+    "reasonTitle": "Przeglądarka blokuje zapis",
+    "reason": "Zwykle dzieje się tak w trybie prywatnym albo przy braku miejsca w telefonie. Pomaga otwarcie aplikacji w zwykłym oknie i zwolnienie trochę miejsca.",
+    "note": "Wpisane dane znikną po zamknięciu strony.",
+    "retry": "Spróbuj jeszcze raz",
+    "back": "Wróć do formularza"
   },
   "redirect": {
     "title": "Przenosimy do aplikacji",

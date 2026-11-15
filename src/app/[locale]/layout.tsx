@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { hasLocale } from "next-intl";
+import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { IndexedDbHouseholdProvider } from "@/features/household/IndexedDbHouseholdProvider";
 import { routing } from "@/i18n/routing";
 import { RootShell, rootMetadata, rootViewport } from "../root-shell";
 
@@ -26,5 +27,11 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  return <RootShell lang={locale}>{children}</RootShell>;
+  return (
+    <RootShell lang={locale}>
+      <NextIntlClientProvider>
+        <IndexedDbHouseholdProvider>{children}</IndexedDbHouseholdProvider>
+      </NextIntlClientProvider>
+    </RootShell>
+  );
 }

@@ -25,7 +25,7 @@ test("Welcome shows one logo and Zaczynamy opens /pl/start", async ({ page }) =>
   await page.getByRole("link", { name: "Zaczynamy" }).click();
   await expect(page).toHaveURL(/\/pl\/start$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Tu powstanie plan dla domu" }),
+    page.getByRole("heading", { level: 1, name: "Domowy plan na nieprzewidziane dni." }),
   ).toBeVisible();
 });
 
