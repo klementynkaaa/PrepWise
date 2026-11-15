@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
+import { localePath } from "@/i18n/paths";
+import messages from "../../messages/pl.json";
 
 export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "PREPWISE — Twój plan przygotowania",
-    short_name: "PREPWISE",
-    description: "Przygotuj zapasy awaryjne dla swojego domu — krok po kroku, także bez internetu.",
+    name: messages.meta.title,
+    short_name: messages.meta.appName,
+    description: messages.meta.description,
     lang: "pl",
-    start_url: "/",
+    start_url: localePath("/"),
     scope: "/",
     display: "standalone",
     // Both duplicate the `bg` token (#EFF4F6): the manifest can't read CSS.

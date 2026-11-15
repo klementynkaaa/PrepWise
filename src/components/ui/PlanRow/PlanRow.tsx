@@ -9,6 +9,8 @@ type PlanRowProps = {
   formula: ReactNode;
   quantity: ReactNode;
   source: Source;
+  /** Short and spoken text of the source pill, passed to SourcePill. */
+  sourceLabels: { short: string; spoken: string };
   /** The first thing to do: highlighted and labelled "Najpierw". */
   first?: boolean;
   href?: string;
@@ -19,7 +21,15 @@ type PlanRowProps = {
  * text the row stacks (container query on its own width): name, quantity,
  * formula, pill.
  */
-export function PlanRow({ name, formula, quantity, source, first, href }: PlanRowProps) {
+export function PlanRow({
+  name,
+  formula,
+  quantity,
+  source,
+  sourceLabels,
+  first,
+  href,
+}: PlanRowProps) {
   const body = (
     <div
       className={cn(
@@ -34,7 +44,7 @@ export function PlanRow({ name, formula, quantity, source, first, href }: PlanRo
       </span>
       <span className="text-caption text-ink-muted">{formula}</span>
       <span className="justify-self-end @max-row-stack:justify-self-start">
-        <SourcePill source={source} />
+        <SourcePill source={source} labels={sourceLabels} />
       </span>
     </div>
   );

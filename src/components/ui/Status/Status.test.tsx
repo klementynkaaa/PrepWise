@@ -2,9 +2,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { FactChip, SaveStatus } from "./Status";
 
+const saveLabels = { saved: "Zapisane w telefonie", offline: "Offline · wszystko działa" };
+
 describe("Status pills", () => {
   it("keeps SaveStatus as a live status", () => {
-    render(<SaveStatus state="saved" />);
+    render(<SaveStatus state="saved" labels={saveLabels} />);
     expect(screen.getByRole("status")).toHaveTextContent("Zapisane w telefonie");
   });
 

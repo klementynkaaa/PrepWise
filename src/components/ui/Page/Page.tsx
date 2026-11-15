@@ -10,7 +10,7 @@ export function PageShell({ children }: { children: ReactNode }) {
 }
 
 type TopBarProps = {
-  back?: { href: string; label?: string };
+  back?: { href: string; label: string };
   /** Progress through a flow, e.g. "Krok 1 z 4". */
   step?: string;
 };

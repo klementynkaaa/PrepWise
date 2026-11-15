@@ -12,7 +12,7 @@ async function waitForControlledPage(page: Page) {
 }
 
 test("service worker controls the page and routes render offline", async ({ page, context }) => {
-  await page.goto("/");
+  await page.goto("/pl");
   await waitForControlledPage(page);
 
   await context.setOffline(true);
@@ -23,8 +23,19 @@ test("service worker controls the page and routes render offline", async ({ page
   }
 });
 
-test("an uncached URL shows the Polish offline page", async ({ page, context }) => {
+test("reloading / offline still ends at /pl", async ({ page, context }) => {
+  await page.goto("/pl");
+  await waitForControlledPage(page);
+
+  await context.setOffline(true);
   await page.goto("/");
+  await expect(page).toHaveURL(/\/pl$/);
+  await expect(page.locator("main")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "pl");
+});
+
+test("an uncached URL shows the Polish offline page", async ({ page, context }) => {
+  await page.goto("/pl");
   await waitForControlledPage(page);
 
   await context.setOffline(true);
@@ -44,6 +55,6 @@ test("@smoke every route returns 200 in Polish and the service worker takes cont
     await expect(page.locator("main")).toBeVisible();
   }
 
-  await page.goto("/");
+  await page.goto("/pl");
   await waitForControlledPage(page);
 });

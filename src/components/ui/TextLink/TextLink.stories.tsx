@@ -16,7 +16,7 @@ export const Default: Story = {};
 export const Back: Story = {
   render: () => (
     <div className="flex flex-col gap-2">
-      <BackLink href="/" />
+      <BackLink href="/">Wstecz</BackLink>
       <BackLink href="/">Start</BackLink>
     </div>
   ),

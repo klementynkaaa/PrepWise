@@ -5,7 +5,10 @@ const meta = {
   title: "Plakietki/SourcePill",
   component: SourcePill,
   tags: ["autodocs"],
-  args: { source: "official" },
+  args: {
+    source: "official",
+    labels: { short: "Oficjalne", spoken: "źródło: zalecenie oficjalne" },
+  },
   argTypes: { source: { control: "inline-radio", options: ["official", "prepwise"] } },
 } satisfies Meta<typeof SourcePill>;
 
@@ -14,7 +17,12 @@ type Story = StoryObj<typeof meta>;
 
 /** Shown short, read in full ("źródło: zalecenie oficjalne"). */
 export const Official: Story = {};
-export const Prepwise: Story = { args: { source: "prepwise" } };
+export const Prepwise: Story = {
+  args: {
+    source: "prepwise",
+    labels: { short: "PREPWISE", spoken: "źródło: rekomendacja PREPWISE" },
+  },
+};
 
 /** Missing is neutral, never red: it is the normal state at the start. */
 export const Statuses: Story = {

@@ -18,6 +18,7 @@ const meta = {
     },
   },
   args: {
+    label: "Główna nawigacja",
     items: [
       { href: "/", label: "Start", icon: "home" },
       { href: "/plan", label: "Plan", icon: "plan" },
@@ -41,7 +42,10 @@ export const StartCurrent: Story = { args: { currentHref: "/" } };
 function Layout() {
   return (
     <div className="flex min-h-dvh flex-col">
-      <AppHeader saveState="saved" />
+      <AppHeader
+        saveState="saved"
+        saveLabels={{ saved: "Zapisane w telefonie", offline: "Offline · wszystko działa" }}
+      />
       <main className="mx-auto flex w-full max-w-app flex-1 flex-col gap-3 px-4 py-3">
         <Panel>
           <p className="text-body">Krótka treść ekranu.</p>
@@ -51,6 +55,7 @@ function Layout() {
         </Panel>
       </main>
       <TabBar
+        label="Główna nawigacja"
         items={[
           { href: "/", label: "Start", icon: "home" },
           { href: "/plan", label: "Plan", icon: "plan" },

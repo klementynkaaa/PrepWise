@@ -38,7 +38,10 @@ const meta = {
             <KeyValueRow label="Osoby" value="3" />
             <KeyValueRow label="Dni" value="3" />
           </div>
-          <SourcePill source="official" />
+          <SourcePill
+            source="official"
+            labels={{ short: "Oficjalne", spoken: "źródło: zalecenie oficjalne" }}
+          />
           <Button onClick={close}>Rozumiem</Button>
         </BottomSheet>
       </>

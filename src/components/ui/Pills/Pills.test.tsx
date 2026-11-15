@@ -7,7 +7,7 @@ describe("SourcePill", () => {
     ["official", "Oficjalne", "źródło: zalecenie oficjalne"],
     ["prepwise", "PREPWISE", "źródło: rekomendacja PREPWISE"],
   ] as const)("shows %s short and reads it in full", (source, short, spoken) => {
-    const { container } = render(<SourcePill source={source} />);
+    const { container } = render(<SourcePill source={source} labels={{ short, spoken }} />);
     expect(screen.getByText(short)).toHaveAttribute("aria-hidden", "true");
     expect(screen.getByText(spoken)).toHaveClass("sr-only");
     expect(container).toHaveTextContent(`${short}${spoken}`);

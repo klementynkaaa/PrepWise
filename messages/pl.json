@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "appName": "PREPWISE",
+    "title": "PREPWISE — Twój plan przygotowania",
+    "description": "Przygotuj zapasy awaryjne dla swojego domu — krok po kroku, także bez internetu."
+  },
+  "common": {
+    "back": "Wstecz",
+    "backToHome": "Wróć do strony głównej"
+  },
+  "welcome": {
+    "title": "Spokój zaczyna się od przygotowania.",
+    "lead": "Zadbaj o bezpieczeństwo swoje i swoich bliskich. Dowiedz się, co warto przygotować na nieprzewidziane sytuacje.",
+    "worksOffline": "Działa bez internetu",
+    "start": "Zaczynamy"
+  },
+  "start": {
+    "metaTitle": "Start",
+    "title": "Tu powstanie plan dla domu",
+    "body": "Ten krok pojawi się w kolejnej wersji aplikacji."
+  },
+  "redirect": {
+    "title": "Przenosimy do aplikacji",
+    "body": "Jeśli nic się nie dzieje, otwórz stronę główną samodzielnie.",
+    "action": "Otwórz stronę główną"
+  },
+  "offline": {
+    "metaTitle": "Brak połączenia",
+    "title": "Brak połączenia z internetem",
+    "body": "Ta strona nie jest zapisana na Twoim urządzeniu. Twój plan i lista zakupów działają bez internetu."
+  },
+  "notFound": {
+    "metaTitle": "Nie ma takiej strony",
+    "title": "Nie ma takiej strony",
+    "body": "Sprawdź adres albo wróć do strony głównej. Twój plan i lista zakupów działają bez internetu."
+  }
+}

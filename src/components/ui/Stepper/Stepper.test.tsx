@@ -57,9 +57,17 @@ describe("Stepper", () => {
     );
   });
 
-  it("falls back to generic Polish button names", () => {
-    render(<Stepper label="Psy" value={1} onChange={() => {}} />);
-    expect(screen.getByRole("button", { name: "Zmniejsz: Psy" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Zwiększ: Psy" })).toBeInTheDocument();
+  it("names the buttons with the texts it is given", () => {
+    render(
+      <Stepper
+        label="Psy"
+        value={1}
+        onChange={() => {}}
+        decreaseLabel="Mniej psów"
+        increaseLabel="Więcej psów"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Mniej psów" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Więcej psów" })).toBeInTheDocument();
   });
 });

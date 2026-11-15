@@ -1,4 +1,7 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // Static export: the app is plain HTML/CSS/JS in `out/`, with no server at
@@ -8,6 +11,11 @@ const nextConfig: NextConfig = {
   images: {
     // The default image optimizer needs a server; static export can't use it.
     unoptimized: true,
+  },
+  experimental: {
+    // Two root layouts (/ and /offline, and /[locale]) leave no single layout
+    // to build the 404 page from; src/app/global-not-found.tsx replaces it.
+    globalNotFound: true,
   },
   turbopack: {
     rules: {
@@ -19,4 +27,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
