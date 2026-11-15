@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { THEME_COLOR } from "@/lib/theme-color";
 import "./globals.css";
 
 // Everything the root layouts share, so they cannot drift apart and none of
@@ -40,10 +41,10 @@ export function rootMetadata({ appName, title, description }: MetaCopy): Metadat
   };
 }
 
-// Light theme only in v1. themeColor duplicates the `bg` token (#EFF4F6)
+// Light theme only in v1. themeColor uses the shared copy of the `bg` token
 // because metadata can't read CSS variables.
 export const rootViewport: Viewport = {
-  themeColor: "#EFF4F6",
+  themeColor: THEME_COLOR,
   colorScheme: "light",
 };
 

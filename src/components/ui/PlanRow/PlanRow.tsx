@@ -11,8 +11,8 @@ type PlanRowProps = {
   source: Source;
   /** Short and spoken text of the source pill, passed to SourcePill. */
   sourceLabels: { short: string; spoken: string };
-  /** The first thing to do: highlighted and labelled "Najpierw". */
-  first?: boolean;
+  /** Marks the first thing to do: the row is highlighted and shows this text (e.g. "Najpierw"). */
+  firstLabel?: string;
   href?: string;
 };
 
@@ -27,17 +27,17 @@ export function PlanRow({
   quantity,
   source,
   sourceLabels,
-  first,
+  firstLabel,
   href,
 }: PlanRowProps) {
   const body = (
     <div
       className={cn(
         "grid grid-cols-row items-start gap-x-3 gap-y-1 rounded-md p-2.5 @max-row-stack:grid-cols-1",
-        first && "bg-accent-tint",
+        firstLabel && "bg-accent-tint",
       )}
     >
-      {first && <span className="col-span-full text-label text-accent">Najpierw</span>}
+      {firstLabel && <span className="col-span-full text-label text-accent">{firstLabel}</span>}
       <span className="text-body-strong">{name}</span>
       <span className="justify-self-end text-body-strong font-bold whitespace-nowrap @max-row-stack:justify-self-start">
         {quantity}

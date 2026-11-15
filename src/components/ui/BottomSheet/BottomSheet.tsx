@@ -7,6 +7,8 @@ type BottomSheetProps = {
   open: boolean;
   onClose: () => void;
   title: ReactNode;
+  /** Accessible name of the close button, e.g. "Zamknij". */
+  closeLabel: string;
   children: ReactNode;
 };
 
@@ -15,7 +17,7 @@ type BottomSheetProps = {
  * inside, the page behind is inert, Escape and a tap on the scrim close it,
  * and focus returns to the opener. Controlled by `open`.
  */
-export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, closeLabel, children }: BottomSheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -49,7 +51,7 @@ export function BottomSheet({ open, onClose, title, children }: BottomSheetProps
           </h2>
           <button
             type="button"
-            aria-label="Zamknij"
+            aria-label={closeLabel}
             onClick={onClose}
             className="inline-flex size-touch shrink-0 items-center justify-center rounded-full text-ink-muted"
           >

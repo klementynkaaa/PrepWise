@@ -5,6 +5,8 @@ import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./sto
 export const DB_NAME = "prepwise";
 export const STORE_NAME = "household";
 export const RECORD_KEY = "current";
+/** Where an unreadable record is kept when a save replaces it, so it can be recovered. */
+export const BACKUP_KEY = "previous-invalid";
 const DB_VERSION = 1;
 
 export type IndexedDbStoreOptions = Partial<SaveDeps> & { dbName?: string };
@@ -62,8 +64,9 @@ async function withStore<T>(
     db = await openDatabase(dbName);
     const tx = db.transaction(STORE_NAME, mode);
     const finished = transactionDone(tx);
-    const result = await work(tx.objectStore(STORE_NAME));
-    await finished;
+    // Promise.all gives `finished` a handler right away, so a transaction that aborts
+    // while `work` is still running cannot raise an unhandled rejection.
+    const [result] = await Promise.all([work(tx.objectStore(STORE_NAME)), finished]);
     return result;
   } catch (error) {
     if (error instanceof HouseholdStoreError) throw error;
@@ -100,19 +103,27 @@ export function createIndexedDbStore(options: IndexedDbStoreOptions = {}): House
     },
 
     async saveStep(step, patch) {
-      const raw = await readRaw();
-      const existing = raw === undefined ? null : householdSchema.safeParse(raw);
-      // An invalid stored record is overwritten, starting from a blank profile.
-      const current = existing?.success ? existing.data : null;
-      const record = buildSavedRecord(current, step, patch, deps);
-      await withStore(dbName, "readwrite", (store) =>
-        requestToPromise(store.put(record, RECORD_KEY)),
-      );
-      return record;
+      // Read, merge and write in ONE readwrite transaction, so two saves cannot
+      // start from the same base record and drop each other's answers.
+      return withStore(dbName, "readwrite", async (store) => {
+        const raw = await requestToPromise(store.get(RECORD_KEY));
+        const existing = raw === undefined ? null : householdSchema.safeParse(raw);
+        // An invalid stored record is replaced by a blank profile, but its raw value is
+        // kept under BACKUP_KEY first, so nothing unreadable is lost silently. Any
+        // future schemaVersion bump needs a migration before this point.
+        const current = existing?.success ? existing.data : null;
+        if (existing && !existing.success) await requestToPromise(store.put(raw, BACKUP_KEY));
+        const record = buildSavedRecord(current, step, patch, deps);
+        await requestToPromise(store.put(record, RECORD_KEY));
+        return record;
+      });
     },
 
     async clear() {
-      await withStore(dbName, "readwrite", (store) => requestToPromise(store.delete(RECORD_KEY)));
+      await withStore(dbName, "readwrite", async (store) => {
+        await requestToPromise(store.delete(RECORD_KEY));
+        await requestToPromise(store.delete(BACKUP_KEY));
+      });
     },
   };
 }

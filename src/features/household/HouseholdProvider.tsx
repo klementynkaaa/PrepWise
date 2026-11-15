@@ -35,19 +35,26 @@ export function HouseholdProvider({
 
   useEffect(() => {
     let cancelled = false;
-    store.load().then((result) => {
-      if (cancelled) return;
-      switch (result.kind) {
-        case "found":
-          setState({ status: "ready", kind: "found", household: result.household });
-          break;
-        case "unavailable":
-          setState({ status: "unavailable", kind: null, household: null });
-          break;
-        default:
-          setState({ status: "ready", kind: result.kind, household: null });
-      }
-    });
+    store
+      .load()
+      .then((result) => {
+        if (cancelled) return;
+        switch (result.kind) {
+          case "found":
+            setState({ status: "ready", kind: "found", household: result.household });
+            break;
+          case "unavailable":
+            setState({ status: "unavailable", kind: null, household: null });
+            break;
+          default:
+            setState({ status: "ready", kind: result.kind, household: null });
+        }
+      })
+      // The interface does not promise that load() never rejects: treat a rejection
+      // as unavailable storage rather than leaving the screen on the held page.
+      .catch(() => {
+        if (!cancelled) setState({ status: "unavailable", kind: null, household: null });
+      });
     return () => {
       cancelled = true;
     };

@@ -35,19 +35,22 @@ export function useStepSubmit<S extends Step>(
     lastPatch.current = patch;
     setFailed(false);
     try {
-      await saveStep(step, patch);
-    } catch {
+      try {
+        await saveStep(step, patch);
+      } catch {
+        setFailed(true);
+        return;
+      }
+      const draft = applyStep(before ?? emptyAnswers(), step, patch);
+      const next = nextStepAfter(draft, step, {
+        previousHasPets: before?.hasPets,
+        previousStatus: before?.status,
+      });
+      router.push(targetHref(next, locale));
+    } finally {
+      // Always release the guard, so a throw after the save cannot leave the button dead.
       saving.current = false;
-      setFailed(true);
-      return;
     }
-    const draft = applyStep(before ?? emptyAnswers(), step, patch);
-    const next = nextStepAfter(draft, step, {
-      previousHasPets: before?.hasPets,
-      previousStatus: before?.status,
-    });
-    router.push(targetHref(next, locale));
-    saving.current = false;
   }
 
   return {

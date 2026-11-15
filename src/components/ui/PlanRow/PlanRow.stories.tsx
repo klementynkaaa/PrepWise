@@ -30,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /** The first thing to do: highlighted, labelled "Najpierw". */
-export const First: Story = { args: { first: true } };
+export const First: Story = { args: { firstLabel: "Najpierw" } };
 
 export const PrepwiseEstimate: Story = {
   args: {
@@ -52,7 +52,7 @@ export const PriorityGroup: Story = {
         Woda i jedzenie
       </PriorityHeader>
       <PlanRow
-        first
+        firstLabel="Najpierw"
         name="Woda pitna"
         quantity="27 l"
         formula="3 l × 3 osoby × 3 dni"

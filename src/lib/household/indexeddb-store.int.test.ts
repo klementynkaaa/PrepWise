@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { completeHousehold, TEST_ID, TEST_TIME } from "./fixtures";
-import { createIndexedDbStore, RECORD_KEY, STORE_NAME } from "./indexeddb-store";
+import { BACKUP_KEY, createIndexedDbStore, RECORD_KEY, STORE_NAME } from "./indexeddb-store";
 import { HouseholdStoreError } from "./store";
 
 let counter = 0;
@@ -15,6 +15,17 @@ function openRaw(name: string): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
+
+async function getRaw(name: string, key: string): Promise<unknown> {
+  const db = await openRaw(name);
+  const value = await new Promise<unknown>((resolve, reject) => {
+    const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(key);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return value;
 }
 
 async function putRaw(name: string, value: unknown): Promise<void> {
@@ -80,6 +91,16 @@ describe("IndexedDB household store", () => {
     const saved = await store.saveStep("housing", { housingType: "house" });
     expect(saved.people.adults).toBe(0);
     expect(await store.load()).toEqual({ kind: "found", household: saved });
+  });
+
+  it("keeps the unreadable record under a backup key before overwriting it, and clear removes it", async () => {
+    const dbName = freshName();
+    await putRaw(dbName, { broken: 1 });
+    const store = createIndexedDbStore({ dbName, ...deps });
+    await store.saveStep("housing", { housingType: "house" });
+    expect(await getRaw(dbName, BACKUP_KEY)).toEqual({ broken: 1 });
+    await store.clear();
+    expect(await getRaw(dbName, BACKUP_KEY)).toBeUndefined();
   });
 
   it("loads a stored complete household", async () => {

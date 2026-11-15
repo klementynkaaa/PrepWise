@@ -14,6 +14,7 @@ const meta = {
     open: false,
     onClose: fn(),
     title: "Skąd te ilości?",
+    closeLabel: "Zamknij",
     children: null,
   },
   // Opened from a trigger, so focus returns to it on close (Escape, scrim, ×).
