@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Button } from "../Button";
-import { PageBody, PageFooter, PageHeader, PageShell, TopBar, Wordmark } from "./Page";
+import { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
 import { Panel } from "../Panel";
 
 const meta = {
@@ -37,5 +37,3 @@ export const Step: Story = {
     </div>
   ),
 };
-
-export const WordmarkOnly: Story = { render: () => <Wordmark /> };

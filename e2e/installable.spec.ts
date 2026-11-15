@@ -24,7 +24,7 @@ test("@smoke manifest is Polish, standalone and has 192 and 512 icons", async ({
   const manifest = (await response.json()) as {
     lang?: string;
     display?: string;
-    icons?: { src: string; sizes: string }[];
+    icons?: { src: string; sizes: string; purpose?: string }[];
   };
   expect(manifest.lang).toBe("pl");
   expect(manifest.display).toBe("standalone");
@@ -32,6 +32,7 @@ test("@smoke manifest is Polish, standalone and has 192 and 512 icons", async ({
   const sizes = (manifest.icons ?? []).map((icon) => icon.sizes);
   expect(sizes).toContain("192x192");
   expect(sizes).toContain("512x512");
+  expect((manifest.icons ?? []).map((icon) => icon.purpose)).toContain("maskable");
   for (const icon of manifest.icons ?? []) {
     const iconResponse = await request.get(icon.src);
     expect(iconResponse.status(), icon.src).toBe(200);

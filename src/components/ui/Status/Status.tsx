@@ -31,6 +31,19 @@ const saveStates: Record<SaveState, { label: string; dot: string }> = {
   offline: { label: "Offline · wszystko działa", dot: "bg-control-border" },
 };
 
+/** The shared pill: a dot and a short text. The role is the caller's choice. */
+function Chip({ dot, role, children }: { dot: string; role?: "status"; children: ReactNode }) {
+  return (
+    <span
+      role={role}
+      className="inline-flex min-h-chip items-center gap-2 self-start rounded-full bg-surface px-3 text-caption font-semibold whitespace-nowrap inset-ring inset-ring-line"
+    >
+      <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", dot)} />
+      {children}
+    </span>
+  );
+}
+
 /**
  * Where the data is. Never "synchronizacja": nothing leaves the phone.
  * Display only; the screen decides the state.
@@ -38,12 +51,16 @@ const saveStates: Record<SaveState, { label: string; dot: string }> = {
 export function SaveStatus({ state }: { state: SaveState }) {
   const { label, dot } = saveStates[state];
   return (
-    <span
-      role="status"
-      className="inline-flex min-h-chip items-center gap-2 self-start rounded-full bg-surface px-3 text-caption font-semibold whitespace-nowrap inset-ring inset-ring-line"
-    >
-      <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", dot)} />
+    <Chip role="status" dot={dot}>
       {label}
-    </span>
+    </Chip>
   );
+}
+
+/**
+ * A fixed fact shown as a pill. Plain text: it never changes, so a screen
+ * reader doesn't announce it as an update.
+ */
+export function FactChip({ children }: { children: ReactNode }) {
+  return <Chip dot="bg-accent">{children}</Chip>;
 }

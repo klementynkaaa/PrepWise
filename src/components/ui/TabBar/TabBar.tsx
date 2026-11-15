@@ -24,7 +24,10 @@ export function TabBar({ items, currentHref }: TabBarProps) {
   const current = currentHref ?? pathname ?? "/";
 
   return (
-    <nav aria-label="Główna nawigacja" className="w-full border-t border-line bg-surface">
+    <nav
+      aria-label="Główna nawigacja"
+      className="sticky bottom-0 z-10 w-full border-t border-line bg-surface"
+    >
       <ul className="mx-auto grid max-w-app auto-cols-fr grid-flow-col gap-1 px-2 pt-2 pb-2">
         {items.map((item) => {
           const active = isCurrent(item.href, current);
