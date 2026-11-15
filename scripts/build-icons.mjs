@@ -75,3 +75,20 @@ try {
 
 copyFileSync(favicon, `${OUT}/icon.svg`);
 console.log(`wrote ${OUT}/icon.svg`);
+
+// public/favicon.ico answers the /favicon.ico request that some clients send
+// without reading the <link> tags. An ICO can hold a PNG image as is: a
+// 6-byte header, one 16-byte directory entry, then the PNG bytes.
+const png32 = readFileSync(`${OUT}/favicon-32.png`);
+const header = Buffer.alloc(22);
+header.writeUInt16LE(0, 0); // reserved
+header.writeUInt16LE(1, 2); // type: icon
+header.writeUInt16LE(1, 4); // one image
+header.writeUInt8(32, 6); // width
+header.writeUInt8(32, 7); // height
+header.writeUInt16LE(1, 10); // colour planes
+header.writeUInt16LE(32, 12); // bits per pixel
+header.writeUInt32LE(png32.length, 14); // image size
+header.writeUInt32LE(22, 18); // image offset
+writeFileSync("public/favicon.ico", Buffer.concat([header, png32]));
+console.log("wrote public/favicon.ico");
