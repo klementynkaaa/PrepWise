@@ -43,6 +43,11 @@ next-env.d.ts
 # local working notes (PRD, shape notes, plans) — public summary lives in docs/
 /context/
 
+# local agent skills; .claude/settings.json stays tracked (roadmap sync hook)
+/.agents/
+/.claude/*
+!/.claude/settings.json
+
 # playwright
 /playwright-report/
 /test-results/
@@ -50,3 +55,4 @@ next-env.d.ts
 # storybook
 /storybook-static/
 *storybook.log
+skills-lock.json
