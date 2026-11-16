@@ -8,7 +8,7 @@ PREPWISE takes a household from "I don't know where to start" to "I'm prepared":
 
 ## Who it's for
 
-The household manager: the person who organises the home and is starting to prepare supplies for the family. She is not a prepper or survivalist. She is the only user. The other household members are covered by her plan but don't use the app.
+The household manager: the person who organises the home and is starting to prepare supplies for the family. She is not a prepper or survivalist. In v1 she is the only user; the other household members are covered by her plan but don't use the app. Household sharing (below) will let them join the same household on their own devices.
 
 ## MVP scope
 
@@ -24,7 +24,7 @@ The first session should end with a personalised plan and a clear first step.
 
 ## Guardrails
 
-- **Household data stays on the device.** Nothing about the household is sent anywhere.
+- **Household data stays on the device until sharing is switched on.** In production nothing about the household is sent anywhere. Once household sharing is switched on (only after legal advice and a data protection impact assessment), it syncs only to an approved backend in the EU and only to the members of that household. There are no analytics or tracking.
 - **Works offline.** The profile, plan, list and ticking all work with no connection.
 - **Polish first.** All screens and guidance are in Polish at launch.
 - **Accessible to non-experts.** The app works with a screen reader, and specialist terms are explained.
@@ -35,7 +35,7 @@ Before any feature is built, three things must be in place: CI/CD on GitHub Acti
 
 ## Non-goals (v1)
 
-- Accounts, sync, family sharing or payments (household accounts and sharing are planned after v1)
+- Payments. Accounts, sync and family sharing are being built (see Household sharing below), but stay switched off in production until the legal check is done
 - Step-by-step instructions for what to do during or after a crisis (v1 is about preparing)
 - Markets outside Poland
 - Inventory tracking, storage boxes or QR codes, expiry and maintenance tracking
@@ -60,5 +60,5 @@ After v1, still on the device and still offline:
 
 - **Ticks can go stale.** A ticked item may later be used up or expire. Inventory and expiry tracking would fix this and are planned for later.
 - **Data is lost with the device.** Reinstalling the app or changing phones loses data, because there's no backup in v1.
-- **Accounts come later.** After v1, household members will get accounts so they can share the plan and manage supplies together. That means storing household data off the device, which changes the architecture; it will be decided before that milestone starts.
+- **Household sharing is decided, not switched on.** Household members will share one household across their own devices. Accounts are anonymous by default, and an email can be linked to recover the account on a new phone. Each person belongs to one household, which has one owner; the others are members, and any member can invite someone by QR code, link or code. The decisions are in [Household sharing decisions](decisions/household-sharing.md). Production stays without accounts and sync until legal advice and a data protection impact assessment are done, because the profile includes health-related needs.
 - **Baseline figures aren't verified yet.** The per-person, per-day amounts (water, food, etc.) and their official Polish sources still need checking before the plan content ships.

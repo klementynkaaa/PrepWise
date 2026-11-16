@@ -1,6 +1,6 @@
 # PREPWISE
 
-An installable web app that helps households in Poland prepare an emergency supply kit. It tells you what to get, how much, and in what order. It works online and offline, so it still works during a blackout. Household data stays on your device.
+An installable web app that helps households in Poland prepare an emergency supply kit. It tells you what to get, how much, and in what order. It works online and offline, so it still works during a blackout. Household data is kept on your device; household sharing between members' devices is being built and stays switched off in production until a legal review is done.
 
 ## Getting started
 

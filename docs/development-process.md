@@ -91,6 +91,26 @@ The same `PR conventions` job also runs `node scripts/check-ui-stories.mjs`: a P
 
 These six job names are the required checks in the `develop protection` and `main protection` rulesets. A pull request can be merged only when all of them pass. A job skipped on a draft reports success, which is safe only because a draft can't be merged and CI runs again when the PR is marked ready.
 
+### Database tests
+
+The `Database tests` job proves the Supabase backend: the schema, row-level security, the invite and membership functions, the per-field merge rule and the account-deletion rules. It runs `npm ci`, `npm run db:start` and `npm run db:test` on a local Supabase inside the CI runner; no hosted database is involved. The Supabase CLI comes from the exact-pinned `supabase` dev dependency, so CI and developers use the same version.
+
+When the job has reported on a pull request at least once, the owner adds `Database tests` as a required check to both rulesets (`develop protection` and `main protection`), in `.github/rulesets/` and with `node scripts/repo-settings.mjs --apply`.
+
+## Local database stack
+
+The backend lives in `supabase/`: the schema in `supabase/migrations/`, the pgTAP tests in `supabase/tests/`, and Edge Functions in `supabase/functions/`. Working on it locally needs **Docker** running; the rest of the app does not.
+
+| Command            | What it does                                                         |
+| ------------------ | -------------------------------------------------------------------- |
+| `npm run db:start` | starts local Supabase in Docker                                      |
+| `npm run db:stop`  | stops it                                                             |
+| `npm run db:reset` | rebuilds the local database and applies every migration from scratch |
+| `npm run db:test`  | runs the database tests (pgTAP) against the local database           |
+
+- Change the schema only through a new file in `supabase/migrations/`, together with the matching row shapes in `src/lib/household` and a test.
+- Nothing in the app connects to Supabase or PowerSync yet. The sync client, the hosted development projects in the EU and the preview-only sync variables come with the household sharing screens (S-10). **Production never gets the sync variables** until legal advice and a DPIA are done. See [Household sharing decisions](decisions/household-sharing.md).
+
 ## Releases
 
 A release is a pull request from `develop` into `main`.
