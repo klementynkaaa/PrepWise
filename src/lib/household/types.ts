@@ -6,7 +6,14 @@
 /** Largest count accepted for any person or pet group. One place to change it. */
 export const MAX_COUNT = 20;
 
-export const SCHEMA_VERSION = 1;
+/** Longest household name, in characters. The same check exists in Postgres. */
+export const NAME_MAX_LENGTH = 60;
+
+/**
+ * Version of the `Household` shape. Version 1 was the single IndexedDB record
+ * of S-01; version 2 adds `name` and is built from the shared rows (`rows.ts`).
+ */
+export const SCHEMA_VERSION = 2;
 
 /** Every step of the profile, in the order they are asked (pets only when `hasPets`). */
 export const STEPS = ["people", "pets", "housing", "needs"] as const;
@@ -53,11 +60,24 @@ export type HouseholdAnswers = {
   needs: Need[];
 };
 
-/** The stored record: answers plus what a later shared database needs. */
+/** The household screens use: answers plus identity and metadata. */
 export type Household = HouseholdAnswers & {
   id: string;
+  /** Null means unnamed; screens show a default label from `messages/`. */
+  name: string | null;
   schemaVersion: typeof SCHEMA_VERSION;
   /** ISO 8601 timestamp of the last change. */
+  updatedAt: string;
+  status: HouseholdStatus;
+};
+
+/**
+ * The S-01 record (schema version 1) as IndexedDB stored it: today's answers,
+ * no name. Frozen: read once by the v1 import, never written again.
+ */
+export type HouseholdV1 = HouseholdAnswers & {
+  id: string;
+  schemaVersion: 1;
   updatedAt: string;
   status: HouseholdStatus;
 };

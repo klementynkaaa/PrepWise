@@ -1,6 +1,8 @@
-import { householdSchema } from "./schema";
+import { fromV1 } from "./contract";
+import { householdV1Schema } from "./schema";
 import { buildSavedRecord, defaultDeps, type SaveDeps } from "./save-step";
 import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
+import type { Household, HouseholdV1 } from "./types";
 
 export const DB_NAME = "prepwise";
 export const STORE_NAME = "household";
@@ -77,6 +79,33 @@ async function withStore<T>(
 }
 
 /**
+ * Until the store moves to the shared rows (S-09 Phase 5), the record stays in
+ * the S-01 format (schema version 1), so the one-time v1 import can read it.
+ * The name is not kept: nothing sets it yet.
+ */
+function toV1(household: Household): HouseholdV1 {
+  const { id, updatedAt, status, completedSteps, people, hasPets, pets, housingType, needs } =
+    household;
+  return {
+    id,
+    schemaVersion: 1,
+    updatedAt,
+    status,
+    completedSteps,
+    people,
+    hasPets,
+    pets,
+    housingType,
+    needs,
+  };
+}
+
+function readV1(raw: unknown) {
+  const parsed = householdV1Schema.safeParse(raw);
+  return parsed.success ? { success: true as const, data: fromV1(parsed.data) } : parsed;
+}
+
+/**
  * IndexedDB-backed store: database `prepwise`, object store `household`, one
  * record under the key `current`. Nothing touches IndexedDB until a method is
  * called, so importing this module is safe during prerendering.
@@ -98,7 +127,7 @@ export function createIndexedDbStore(options: IndexedDbStoreOptions = {}): House
         return { kind: "unavailable" };
       }
       if (raw === undefined) return { kind: "none" };
-      const parsed = householdSchema.safeParse(raw);
+      const parsed = readV1(raw);
       return parsed.success ? { kind: "found", household: parsed.data } : { kind: "invalid" };
     },
 
@@ -107,14 +136,14 @@ export function createIndexedDbStore(options: IndexedDbStoreOptions = {}): House
       // start from the same base record and drop each other's answers.
       return withStore(dbName, "readwrite", async (store) => {
         const raw = await requestToPromise(store.get(RECORD_KEY));
-        const existing = raw === undefined ? null : householdSchema.safeParse(raw);
+        const existing = raw === undefined ? null : readV1(raw);
         // An invalid stored record is replaced by a blank profile, but its raw value is
         // kept under BACKUP_KEY first, so nothing unreadable is lost silently. Any
         // future schemaVersion bump needs a migration before this point.
         const current = existing?.success ? existing.data : null;
         if (existing && !existing.success) await requestToPromise(store.put(raw, BACKUP_KEY));
         const record = buildSavedRecord(current, step, patch, deps);
-        await requestToPromise(store.put(record, RECORD_KEY));
+        await requestToPromise(store.put(toV1(record), RECORD_KEY));
         return record;
       });
     },

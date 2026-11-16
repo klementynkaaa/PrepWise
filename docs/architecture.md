@@ -47,6 +47,20 @@ browser ── first visit (online) ──▶ static host (Vercel)
 - **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation is PowerSync's local database on the device; an in-memory one serves tests. Data read back is validated at the boundary.
 - **Shared household.** Each person belongs to one household, shared by its members on all their devices, with an `owner` and `member`s. Accounts are anonymous by default, with optional email-code linking. The Supabase backend enforces membership with row-level security and merges concurrent edits per field by timestamp. The screens and the sync client come in a later change (S-10); until then nothing syncs.
 
+### Data contract
+
+Every piece of household data that may be shared follows these rules, so later features (S-02 to S-07) store their data in the shared format from the start. The row shapes and the code that maps them live in `src/lib/household` (`rows.ts`, `contract.ts`).
+
+- **Ids.** The device makes a UUID for every new household and entity. A set element (a need, a confirmed step, later a ticked item) gets a fixed id, `<household_id>:<element>`, so two devices adding the same element write the same row.
+- **One row per set element.** A set is never an array column. Each element is its own row with a `selected` flag; removing it sets `selected: false`, so it can be added again later.
+- **Entity rows** (for example an inventory item) have a `deleted_at` column. Deletion sets it, and **delete wins**: later edits to a deleted row are ignored. Nothing is ever hard-deleted by the app. A household is never soft-deleted; when its last member leaves, it is erased with all its rows.
+- **Shared columns.** Every synced row has `household_id`, `updated_at` and `field_ts`, which records when each column last changed. The server fills `created_by` and `updated_by`; the device never sends who it is.
+- **Flat fields, patch saves.** Columns are plain values in `snake_case`, matching Postgres one to one, never nested objects. A save writes only the columns that changed, with a `field_ts` entry for each, so edits from two devices merge column by column (latest timestamp wins). Fields are only ever added, never renamed or removed.
+- **One source for shapes.** Row shapes are Zod schemas in `rows.ts`. A change that adds or alters a table adds the matching migration in `supabase/migrations/` in the same change.
+- **Device-only state** (which household this device shows, filters, hints) lives in local-only tables that never sync.
+- **Bundled item ids** (plan items, emergencies) are kebab-case slugs written by hand. They never change and are never reused, because stored rows refer to them.
+- **Rules that span fields are applied on read.** A merge can combine two valid edits into an odd mix (say, "no pets" with a cat count). Turning rows into the household that screens use (`assemble`) normalises this: without pets, pet counts read as 0. The profile status is computed there too, never stored.
+
 ## Offline behaviour
 
 - **Precache:** `scripts/build-sw.mjs` runs after `next build`. It saves every file in `out/` (pages, route payloads, assets, icons) and bundles `src/sw.ts` into `out/sw.js`.

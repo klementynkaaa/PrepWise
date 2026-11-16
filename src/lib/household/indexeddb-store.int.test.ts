@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { completeHousehold, TEST_ID, TEST_TIME } from "./fixtures";
+import { completeHousehold, completeHouseholdV1, TEST_ID, TEST_TIME } from "./fixtures";
 import { BACKUP_KEY, createIndexedDbStore, RECORD_KEY, STORE_NAME } from "./indexeddb-store";
 import { HouseholdStoreError } from "./store";
 
@@ -103,13 +103,28 @@ describe("IndexedDB household store", () => {
     expect(await getRaw(dbName, BACKUP_KEY)).toBeUndefined();
   });
 
-  it("loads a stored complete household", async () => {
+  it("loads a stored S-01 (version 1) record as a current household without a name", async () => {
     const dbName = freshName();
-    await putRaw(dbName, completeHousehold());
+    await putRaw(dbName, completeHouseholdV1());
     expect(await createIndexedDbStore({ dbName }).load()).toEqual({
       kind: "found",
       household: completeHousehold(),
     });
+  });
+
+  it("keeps writing the version 1 record, so the later v1 import can read it", async () => {
+    const dbName = freshName();
+    await putRaw(dbName, completeHouseholdV1());
+    await createIndexedDbStore({ dbName, ...deps }).saveStep("housing", { housingType: "house" });
+    expect(await getRaw(dbName, RECORD_KEY)).toEqual(
+      completeHouseholdV1({ housingType: "house", updatedAt: TEST_TIME }),
+    );
+  });
+
+  it("treats a record in the current (version 2) shape as invalid", async () => {
+    const dbName = freshName();
+    await putRaw(dbName, completeHousehold());
+    expect(await createIndexedDbStore({ dbName }).load()).toEqual({ kind: "invalid" });
   });
 
   it("clears the record", async () => {
