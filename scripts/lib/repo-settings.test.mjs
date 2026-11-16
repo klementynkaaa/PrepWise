@@ -53,11 +53,12 @@ describe("settings files", () => {
     }
   });
 
-  it("requires the six checks with the GitHub Actions integration", () => {
+  it("requires the seven checks with the GitHub Actions integration", () => {
     const checks = main.rules.find((r) => r.type === "required_status_checks").parameters;
     expect(checks.required_status_checks.map((c) => c.context)).toEqual([
       "Lint, type check, build",
       "Unit & integration tests",
+      "Database tests",
       "Browser tests (offline + a11y)",
       "Dependency audit",
       "Secret scan",

@@ -48,17 +48,17 @@ hotfix/…  branches off main, pull request into main (merge commit), then a syn
 
 Rulesets enforce this on GitHub. They are kept as code (see Repository settings below).
 
-| Rule                    | Draft PR                            | PR into `develop`                                               | PR into `main`                                             |
-| ----------------------- | ----------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| CI that runs            | build, unit tests, `PR conventions` | all five gates and `PR conventions`                             | all five gates and `PR conventions`                        |
-| Required checks         | none (a draft can't be merged)      | all five gates and `PR conventions`                             | all five gates and `PR conventions`                        |
-| Branch up to date       | none                                | not required                                                    | required                                                   |
-| Approvals               | none                                | 0                                                               | 0 (production is approved in the `production` environment) |
-| Conversation resolution | none                                | required                                                        | required                                                   |
-| Merge methods           | none                                | squash for work branches; merge commit for the sync PR only     | merge commit only                                          |
-| Allowed source branches | none                                | `feature/ bugfix/ refactor/ chore/ docs/`, and `main` (sync PR) | `develop` and `hotfix/*`                                   |
-| Force push, deletion    | none                                | blocked                                                         | blocked                                                    |
-| Bypass actors           | none                                | none                                                            | none                                                       |
+| Rule                    | Draft PR                                            | PR into `develop`                                               | PR into `main`                                             |
+| ----------------------- | --------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------- |
+| CI that runs            | build, unit tests, database tests, `PR conventions` | all six gates and `PR conventions`                              | all six gates and `PR conventions`                         |
+| Required checks         | none (a draft can't be merged)                      | all six gates and `PR conventions`                              | all six gates and `PR conventions`                         |
+| Branch up to date       | none                                                | not required                                                    | required                                                   |
+| Approvals               | none                                                | 0                                                               | 0 (production is approved in the `production` environment) |
+| Conversation resolution | none                                                | required                                                        | required                                                   |
+| Merge methods           | none                                                | squash for work branches; merge commit for the sync PR only     | merge commit only                                          |
+| Allowed source branches | none                                                | `feature/ bugfix/ refactor/ chore/ docs/`, and `main` (sync PR) | `develop` and `hotfix/*`                                   |
+| Force push, deletion    | none                                                | blocked                                                         | blocked                                                    |
+| Bypass actors           | none                                                | none                                                            | none                                                       |
 
 The rulesets are named `develop protection` and `main protection`.
 
@@ -66,13 +66,13 @@ The rulesets are named `develop protection` and `main protection`.
 
 | Trigger                                 | What runs                                                                                                                                                    |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Draft pull request                      | `Lint, type check, build`, `Unit & integration tests` and `PR conventions` only                                                                              |
+| Draft pull request                      | `Lint, type check, build`, `Unit & integration tests`, `Database tests` and `PR conventions` only                                                            |
 | Marking a pull request ready for review | CI runs again with every gate                                                                                                                                |
 | Pull request into `develop` or `main`   | every quality gate below, plus `PR conventions`                                                                                                              |
 | Merge into `develop`                    | the same gates, then a preview deployment on Vercel                                                                                                          |
 | Merge into `main`                       | the same gates, then a staged production deployment, a smoke and health check on it, the owner's approval, promotion to production, and a tag with a release |
 
-Deployment runs only when all five gates pass. Every deployment ships the `out/` folder the browser tests ran against: CI turns it into `.vercel/output` and deploys it with `--prebuilt`, so nothing is rebuilt.
+Deployment runs only when all six gates pass. Every deployment ships the `out/` folder the browser tests ran against: CI turns it into `.vercel/output` and deploys it with `--prebuilt`, so nothing is rebuilt.
 
 ### Quality gates
 
@@ -80,6 +80,7 @@ Deployment runs only when all five gates pass. Every deployment ships the `out/`
 | ------------------------------------- | -------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Format, lint, types, build            | `Lint, type check, build`        | `format:check`, `lint`, `typecheck`, `build`, `build-storybook`        | formatting, a lint or type error, the export is incomplete, or Storybook doesn't build                                                     |
 | Unit, integration and component tests | `Unit & integration tests`       | `npm run test:coverage`                                                | a test fails or coverage drops below the floor                                                                                             |
+| Database                              | `Database tests`                 | `npm run db:start`, then `npm run db:test` (needs Docker)              | a migration doesn't apply or a pgTAP test fails (see Database tests below)                                                                 |
 | Offline and accessibility             | `Browser tests (offline + a11y)` | `npm run test:e2e` (after `npm run build`), `npm run test:storybook`   | an offline, installability or accessibility check fails, or a Storybook story has an accessibility violation                               |
 | Dependency audit                      | `Dependency audit`               | `npm run audit`                                                        | a high or critical advisory is found that has no unexpired entry in `.github/audit-exceptions.json` (a hotfix may bypass it, see Releases) |
 | Secret scan                           | `Secret scan`                    | none (runs in CI)                                                      | a secret appears in the commits being introduced                                                                                           |
@@ -89,13 +90,13 @@ The same `PR conventions` job also runs `node scripts/check-ui-stories.mjs`: a P
 
 **Audit exceptions.** When a high or critical advisory has no fixed version and doesn't reach the shipped app (for example, it's only in build or test tools), add it to `.github/audit-exceptions.json` with its GHSA id, a `reason` saying why it is safe, and a `reviewBy` date no more than about a month out. `npm run audit` lets it through until that date and then blocks again, so the exception is looked at again. It also prints exceptions that no longer match anything, so they can be removed. Add an exception in its own `chore/` pull request, never alongside unrelated work.
 
-These six job names are the required checks in the `develop protection` and `main protection` rulesets. A pull request can be merged only when all of them pass. A job skipped on a draft reports success, which is safe only because a draft can't be merged and CI runs again when the PR is marked ready.
+These seven job names are the required checks in the `develop protection` and `main protection` rulesets. A pull request can be merged only when all of them pass. A job skipped on a draft reports success, which is safe only because a draft can't be merged and CI runs again when the PR is marked ready.
 
 ### Database tests
 
 The `Database tests` job proves the Supabase backend: the schema, row-level security, the invite and membership functions, the per-field merge rule and the account-deletion rules. It runs `npm ci`, `npm run db:start` and `npm run db:test` on a local Supabase inside the CI runner; no hosted database is involved. The Supabase CLI comes from the exact-pinned `supabase` dev dependency, so CI and developers use the same version.
 
-When the job has reported on a pull request at least once, the owner adds `Database tests` as a required check to both rulesets (`develop protection` and `main protection`), in `.github/rulesets/` and with `node scripts/repo-settings.mjs --apply`.
+`Database tests` is listed as a required check in both ruleset files (`develop protection` and `main protection`) in `.github/rulesets/`. The owner applies them to GitHub with `node scripts/repo-settings.mjs --apply` once the job has reported on a pull request at least once; until then GitHub doesn't require it.
 
 ## Local database stack
 
@@ -109,13 +110,14 @@ The backend lives in `supabase/`: the schema in `supabase/migrations/`, the pgTA
 | `npm run db:test`  | runs the database tests (pgTAP) against the local database           |
 
 - Change the schema only through a new file in `supabase/migrations/`, together with the matching row shapes in `src/lib/household` and a test.
+- `supabase/config.toml` holds the local settings: anonymous sign-ins and manual identity linking on, email codes of 6 digits, no CAPTCHA, and Realtime, Storage, Edge Functions and analytics off. The local ports are 553xx instead of the default 543xx (API on `127.0.0.1:55321`, database on `55322`), so the stack can run next to another project's.
 - Nothing in the app connects to Supabase or PowerSync yet. The sync client, the hosted development projects in the EU and the preview-only sync variables come with the household sharing screens (S-10). **Production never gets the sync variables** until legal advice and a DPIA are done. See [Household sharing decisions](decisions/household-sharing.md).
 
 ## Releases
 
 A release is a pull request from `develop` into `main`.
 
-1. **Open the release PR** from `develop` into `main`. Its title is `chore(release): <short description>`, for example `chore(release): 2026-11-20`. Wait for all six checks, then merge it with a **merge commit**. The branch must be up to date with `main`, which is why the sync PR below matters.
+1. **Open the release PR** from `develop` into `main`. Its title is `chore(release): <short description>`, for example `chore(release): 2026-11-20`. Wait for all seven checks, then merge it with a **merge commit**. The branch must be up to date with `main`, which is why the sync PR below matters.
 2. **CI deploys and checks.** On `main`, CI runs the gates again, then deploys the tested `out/` as a staged production deployment (not on the production domain yet). `Smoke & health (staging)` loads every route, checks the manifest and service worker, and checks that `/version.json` shows the commit being released.
 3. **Approve production.** `Promote to production` waits for the owner. Open the run in the GitHub Actions tab, choose **Review deployments**, select `production` and approve or reject. Approving runs `scripts/vercel-promote.mjs`, which calls the Vercel REST API (the CLI's `vercel promote` fails for this token) and puts the staged deployment on the production domain without rebuilding, then checks health on the production domain.
 4. **Tag and release.** `Tag release` creates the tag and a GitHub Release with generated notes. The tag is a CalVer tag `vYYYY.MM.DD` using the Europe/Warsaw date. A later release the same day gets `.2`, `.3` and so on, for example `v2026.11.20.2`.
@@ -162,7 +164,7 @@ The owner runs `scripts/repo-settings.mjs` by hand, with admin rights through `g
 | `node scripts/repo-settings.mjs --apply`                     | creates or updates the rulesets, environments and repo settings from the files                                      |
 | `node scripts/repo-settings.mjs --remove-classic-protection` | deletes the old classic branch protection on `develop` and `main`, and only once both rulesets exist and are active |
 
-To set up a repository: run `--apply`, then `--check`, then `--remove-classic-protection`. Apply the rulesets only after a PR has reported all six check names at least once, so the required checks exist.
+To set up a repository: run `--apply`, then `--check`, then `--remove-classic-protection`. Apply the rulesets only after a PR has reported all seven check names at least once, so the required checks exist.
 
 One-time setup that isn't in the files, because it holds secrets or lives in Vercel:
 

@@ -1,10 +1,11 @@
 name: CI/CD
 
 # Pull requests into develop/main run every gate: lint, type check and build;
-# unit and integration tests with a coverage floor; browser tests (offline and
-# accessibility); dependency audit; secret scan.
-# Draft PRs run only the fast gates (build, unit and integration tests); marking
-# a PR ready for review runs CI again with every gate.
+# unit and integration tests with a coverage floor; database tests (pgTAP on a
+# local Supabase); browser tests (offline and accessibility); dependency audit;
+# secret scan.
+# Draft PRs run only the fast gates (build, unit and integration tests, database
+# tests); marking a PR ready for review runs CI again with every gate.
 # Push to develop (merged PR): all gates, then a Vercel preview deployment.
 # Push to main (merged release PR): all gates, then the tested export goes to a
 # staged Vercel production deployment, smoke and health checks run on it, the
@@ -103,6 +104,28 @@ jobs:
           name: coverage
           path: coverage/
           if-no-files-found: ignore
+
+  # Local Supabase in Docker on the runner; no hosted database. The CLI comes
+  # from the exact-pinned `supabase` dev dependency, not from setup-cli.
+  database:
+    name: Database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Start local Supabase (applies every migration)
+        run: npm run db:start
+
+      - name: Database tests (pgTAP)
+        run: npm run db:test
 
   e2e:
     name: Browser tests (offline + a11y)
@@ -267,7 +290,7 @@ jobs:
 
   preview:
     name: Deploy preview
-    needs: [checks, tests, e2e, audit, secrets]
+    needs: [checks, tests, database, e2e, audit, secrets]
     if: github.event_name == 'push' && github.ref_name == 'develop'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -325,7 +348,7 @@ jobs:
   # production domain yet. `production` promotes it after smoke and approval.
   staging:
     name: Deploy staging
-    needs: [checks, tests, e2e, audit, secrets]
+    needs: [checks, tests, database, e2e, audit, secrets]
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -56,3 +56,7 @@ next-env.d.ts
 /storybook-static/
 *storybook.log
 skills-lock.json
+
+# supabase (local CLI state)
+/supabase/.temp/
+/supabase/.branches/
