@@ -1,12 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { completeHousehold, TEST_ID, TEST_TIME } from "./fixtures";
-import { BACKUP_KEY, createIndexedDbStore, RECORD_KEY, STORE_NAME } from "./indexeddb-store";
-import { HouseholdStoreError } from "./store";
+import { completeHouseholdV1 } from "./fixtures";
+import { importV1 } from "./import-v1";
+import {
+  BACKUP_KEY,
+  readV1Backup,
+  readV1Record,
+  RECORD_KEY,
+  removeV1Backup,
+  removeV1Record,
+  STORE_NAME,
+} from "./indexeddb-store";
+import { migrateV1 } from "./contract";
 
 let counter = 0;
 const freshName = () => `household-test-${Date.now()}-${counter++}`;
-const deps = { newId: () => TEST_ID, now: () => new Date(TEST_TIME) };
-const one = { adults: 1, seniors: 0, children: 0, smallChildren: 0 };
 
 function openRaw(name: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -17,22 +24,11 @@ function openRaw(name: string): Promise<IDBDatabase> {
   });
 }
 
-async function getRaw(name: string, key: string): Promise<unknown> {
-  const db = await openRaw(name);
-  const value = await new Promise<unknown>((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-  db.close();
-  return value;
-}
-
-async function putRaw(name: string, value: unknown): Promise<void> {
+async function putRaw(name: string, value: unknown, key = RECORD_KEY): Promise<void> {
   const db = await openRaw(name);
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
-    tx.objectStore(STORE_NAME).put(value, RECORD_KEY);
+    tx.objectStore(STORE_NAME).put(value, key);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -43,100 +39,47 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("IndexedDB household store", () => {
-  it("returns none when nothing is saved", async () => {
-    expect(await createIndexedDbStore({ dbName: freshName() }).load()).toEqual({ kind: "none" });
+describe("v1 record in IndexedDB", () => {
+  it("reads nothing when no record was saved", async () => {
+    expect(await readV1Record(freshName())).toBeUndefined();
   });
 
-  it("round-trips a record across a fresh store instance (close and reopen)", async () => {
-    const dbName = freshName();
-    const saved = await createIndexedDbStore({ dbName, ...deps }).saveStep("people", {
-      people: one,
-      hasPets: false,
-    });
-    const loaded = await createIndexedDbStore({ dbName }).load();
-    expect(loaded).toEqual({ kind: "found", household: saved });
+  it("reads the raw record", async () => {
+    const name = freshName();
+    await putRaw(name, completeHouseholdV1());
+    expect(await readV1Record(name)).toEqual(completeHouseholdV1());
   });
 
-  it("goes from draft to complete and keeps the id", async () => {
-    const store = createIndexedDbStore({ dbName: freshName(), ...deps });
-    const a = await store.saveStep("people", { people: one, hasPets: false });
-    await store.saveStep("housing", { housingType: "flat" });
-    const done = await store.saveStep("needs", { needs: ["specialDiet"] });
-    expect(a.status).toBe("draft");
-    expect(done.status).toBe("complete");
-    expect(done.id).toBe(a.id);
+  it("removes the record, keeping a backup when asked", async () => {
+    const name = freshName();
+    await putRaw(name, { broken: 1 });
+    await removeV1Record(name, { backup: { broken: 1 } });
+    expect(await readV1Record(name)).toBeUndefined();
+    expect(await readV1Backup(name)).toEqual({ broken: 1 });
+    await removeV1Backup(name);
+    expect(await readV1Backup(name)).toBeUndefined();
   });
 
-  it("rejects invalid data with a typed error and writes nothing", async () => {
-    const store = createIndexedDbStore({ dbName: freshName(), ...deps });
-    await expect(store.saveStep("housing", { housingType: "tent" as never })).rejects.toMatchObject(
-      { code: "invalid" },
-    );
-    expect(await store.load()).toEqual({ kind: "none" });
+  it("removes the record without touching the backup when none is given", async () => {
+    const name = freshName();
+    await putRaw(name, "old", BACKUP_KEY);
+    await putRaw(name, completeHouseholdV1());
+    await removeV1Record(name);
+    expect(await readV1Record(name)).toBeUndefined();
+    expect(await readV1Backup(name)).toBe("old");
   });
 
-  it("reports an invalid stored record as invalid, without deleting it", async () => {
-    const dbName = freshName();
-    await putRaw(dbName, { id: "x", nonsense: true });
-    const store = createIndexedDbStore({ dbName });
-    expect(await store.load()).toEqual({ kind: "invalid" });
-    expect(await store.load()).toEqual({ kind: "invalid" });
-  });
-
-  it("overwrites an invalid record on the next save, starting blank", async () => {
-    const dbName = freshName();
-    await putRaw(dbName, { broken: 1 });
-    const store = createIndexedDbStore({ dbName, ...deps });
-    const saved = await store.saveStep("housing", { housingType: "house" });
-    expect(saved.people.adults).toBe(0);
-    expect(await store.load()).toEqual({ kind: "found", household: saved });
-  });
-
-  it("keeps the unreadable record under a backup key before overwriting it, and clear removes it", async () => {
-    const dbName = freshName();
-    await putRaw(dbName, { broken: 1 });
-    const store = createIndexedDbStore({ dbName, ...deps });
-    await store.saveStep("housing", { housingType: "house" });
-    expect(await getRaw(dbName, BACKUP_KEY)).toEqual({ broken: 1 });
-    await store.clear();
-    expect(await getRaw(dbName, BACKUP_KEY)).toBeUndefined();
-  });
-
-  it("loads a stored complete household", async () => {
-    const dbName = freshName();
-    await putRaw(dbName, completeHousehold());
-    expect(await createIndexedDbStore({ dbName }).load()).toEqual({
-      kind: "found",
-      household: completeHousehold(),
-    });
-  });
-
-  it("clears the record", async () => {
-    const store = createIndexedDbStore({ dbName: freshName(), ...deps });
-    await store.saveStep("housing", { housingType: "flat" });
-    await store.clear();
-    expect(await store.load()).toEqual({ kind: "none" });
-  });
-
-  it("does not touch IndexedDB until a method is called", () => {
+  it("does not touch IndexedDB until a function is called", async () => {
     const open = vi.fn();
     vi.stubGlobal("indexedDB", { open });
-    createIndexedDbStore({ dbName: freshName() });
+    await import("./indexeddb-store");
     expect(open).not.toHaveBeenCalled();
   });
 
-  it("is unavailable when IndexedDB is missing", async () => {
+  it("rejects when IndexedDB is missing, blocked, failing or throwing", async () => {
     vi.stubGlobal("indexedDB", undefined);
-    const store = createIndexedDbStore({ dbName: freshName() });
-    expect(await store.load()).toEqual({ kind: "unavailable" });
-    await expect(store.saveStep("housing", { housingType: "flat" })).rejects.toMatchObject({
-      code: "unavailable",
-    });
-    await expect(store.clear()).rejects.toBeInstanceOf(HouseholdStoreError);
-  });
+    await expect(readV1Record(freshName())).rejects.toThrow();
 
-  it("is unavailable when the database is blocked or fails to open", async () => {
     const failing = (fire: "onblocked" | "onerror") => ({
       open() {
         const request: Record<string, unknown> = { error: new Error("denied") };
@@ -146,54 +89,63 @@ describe("IndexedDB household store", () => {
     });
     for (const fire of ["onblocked", "onerror"] as const) {
       vi.stubGlobal("indexedDB", failing(fire));
-      const store = createIndexedDbStore({ dbName: freshName() });
-      expect(await store.load()).toEqual({ kind: "unavailable" });
+      await expect(readV1Record(freshName())).rejects.toThrow();
     }
-  });
 
-  it("is unavailable when indexedDB.open throws", async () => {
     vi.stubGlobal("indexedDB", {
       open() {
         throw new Error("SecurityError");
       },
     });
-    expect(await createIndexedDbStore({ dbName: freshName() }).load()).toEqual({
-      kind: "unavailable",
-    });
+    await expect(readV1Record(freshName())).rejects.toThrow("SecurityError");
+  });
+});
+
+describe("importV1", () => {
+  it("does nothing when there is no v1 record", async () => {
+    const write = vi.fn();
+    expect(await importV1(write, freshName())).toBe("none");
+    expect(write).not.toHaveBeenCalled();
   });
 
-  it("turns a quota error on write into an unavailable error", async () => {
-    const dbName = freshName();
-    const real = await openRaw(dbName);
-    real.close();
-    const originalOpen = indexedDB.open.bind(indexedDB);
-    vi.stubGlobal("indexedDB", {
-      open: (name: string, version?: number) => {
-        const request = originalOpen(name, version);
-        request.addEventListener("success", () => {
-          const db = request.result;
-          const tx = db.transaction.bind(db);
-          db.transaction = ((...args: Parameters<typeof tx>) => {
-            const t = tx(...args);
-            if (args[1] === "readwrite") {
-              const store = t.objectStore.bind(t);
-              t.objectStore = ((n: string) => {
-                const s = store(n);
-                s.put = () => {
-                  throw new DOMException("full", "QuotaExceededError");
-                };
-                return s;
-              }) as typeof t.objectStore;
-            }
-            return t;
-          }) as typeof db.transaction;
-        });
-        return request;
-      },
+  it("writes a valid record's rows, then removes `current`", async () => {
+    const name = freshName();
+    await putRaw(name, completeHouseholdV1());
+    const write = vi.fn(async () => {
+      // The record is still there while the rows are written.
+      expect(await readV1Record(name)).toEqual(completeHouseholdV1());
     });
-    const store = createIndexedDbStore({ dbName, ...deps });
-    await expect(store.saveStep("housing", { housingType: "flat" })).rejects.toMatchObject({
-      code: "unavailable",
-    });
+    expect(await importV1(write, name)).toBe("imported");
+    expect(write).toHaveBeenCalledOnce();
+    expect(write).toHaveBeenCalledWith(migrateV1(completeHouseholdV1()));
+    expect(await readV1Record(name)).toBeUndefined();
+    expect(await readV1Backup(name)).toBeUndefined();
+    expect(await importV1(write, name)).toBe("none");
+    expect(write).toHaveBeenCalledOnce();
+  });
+
+  it("keeps `current` when writing the rows fails, so the next open tries again", async () => {
+    const name = freshName();
+    await putRaw(name, completeHouseholdV1());
+    await expect(importV1(() => Promise.reject(new Error("disk")), name)).rejects.toThrow("disk");
+    expect(await readV1Record(name)).toEqual(completeHouseholdV1());
+  });
+
+  it("keeps an invalid record under BACKUP_KEY, removes `current` and writes nothing", async () => {
+    const name = freshName();
+    const broken = { ...completeHouseholdV1(), schemaVersion: 2 };
+    await putRaw(name, broken);
+    const write = vi.fn();
+    expect(await importV1(write, name)).toBe("invalid");
+    expect(write).not.toHaveBeenCalled();
+    expect(await readV1Backup(name)).toEqual(broken);
+    expect(await readV1Record(name)).toBeUndefined();
+  });
+
+  it("is skipped when IndexedDB cannot be read", async () => {
+    vi.stubGlobal("indexedDB", undefined);
+    const write = vi.fn();
+    expect(await importV1(write, freshName())).toBe("skipped");
+    expect(write).not.toHaveBeenCalled();
   });
 });

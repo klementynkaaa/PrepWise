@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { completeHousehold, TEST_ID, TEST_TIME } from "./fixtures";
 import { createMemoryStore } from "./memory-store";
 import { HouseholdStoreError } from "./store";
@@ -66,5 +66,33 @@ describe("memory store", () => {
   it("works with the default id and clock", async () => {
     const record = await createMemoryStore().saveStep("housing", { housingType: "flat" });
     expect(record.id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("calls subscribers after a save and a clear, until they unsubscribe", async () => {
+    const store = createMemoryStore(null, deps());
+    const listener = vi.fn();
+    const unsubscribe = store.subscribe(listener);
+    await store.saveStep("housing", { housingType: "flat" });
+    expect(listener).toHaveBeenCalledTimes(1);
+    await store.clear();
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+    await store.saveStep("housing", { housingType: "house" });
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not call subscribers when a save is rejected", async () => {
+    const store = createMemoryStore(null, deps());
+    const listener = vi.fn();
+    store.subscribe(listener);
+    await expect(store.saveStep("housing", { housingType: "tent" as never })).rejects.toThrow();
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("loads an initial household as it was given", async () => {
+    expect(await createMemoryStore(completeHousehold()).load()).toEqual({
+      kind: "found",
+      household: completeHousehold(),
+    });
   });
 });

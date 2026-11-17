@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { seedCompleteProfile } from "./seed";
+import { readV1Record, seedCompleteProfile } from "./seed";
 
 async function waitForControlledPage(page: Page) {
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -102,7 +102,10 @@ test("reload after step 2 resumes with the answers filled", async ({ page }) => 
   await expect(page).toHaveURL(/\/pl\/start\/housing$/);
 
   await page.goto("/pl/start");
-  await page.getByRole("link", { name: "Stwórz plan" }).click();
+  // The link points at the first unfinished step once the household is read.
+  const resume = page.getByRole("link", { name: "Stwórz plan" });
+  await expect(resume).toHaveAttribute("href", /\/pl\/start\/housing$/);
+  await resume.click();
   await expect(page).toHaveURL(/\/pl\/start\/housing$/);
 
   await page.goto("/pl/start/people");
@@ -149,11 +152,34 @@ test("the overview opens after a reload with the network off", async ({ page, co
   await expect(page.getByText("Bez internetu — wszystko działa")).toBeVisible();
 });
 
-test("a blocked IndexedDB shows the save error and keeps the form", async ({ page }) => {
+test("a seeded S-01 household is imported once and shows the same summary after a reload", async ({
+  page,
+}) => {
+  await seedCompleteProfile(page);
+  await page.goto("/pl/household");
+  await expect(page.getByRole("heading", { level: 1, name: "Profil domu" })).toBeVisible();
+  await expect(page.getByText("2 dorosłych, 1 dziecko · razem 3 osoby")).toBeVisible();
+  await expect(page.getByText("1 kot")).toBeVisible();
+
+  // The v1 record is gone, so the summary below comes from the new store.
+  await expect.poll(() => readV1Record(page)).toBeUndefined();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Profil domu" })).toBeVisible();
+  await expect(page.getByText("2 dorosłych, 1 dziecko · razem 3 osoby")).toBeVisible();
+  await expect(page.getByText("1 kot")).toBeVisible();
+  await expect(page.getByText("Mieszkanie w bloku")).toBeVisible();
+  await expect(page.getByText("Leki przyjmowane na stałe")).toBeVisible();
+});
+
+test("blocked storage shows the save error and keeps the form", async ({ page }) => {
+  // No local database can open: its workers cannot start, and IndexedDB is blocked.
   await page.addInitScript(() => {
-    IDBFactory.prototype.open = function open() {
+    const blocked = () => {
       throw new DOMException("blocked", "SecurityError");
     };
+    IDBFactory.prototype.open = blocked;
+    Object.defineProperty(window, "Worker", { value: blocked });
+    Object.defineProperty(window, "SharedWorker", { value: blocked });
   });
   await page.goto("/pl/start/people");
   await add(page, "Więcej dorosłych");

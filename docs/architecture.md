@@ -2,31 +2,36 @@
 
 ## Overview
 
-PREPWISE is an installable web app (PWA). It is built with Next.js and shipped as a **static export**: plain HTML, CSS and JS with no server at runtime. A service worker saves the whole app on the device after the first online visit. From then on it works the same with or without a connection.
+PREPWISE is an installable web app (PWA). It is built with Next.js and shipped as a **static export**: plain HTML, CSS and JS with no server of our own at runtime. A service worker saves the whole app on the device after the first online visit. From then on it works the same with or without a connection.
+
+Household data lives on the device. For household sharing, the browser may sync it with two hosted services in the EU: Supabase (database, sign-in, access rules) and PowerSync (sync). **Production keeps sync off** until legal advice and a DPIA are done, so in production nothing leaves the device yet.
 
 ```
 browser ── first visit (online) ──▶ static host (Vercel)
    │                                   └─ HTML/CSS/JS + sw.js
    ├─ service worker: precaches every file, serves them offline
-   └─ IndexedDB: household profile, plan state, ticked items (never leaves the device)
+   ├─ local database (PowerSync, on the device): household profile, plan state, ticked items
+   └─ sync, only when configured (off in production) ──▶ PowerSync Cloud (EU) ──▶ Supabase (Frankfurt)
 ```
 
 ## Stack
 
-| Area      | Choice                                                                                                                                                                   |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                                                                   |
-| Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                                                                    |
-| Text      | next-intl with one Polish dictionary, `messages/pl.json`                                                                                                                 |
-| Offline   | Serwist service worker, built after the static export                                                                                                                    |
-| Storage   | IndexedDB on the device, behind one typed storage interface (`src/lib/household`)                                                                                        |
-| Hosting   | Vercel (static files)                                                                                                                                                    |
-| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → staged production, smoke check, approval, promote, tag |
+| Area      | Choice                                                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                                                                         |
+| Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                                                                          |
+| Text      | next-intl with one Polish dictionary, `messages/pl.json`                                                                                                                       |
+| Offline   | Serwist service worker, built after the static export                                                                                                                          |
+| Storage   | PowerSync's local SQLite database on the device, behind one typed storage interface (`src/lib/household`); an S-01 household in IndexedDB is imported once                     |
+| Backend   | Supabase in Frankfurt (Postgres, anonymous and email-code sign-in, row-level security) and PowerSync Cloud in the EU; schema in `supabase/migrations/`; sync off in production |
+| Hosting   | Vercel (static files)                                                                                                                                                          |
+| CI/CD     | GitHub Actions (`.github/workflows/ci.yml`): every quality gate on every PR; `develop` → Vercel preview, `main` → staged production, smoke check, approval, promote, tag       |
 
 ## Key decisions
 
 - **PWA instead of native apps.** One codebase, installable from the browser, and no app store review.
-- **Static export, no backend.** Household data must never leave the device and there are no accounts, so a server has nothing to do. Server-only Next.js features are off-limits: Server Actions, request-based Route Handlers, cookies or headers, proxy/middleware, ISR, and the default image optimizer. See `AGENTS.md` for the full list.
+- **Static export, hosted services, Edge Functions.** The Next.js app has no server of its own. Server-only Next.js features are off-limits: Server Actions, request-based Route Handlers, cookies or headers, proxy/middleware, ISR, and the default image optimizer. See `AGENTS.md` for the full list. Client Components may call the approved hosted services (Supabase and PowerSync) with public `NEXT_PUBLIC_*` values only; no secret goes into the bundle. The only server code we write is Supabase Edge Functions in `supabase/functions/`, for work that needs a secret, such as deleting an account.
+- **Shared backend, switched off in production.** Household members share one household through Supabase in Frankfurt and PowerSync Cloud in the EU. The app syncs only when all its sync variables (`NEXT_PUBLIC_*`) are set. They are set for preview deployments only; production has none, so production does not sync until legal advice and a DPIA are done. Decisions and reasons: [`docs/decisions/household-sharing.md`](decisions/household-sharing.md).
 - **Next.js over a lighter client-only option.** Chosen for popularity and tooling. The trade-off: agents tend to reach for server features by default, so the restrictions are written into `AGENTS.md`.
 - **Content ships with the app.** Plan content and quantity rules are bundled as static data and never fetched at runtime, so they are available during a blackout.
 - **`cacheComponents` is disabled.** It conflicts with the `force-static` route config that static export requires.
@@ -39,12 +44,26 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 ## Household data
 
-- **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation today is IndexedDB on the device; an in-memory one serves tests. Data read back is validated at the boundary.
-- **Shared database later.** A database shared between household members would store data off the device and change this architecture. It is a separate, later change; the interface is the seam where it would plug in.
+- **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation is PowerSync's local database on the device (`powersync-store.ts`, stored in the browser's origin private file system), with no server connection; an in-memory one serves tests. While sync is off, it writes local-only twins of the synced tables, so nothing waits for upload. `subscribe` tells the screens about every change. Data read back is validated at the boundary. Where the database can't open (a private Safari window), screens show the existing "storage unavailable" states.
+- **Shared household.** Each person belongs to one household, shared by its members on all their devices, with an `owner` and `member`s. Accounts are anonymous by default, with optional email-code linking. The Supabase backend enforces membership with row-level security and merges concurrent edits per field by timestamp. The screens and the sync client come in a later change (S-10); until then nothing syncs.
+
+### Data contract
+
+Every piece of household data that may be shared follows these rules, so later features (S-02 to S-07) store their data in the shared format from the start. The row shapes and the code that maps them live in `src/lib/household` (`rows.ts`, `contract.ts`).
+
+- **Ids.** The device makes a UUID for every new household and entity. A set element (a need, a confirmed step, later a ticked item) gets a fixed id, `<household_id>:<element>`, so two devices adding the same element write the same row.
+- **One row per set element.** A set is never an array column. Each element is its own row with a `selected` flag; removing it sets `selected: false`, so it can be added again later.
+- **Entity rows** (for example an inventory item) have a `deleted_at` column. Deletion sets it, and **delete wins**: later edits to a deleted row are ignored. Nothing is ever hard-deleted by the app. A household is never soft-deleted; when its last member leaves, it is erased with all its rows.
+- **Shared columns.** Every synced row has `household_id`, `updated_at` and `field_ts`, which records when each column last changed. The server fills `created_by` and `updated_by`; the device never sends who it is.
+- **Flat fields, patch saves.** Columns are plain values in `snake_case`, matching Postgres one to one, never nested objects. A save writes only the columns that changed, with a `field_ts` entry for each, so edits from two devices merge column by column (latest timestamp wins). Fields are only ever added, never renamed or removed.
+- **One source for shapes.** Row shapes are Zod schemas in `rows.ts`. A change that adds or alters a table adds the matching migration in `supabase/migrations/` in the same change.
+- **Device-only state** (which household this device shows, filters, hints) lives in local-only tables that never sync.
+- **Bundled item ids** (plan items, emergencies) are kebab-case slugs written by hand. They never change and are never reused, because stored rows refer to them.
+- **Rules that span fields are applied on read.** A merge can combine two valid edits into an odd mix (say, "no pets" with a cat count). Turning rows into the household that screens use (`assemble`) normalises this: without pets, pet counts read as 0. The profile status is computed there too, never stored.
 
 ## Offline behaviour
 
-- **Precache:** `scripts/build-sw.mjs` runs after `next build`. It saves every file in `out/` (pages, route payloads, assets, icons) and bundles `src/sw.ts` into `out/sw.js`.
+- **Precache:** `scripts/build-sw.mjs` runs after `next build`. It saves every file in `out/` (pages, route payloads, assets, icons) and bundles `src/sw.ts` into `out/sw.js`. Of PowerSync's files, which `npm run assets` copies into `public/@powersync/` before every build, it saves only the worker, the SQLite build and the WASM that the chosen storage (`OPFSCoopSyncVFS`) loads.
 - **Pages:** they are served from the cache first. This includes Next.js in-app navigation requests (the `_rsc` parameter is ignored when matching).
 - **Updates:** while online, a new deployment's service worker installs in the background and takes over immediately.
 - **Fallback:** any page not saved on the device shows a Polish offline page (`/offline`).
@@ -71,11 +90,14 @@ npm start        # serve out/ locally to test the production/offline build
 npm run lint
 npm run typecheck  # generates Next.js route types, then tsc
 npm run format:check
-npm test           # unit, integration and component tests (Vitest)
-npm run test:coverage  # same, with the coverage floor
+npm test           # unit, integration and component tests, then the store tests (Vitest)
+npm run test:coverage  # unit, integration and component tests, with the coverage floor
+npm run test:store # store tests on PowerSync's real local database, in Chromium
 npm run test:e2e   # browser tests (Playwright); needs a prior npm run build
 npm run storybook       # component showcase on http://localhost:6006
 npm run test:storybook  # every story in Chromium, with accessibility checks
+npm run db:start   # local Supabase in Docker (also db:stop, db:reset)
+npm run db:test    # database tests (pgTAP) against local Supabase
 ```
 
 ## Deployment

@@ -16,16 +16,22 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
 
 ## Hard constraints (never violate)
 
-1. **Static export only.** The app ships as `output: 'export'` (HTML/CSS/JS in `out/`). There is no Node server at runtime, so do not add anything that needs one:
+1. **Static export, plus approved hosted services.** The Next.js app ships as `output: 'export'` (HTML/CSS/JS in `out/`). There is no Node server at runtime, so do not add anything that needs one:
    - no Server Actions (`'use server'`)
    - no Route Handlers that read the Request; a GET handler is allowed only with `export const dynamic = 'force-static'`
    - no `cookies()`, `headers()`, `proxy.ts`/middleware, rewrites, redirects, custom headers, ISR or Draft Mode
    - no dynamic routes without `generateStaticParams()`, and no `dynamicParams: true`
    - no `next/image` with the default loader; use `images: { unoptimized: true }` or plain `<img>`
-     The full list is in `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`. If a feature seems to need a server, stop and ask; don't work around it.
-2. **Household data never leaves the device.** No backend, database service, analytics, telemetry or third-party API receives profile, plan or checklist data. Persist state in IndexedDB on the client, with a single typed storage module. Do not use `localStorage` for app data.
-3. **Works online and offline, the same way.** People normally use the app online. It must keep working with no connection, for example during a blackout. The profile, plan, action list and ticking behave the same in both cases, so never make a core feature depend on the network. Ship plan content and quantity rules as bundled static data, not as runtime fetches. The service worker (Serwist) precaches the app shell and every route after the first online visit. When the device is online, the service worker picks up new app versions in the background. When it's offline, the cached version keeps running and shows no error screens.
-4. **No accounts, auth, payments or sync** in v1 (see PRD Non-Goals).
+     The full list is in `node_modules/next/dist/docs/01-app/02-guides/static-exports.md`.
+   - Client Components may call the approved hosted services (Supabase and PowerSync), using public `NEXT_PUBLIC_*` values only. No service-role key or other secret ever goes into the bundle.
+   - Server code is allowed only as Supabase Edge Functions in `supabase/functions/`. The database schema lives in `supabase/migrations/`.
+     If a feature seems to need any other server, stop and ask; don't work around it.
+2. **Household data is stored on the device and syncs only to the approved EU backend.** Household data goes through the single typed storage module in `src/lib/household`, follows its data contract, and is kept in PowerSync's local SQLite database on the device (OPFS storage, `OPFSCoopSyncVFS`). It may sync only to the approved EU backend: Supabase in Frankfurt and PowerSync Cloud in the EU.
+   - **Production keeps sync off** (no sync variables set) until legal advice and a DPIA are done. Development and preview data may sync before that.
+   - Never use `localStorage` for app data. The Supabase session is the one exception: it may live in `localStorage`.
+   - No analytics or telemetry, and no other backend, database service or third-party API receives profile, plan or checklist data.
+3. **Works online and offline, the same way.** People normally use the app online. It must keep working with no connection, for example during a blackout. The profile, plan, action list and ticking behave the same in both cases, so never make a core feature depend on the network. Sync never blocks a screen, and the first launch works with no account and no connection. Ship plan content and quantity rules as bundled static data, not as runtime fetches. The service worker (Serwist) precaches the app shell, every route, and the sync engine's worker and WASM files after the first online visit. When the device is online, the service worker picks up new app versions in the background. When it's offline, the cached version keeps running and shows no error screens.
+4. **Anonymous accounts, owner and member roles, no payments.** Each person gets an anonymous account by default and may link an email with a one-time code. A household has one `owner`; everyone else in it is a `member` (see PRD Access Control). No passwords, no OAuth sign-in (for now) and no payments. Decisions and reasons: `docs/decisions/household-sharing.md`.
 
 ## Git workflow (always)
 
@@ -61,11 +67,12 @@ At the end of a task, name the skills you used in one line.
 - `npm run build` runs `next build` (static export to `out/`), then `scripts/build-sw.mjs`, which bundles `src/sw.ts` into `out/sw.js` and precaches every exported file. `npm start` serves `out/` locally. The service worker only registers in production builds, not in `next dev`.
 - `out/offline.html` is the fallback for pages that aren't saved on the device. Keep its text in Polish.
 - Leave `cacheComponents` off in `next.config.ts`. It rejects the `force-static` route config that static export requires.
+- The local database stack needs Docker. `npm run db:start` starts local Supabase, `npm run db:stop` stops it, `npm run db:reset` re-applies every migration in `supabase/migrations/` to a fresh database, and `npm run db:test` runs the pgTAP tests in `supabase/tests/`. CI runs them in the `Database tests` job. Change the schema only through a new migration.
 
 ## Code conventions
 
-- TypeScript strict; no `any`. Validate anything read back from IndexedDB at the boundary (e.g. with Zod).
-- Components that touch `window`, `navigator` or IndexedDB are Client Components (`'use client'`) and access those APIs only inside effects or event handlers, because pages are prerendered at build time.
+- TypeScript strict; no `any`. Validate anything read back from on-device storage (IndexedDB or PowerSync's local database) at the boundary (e.g. with Zod).
+- Components that touch `window`, `navigator`, IndexedDB or the local database are Client Components (`'use client'`) and access those APIs only inside effects or event handlers, because pages are prerendered at build time.
 - Business logic (quantities = per-person-per-day × people × days, priority tiers) lives in pure, unit-testable functions outside components.
 - Every recommended quantity carries a source label: "Official guidance" or "PREPWISE recommendation". Never present an estimate as official.
 - All user-facing text is in Polish (`<html lang="pl">`). Avoid jargon or explain it. Keep layouts usable with a screen reader.

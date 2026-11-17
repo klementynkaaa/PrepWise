@@ -1,6 +1,7 @@
 // Builds the service worker after `next build` has written the static export
-// to `out/`. Every exported page, RSC payload and asset is added to the
-// precache manifest, then src/sw.ts is bundled to out/sw.js with esbuild.
+// to `out/`. Every exported page, RSC payload and asset (including PowerSync's
+// worker and WASM) is added to the precache manifest, then src/sw.ts is
+// bundled to out/sw.js with esbuild.
 import { execSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { getFileManifestEntries } from "@serwist/build";
@@ -29,8 +30,27 @@ writeFileSync(
 
 const { manifestEntries, count, size, warnings } = await getFileManifestEntries({
   globDirectory: OUT_DIR,
-  globPatterns: ["**/*.{html,txt,js,css,json,webmanifest,svg,png,ico,woff,woff2}"],
-  globIgnores: ["sw.js", "sw.js.map", "version.json"],
+  globPatterns: ["**/*.{html,txt,js,css,json,webmanifest,svg,png,ico,woff,woff2,wasm}"],
+  globIgnores: [
+    "sw.js",
+    "sw.js.map",
+    "version.json",
+    // PowerSync (public/@powersync, copied by `npm run assets`): keep only what
+    // OPFSCoopSyncVFS loads, i.e. the worker, the plain wa-sqlite build and its
+    // WASM. Drop the other storage builds, the encryption (mc-*) and async builds,
+    // and the duplicate WASM that Turbopack emits from the SDK's default worker
+    // reference. Keep this list in step with the VFS chosen in
+    // src/lib/household/powersync-store.ts: a file the VFS needs but the
+    // precache lacks breaks the offline start.
+    "_next/static/media/*.wasm",
+    "@powersync/mc-*",
+    "@powersync/assets/mc-*",
+    "@powersync/*-async-*",
+    "@powersync/assets/*-async-*",
+    "@powersync/IDBBatchAtomicVFS-*",
+    "@powersync/OPFSWriteAheadVFS-*",
+    "@powersync/AccessHandlePoolVFS-*",
+  ],
   // Next.js hashes file names under _next/static, so they need no revision.
   dontCacheBustURLsMatching: /^_next\/static\//,
   maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

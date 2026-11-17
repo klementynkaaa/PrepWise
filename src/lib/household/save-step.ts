@@ -32,6 +32,7 @@ export function buildSavedRecord<S extends Step>(
   const record: Household = {
     ...answers,
     id: current?.id ?? deps.newId(),
+    name: current?.name ?? null,
     schemaVersion: SCHEMA_VERSION,
     updatedAt: deps.now().toISOString(),
     status: computeStatus(answers),

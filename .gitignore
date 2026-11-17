@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+# Vitest browser mode failure screenshots
+/.vitest/
 
 # next.js
 /.next/
@@ -56,3 +58,10 @@ next-env.d.ts
 /storybook-static/
 *storybook.log
 skills-lock.json
+
+# supabase (local CLI state)
+/supabase/.temp/
+/supabase/.branches/
+
+# PowerSync worker and WASM, copied into public/ before every build (npm run assets)
+/public/@powersync/

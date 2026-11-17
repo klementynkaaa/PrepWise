@@ -11,7 +11,8 @@ export default defineConfig({
           name: "unit",
           environment: "node",
           include: ["src/**/*.test.ts"],
-          exclude: ["src/**/*.int.test.ts"],
+          // *.browser.test.ts run in Chromium (vitest.browser.config.mts).
+          exclude: ["src/**/*.int.test.ts", "src/**/*.browser.test.ts"],
         },
       },
       {
@@ -43,7 +44,13 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**"],
-      exclude: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        // Needs a real browser: measured by the store tests (vitest.browser.config.mts).
+        "src/lib/household/powersync-store.ts",
+        "src/lib/household/powersync-schema.ts",
+      ],
       reporter: ["text", "json-summary", "html"],
       reportsDirectory: "coverage",
       thresholds: { lines: 80 },
