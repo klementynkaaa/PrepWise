@@ -119,11 +119,25 @@ async function setDeviceHousehold(tx: LockContext, householdId: string) {
   ]);
 }
 
-/** Replaces any rows of the imported household and makes it the device's household. */
+/** Whether the device already shows a household, or already holds this one. */
+async function alreadyImported(tx: LockContext, id: string): Promise<boolean> {
+  if (await deviceHouseholdId(tx)) return true;
+  const existing = await tx.getOptional(`SELECT id FROM ${LOCAL_TABLES.households} WHERE id = ?`, [
+    id,
+  ]);
+  return existing !== null;
+}
+
+/**
+ * Writes the imported household and makes it the device's household, unless
+ * an earlier import (or a save) already did: a `current` left behind by a
+ * failed delete, or read by a second tab, must not overwrite newer edits.
+ */
 function importWriter(db: PowerSyncDatabase): V1ImportWrite {
   return (rows) =>
     db.writeTransaction(async (tx) => {
       const id = rows.household.id;
+      if (await alreadyImported(tx, id)) return;
       await tx.execute(`DELETE FROM ${LOCAL_TABLES.households} WHERE id = ?`, [id]);
       for (const table of ["household_needs", "household_steps"] as const) {
         await tx.execute(`DELETE FROM ${LOCAL_TABLES[table]} WHERE household_id = ?`, [id]);

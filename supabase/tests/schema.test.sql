@@ -4,7 +4,7 @@
 -- and the functions run with fixed privileges.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(48);
+select plan(49);
 
 -- --- columns ---------------------------------------------------------------------
 
@@ -164,6 +164,13 @@ select is(
 );
 
 select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot use the private schema');
+
+-- A private function added by a later migration is not executable by API roles.
+create function private.t_later_helper() returns int language sql as 'select 1';
+select ok(
+  not has_function_privilege('authenticated', 'private.t_later_helper()', 'execute'),
+  'a private function created later is not executable by authenticated'
+);
 
 select * from finish();
 rollback;

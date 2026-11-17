@@ -4,7 +4,7 @@
 -- idempotent.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(30);
 
 -- Test helpers, rolled back with the test.
 create schema t;
@@ -200,6 +200,16 @@ select results_eq(
   'a change without a timestamp is stamped with the server time'
 );
 
+-- field_ts keeps only keys that name a data column.
+update public.households
+set field_ts = '{"bogus": "2026-01-01T00:00:00.000Z", "updated_at": "2026-01-01T00:00:00.000Z"}'
+where id = '11111111-1111-4111-8111-111111111111';
+select is(
+  (select field_ts ?| array['bogus', 'updated_at'] from public.households),
+  false,
+  'an update drops field_ts keys for system columns and for no column'
+);
+
 -- The server columns and the keys cannot be changed by a client.
 update public.households
 set created_by = '00000000-0000-4000-8000-0000000000c1',
@@ -221,6 +231,17 @@ insert into public.household_needs (id, household_id, need, selected, created_by
 values ('11111111-1111-4111-8111-111111111111:specialDiet', '11111111-1111-4111-8111-111111111111',
   'specialDiet', true, '00000000-0000-4000-8000-0000000000c1', '00000000-0000-4000-8000-0000000000c1',
   now(), '{"need": "2026-01-01T00:00:00.000Z", "selected": "2026-01-01T00:00:00.000Z"}');
+insert into public.household_steps (id, household_id, step, selected, field_ts)
+values ('11111111-1111-4111-8111-111111111111:people', '11111111-1111-4111-8111-111111111111',
+  'people', true, '{"selected": "2026-01-01T00:00:00.000Z", "bogus": "2026-01-01T00:00:00.000Z"}');
+select is(
+  (select field_ts from public.household_steps),
+  '{"selected": "2026-01-01T00:00:00.000Z"}'::jsonb,
+  'an insert drops field_ts keys that name no column'
+);
+select t.logout();
+delete from public.household_steps;
+select t.login('00000000-0000-4000-8000-0000000000b1');
 select results_eq(
   $$select created_by, updated_by, updated_at from public.household_needs$$,
   $$values ('00000000-0000-4000-8000-0000000000b1'::uuid, '00000000-0000-4000-8000-0000000000b1'::uuid,

@@ -61,6 +61,22 @@ export const householdSchema: z.ZodType<Household> = z
     path: ["status"],
   });
 
+/** A v1 count, frozen at 0 to 20 (not tied to MAX_COUNT). */
+const countV1 = z.number().int().min(0).max(20);
+
+/** The v1 status rule, frozen (not tied to `computeStatus`). */
+function statusV1(h: {
+  people: { adults: number; seniors: number; children: number; smallChildren: number };
+  hasPets: boolean;
+  housingType: string | null;
+  completedSteps: readonly string[];
+}): "draft" | "complete" {
+  const required = ["people", "pets", "housing", "needs"].filter((s) => s !== "pets" || h.hasPets);
+  const people = h.people.adults + h.people.seniors + h.people.children + h.people.smallChildren;
+  const done = required.every((step) => h.completedSteps.includes(step));
+  return done && people >= 1 && h.housingType !== null ? "complete" : "draft";
+}
+
 /**
  * The S-01 IndexedDB record, schema version 1. A frozen copy of the version 1
  * `householdSchema`: do not edit it when the current shape changes, because it
@@ -76,25 +92,25 @@ export const householdV1Schema: z.ZodType<HouseholdV1> = z
       .array(z.enum(["people", "pets", "housing", "needs"]))
       .refine(unique, "duplicate steps"),
     people: z.strictObject({
-      adults: countSchema,
-      seniors: countSchema,
-      children: countSchema,
-      smallChildren: countSchema,
+      adults: countV1,
+      seniors: countV1,
+      children: countV1,
+      smallChildren: countV1,
     }),
     hasPets: z.boolean(),
     pets: z.strictObject({
-      smallDog: countSchema,
-      mediumDog: countSchema,
-      largeDog: countSchema,
-      cat: countSchema,
-      otherSmall: countSchema,
+      smallDog: countV1,
+      mediumDog: countV1,
+      largeDog: countV1,
+      cat: countV1,
+      otherSmall: countV1,
     }),
     housingType: z.enum(["flat", "house"]).nullable(),
     needs: z
       .array(z.enum(["regularMedicines", "medicalEquipment", "limitedMobility", "specialDiet"]))
       .refine(unique, "duplicate needs"),
   })
-  .refine((h) => h.status === computeStatus(h), {
+  .refine((h) => h.status === statusV1(h), {
     message: "status does not match the answers",
     path: ["status"],
   });
