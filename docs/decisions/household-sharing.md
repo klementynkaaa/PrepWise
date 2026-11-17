@@ -106,6 +106,36 @@ Sources: "owner" is a decision by the project owner; "research" and "plan" are t
 - **Reason:** the first check decides the store design, and the third can stop the plan.
 - **Source:** plan.
 
+## Store branch
+
+- **Date:** 2026-11-16
+- **Choice:**
+  - While sync is off, the store writes the household to PowerSync **local-only** tables: twins of `households`, `household_needs` and `household_steps` that never queue an upload. The device's `household_id` is in a local-only table too.
+  - The synced tables stay empty until S-10. After the first successful sign-in, S-10 copies the twins into the synced tables in one transaction and empties the twins.
+- **Reason:**
+  - The spike showed that writes to synced tables before any sign-in do work: they wait in the upload queue and upload after sign-in.
+  - But every save adds to that queue. A production build with sync off would keep a queue growing from install day, and it would all upload when sync is turned on.
+  - Local-only tables keep the queue empty and reuse the copy step S-10 needs anyway. The copy was tested: one upload per row.
+- **Source:** spike (check 1), plan.
+
+## Storage (VFS)
+
+- **Date:** 2026-11-16
+- **Choice:** PowerSync's SQLite database uses `OPFSCoopSyncVFS` (the browser's origin private file system), set explicitly. `'auto'` is not used, because it silently falls back to an in-memory database when that file system is missing.
+- **Reason:** it is PowerSync's advice for apps with Safari and iOS users. In the spike it opened in about 0.1 s, and a saved household survived a restart offline, in Chromium and in WebKit. A private Safari window has no such file system (the database fails to open there), so the store needs a visible fallback for that case.
+- **Source:** spike (check 3, including an installed app on iOS 26), PowerSync documentation.
+
+## Precache approach
+
+- **Date:** 2026-11-16
+- **Choice:**
+  - Before every build, PowerSync's `copy-assets` command copies its worker and WASM files into `public/@powersync/`. These copies are not committed, and the app loads the worker from that path.
+  - The service worker build precaches `wasm` files too, but only the files the chosen storage loads.
+  - It excludes PowerSync's other builds and the duplicate worker and WASM files that the Next.js bundler emits.
+  - The file size limit stays as it is, because the largest file is about 1 MiB.
+- **Reason:** offline start must not need the network. Precaching every copied and bundled build would make the precache roughly ten times larger, and a missing file breaks the offline start with an error.
+- **Source:** spike (check 3).
+
 ## CAPTCHA slot
 
 - **Date:** 2026-11-16
