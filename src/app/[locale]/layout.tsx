@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { IndexedDbHouseholdProvider } from "@/features/household/IndexedDbHouseholdProvider";
+import { LocalHouseholdProvider } from "@/features/household/LocalHouseholdProvider";
 import { routing } from "@/i18n/routing";
 import { RootShell, rootMetadata, rootViewport } from "../root-shell";
 
@@ -30,7 +30,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   return (
     <RootShell lang={locale}>
       <NextIntlClientProvider>
-        <IndexedDbHouseholdProvider>{children}</IndexedDbHouseholdProvider>
+        <LocalHouseholdProvider>{children}</LocalHouseholdProvider>
       </NextIntlClientProvider>
     </RootShell>
   );

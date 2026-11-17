@@ -44,7 +44,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 ## Household data
 
-- **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation is PowerSync's local database on the device; an in-memory one serves tests. Data read back is validated at the boundary.
+- **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation is PowerSync's local database on the device (`powersync-store.ts`, stored in the browser's origin private file system), with no server connection; an in-memory one serves tests. While sync is off, it writes local-only twins of the synced tables, so nothing waits for upload. `subscribe` tells the screens about every change. Data read back is validated at the boundary. Where the database can't open (a private Safari window), screens show the existing "storage unavailable" states.
 - **Shared household.** Each person belongs to one household, shared by its members on all their devices, with an `owner` and `member`s. Accounts are anonymous by default, with optional email-code linking. The Supabase backend enforces membership with row-level security and merges concurrent edits per field by timestamp. The screens and the sync client come in a later change (S-10); until then nothing syncs.
 
 ### Data contract
@@ -63,7 +63,7 @@ Every piece of household data that may be shared follows these rules, so later f
 
 ## Offline behaviour
 
-- **Precache:** `scripts/build-sw.mjs` runs after `next build`. It saves every file in `out/` (pages, route payloads, assets, icons) and bundles `src/sw.ts` into `out/sw.js`.
+- **Precache:** `scripts/build-sw.mjs` runs after `next build`. It saves every file in `out/` (pages, route payloads, assets, icons) and bundles `src/sw.ts` into `out/sw.js`. Of PowerSync's files, which `npm run assets` copies into `public/@powersync/` before every build, it saves only the worker, the SQLite build and the WASM that the chosen storage (`OPFSCoopSyncVFS`) loads.
 - **Pages:** they are served from the cache first. This includes Next.js in-app navigation requests (the `_rsc` parameter is ignored when matching).
 - **Updates:** while online, a new deployment's service worker installs in the background and takes over immediately.
 - **Fallback:** any page not saved on the device shows a Polish offline page (`/offline`).
@@ -90,8 +90,9 @@ npm start        # serve out/ locally to test the production/offline build
 npm run lint
 npm run typecheck  # generates Next.js route types, then tsc
 npm run format:check
-npm test           # unit, integration and component tests (Vitest)
-npm run test:coverage  # same, with the coverage floor
+npm test           # unit, integration and component tests, then the store tests (Vitest)
+npm run test:coverage  # unit, integration and component tests, with the coverage floor
+npm run test:store # store tests on PowerSync's real local database, in Chromium
 npm run test:e2e   # browser tests (Playwright); needs a prior npm run build
 npm run storybook       # component showcase on http://localhost:6006
 npm run test:storybook  # every story in Chromium, with accessibility checks

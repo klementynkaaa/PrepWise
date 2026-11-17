@@ -1,17 +1,17 @@
-import { fromV1 } from "./contract";
-import { householdV1Schema } from "./schema";
-import { buildSavedRecord, defaultDeps, type SaveDeps } from "./save-step";
-import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
-import type { Household, HouseholdV1 } from "./types";
+/**
+ * The S-01 household record in IndexedDB (database `prepwise`, object store
+ * `household`, key `current`, schema version 1). Only the one-time v1 import
+ * (`import-v1.ts`) reads it; the household itself now lives in PowerSync's
+ * local database. Nothing touches IndexedDB until a function is called, so
+ * importing this module is safe during prerendering.
+ */
 
 export const DB_NAME = "prepwise";
 export const STORE_NAME = "household";
 export const RECORD_KEY = "current";
-/** Where an unreadable record is kept when a save replaces it, so it can be recovered. */
+/** Where an unreadable v1 record is kept, so it can be recovered. */
 export const BACKUP_KEY = "previous-invalid";
 const DB_VERSION = 1;
-
-export type IndexedDbStoreOptions = Partial<SaveDeps> & { dbName?: string };
 
 function openDatabase(name: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -52,107 +52,52 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
   });
 }
 
-/**
- * Runs `work` on the household store inside one transaction, then closes the
- * database. Any storage failure (missing, blocked, quota) becomes "unavailable".
- */
+/** Runs `work` on the household object store inside one transaction, then closes the database. */
 async function withStore<T>(
   dbName: string,
   mode: IDBTransactionMode,
   work: (store: IDBObjectStore) => Promise<T>,
 ): Promise<T> {
-  let db: IDBDatabase | undefined;
+  const db = await openDatabase(dbName);
   try {
-    db = await openDatabase(dbName);
     const tx = db.transaction(STORE_NAME, mode);
     const finished = transactionDone(tx);
     // Promise.all gives `finished` a handler right away, so a transaction that aborts
     // while `work` is still running cannot raise an unhandled rejection.
     const [result] = await Promise.all([work(tx.objectStore(STORE_NAME)), finished]);
     return result;
-  } catch (error) {
-    if (error instanceof HouseholdStoreError) throw error;
-    throw new HouseholdStoreError("unavailable", { cause: error });
   } finally {
-    db?.close();
+    db.close();
   }
 }
 
-/**
- * Until the store moves to the shared rows (S-09 Phase 5), the record stays in
- * the S-01 format (schema version 1), so the one-time v1 import can read it.
- * The name is not kept: nothing sets it yet.
- */
-function toV1(household: Household): HouseholdV1 {
-  const { id, updatedAt, status, completedSteps, people, hasPets, pets, housingType, needs } =
-    household;
-  return {
-    id,
-    schemaVersion: 1,
-    updatedAt,
-    status,
-    completedSteps,
-    people,
-    hasPets,
-    pets,
-    housingType,
-    needs,
-  };
-}
-
-function readV1(raw: unknown) {
-  const parsed = householdV1Schema.safeParse(raw);
-  return parsed.success ? { success: true as const, data: fromV1(parsed.data) } : parsed;
+/** The raw v1 record, or undefined when there is none. Rejects when IndexedDB fails. */
+export function readV1Record(dbName: string = DB_NAME): Promise<unknown> {
+  return withStore(dbName, "readonly", (store) => requestToPromise(store.get(RECORD_KEY)));
 }
 
 /**
- * IndexedDB-backed store: database `prepwise`, object store `household`, one
- * record under the key `current`. Nothing touches IndexedDB until a method is
- * called, so importing this module is safe during prerendering.
+ * Removes the v1 record once it is imported. With `backup`, its raw value is
+ * kept under BACKUP_KEY first, in the same transaction.
  */
-export function createIndexedDbStore(options: IndexedDbStoreOptions = {}): HouseholdStore {
-  const { dbName = DB_NAME, ...rest } = options;
-  const deps: SaveDeps = { ...defaultDeps, ...rest };
+export function removeV1Record(
+  dbName: string = DB_NAME,
+  options: { backup?: unknown } = {},
+): Promise<void> {
+  return withStore(dbName, "readwrite", async (store) => {
+    if ("backup" in options) await requestToPromise(store.put(options.backup, BACKUP_KEY));
+    await requestToPromise(store.delete(RECORD_KEY));
+  });
+}
 
-  async function readRaw(): Promise<unknown> {
-    return withStore(dbName, "readonly", (store) => requestToPromise(store.get(RECORD_KEY)));
-  }
+/** Removes a kept backup of an unreadable v1 record. */
+export function removeV1Backup(dbName: string = DB_NAME): Promise<void> {
+  return withStore(dbName, "readwrite", async (store) => {
+    await requestToPromise(store.delete(BACKUP_KEY));
+  });
+}
 
-  return {
-    async load(): Promise<LoadResult> {
-      let raw: unknown;
-      try {
-        raw = await readRaw();
-      } catch {
-        return { kind: "unavailable" };
-      }
-      if (raw === undefined) return { kind: "none" };
-      const parsed = readV1(raw);
-      return parsed.success ? { kind: "found", household: parsed.data } : { kind: "invalid" };
-    },
-
-    async saveStep(step, patch) {
-      // Read, merge and write in ONE readwrite transaction, so two saves cannot
-      // start from the same base record and drop each other's answers.
-      return withStore(dbName, "readwrite", async (store) => {
-        const raw = await requestToPromise(store.get(RECORD_KEY));
-        const existing = raw === undefined ? null : readV1(raw);
-        // An invalid stored record is replaced by a blank profile, but its raw value is
-        // kept under BACKUP_KEY first, so nothing unreadable is lost silently. Any
-        // future schemaVersion bump needs a migration before this point.
-        const current = existing?.success ? existing.data : null;
-        if (existing && !existing.success) await requestToPromise(store.put(raw, BACKUP_KEY));
-        const record = buildSavedRecord(current, step, patch, deps);
-        await requestToPromise(store.put(toV1(record), RECORD_KEY));
-        return record;
-      });
-    },
-
-    async clear() {
-      await withStore(dbName, "readwrite", async (store) => {
-        await requestToPromise(store.delete(RECORD_KEY));
-        await requestToPromise(store.delete(BACKUP_KEY));
-      });
-    },
-  };
+/** The raw value kept under BACKUP_KEY, or undefined. */
+export function readV1Backup(dbName: string = DB_NAME): Promise<unknown> {
+  return withStore(dbName, "readonly", (store) => requestToPromise(store.get(BACKUP_KEY)));
 }

@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "storybook-static/**",
+    // PowerSync's worker and WASM, copied by `npm run assets` (git-ignored).
+    "public/@powersync/**",
   ]),
 ]);
 

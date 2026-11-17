@@ -26,7 +26,7 @@ PREPWISE is an installable PWA, used online and offline, that helps a household 
    - Client Components may call the approved hosted services (Supabase and PowerSync), using public `NEXT_PUBLIC_*` values only. No service-role key or other secret ever goes into the bundle.
    - Server code is allowed only as Supabase Edge Functions in `supabase/functions/`. The database schema lives in `supabase/migrations/`.
      If a feature seems to need any other server, stop and ask; don't work around it.
-2. **Household data is stored on the device and syncs only to the approved EU backend.** Household data goes through the single typed storage module in `src/lib/household`, follows its data contract, and is kept in PowerSync's local SQLite database on the device (OPFS or IndexedDB storage, as the PowerSync spike decides). It may sync only to the approved EU backend: Supabase in Frankfurt and PowerSync Cloud in the EU.
+2. **Household data is stored on the device and syncs only to the approved EU backend.** Household data goes through the single typed storage module in `src/lib/household`, follows its data contract, and is kept in PowerSync's local SQLite database on the device (OPFS storage, `OPFSCoopSyncVFS`). It may sync only to the approved EU backend: Supabase in Frankfurt and PowerSync Cloud in the EU.
    - **Production keeps sync off** (no sync variables set) until legal advice and a DPIA are done. Development and preview data may sync before that.
    - Never use `localStorage` for app data. The Supabase session is the one exception: it may live in `localStorage`.
    - No analytics or telemetry, and no other backend, database service or third-party API receives profile, plan or checklist data.

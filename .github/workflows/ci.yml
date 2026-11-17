@@ -1,9 +1,9 @@
 name: CI/CD
 
 # Pull requests into develop/main run every gate: lint, type check and build;
-# unit and integration tests with a coverage floor; database tests (pgTAP on a
-# local Supabase); browser tests (offline and accessibility); dependency audit;
-# secret scan.
+# unit and integration tests with a coverage floor, and the store tests in
+# Chromium; database tests (pgTAP on a local Supabase); browser tests (offline
+# and accessibility); dependency audit; secret scan.
 # Draft PRs run only the fast gates (build, unit and integration tests, database
 # tests); marking a PR ready for review runs CI again with every gate.
 # Push to develop (merged PR): all gates, then a Vercel preview deployment.
@@ -89,6 +89,30 @@ jobs:
 
       - name: Test with coverage
         run: npm run test:coverage
+
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium with system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps --no-shell chromium
+
+      - name: Install system dependencies only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # The household store on PowerSync's real local database, in Chromium, with
+      # its own coverage floor. `pretest:store` copies PowerSync's worker and WASM.
+      - name: Store tests (PowerSync in Chromium)
+        run: npm run test:store
 
       - name: Coverage summary
         if: always()

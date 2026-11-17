@@ -22,7 +22,7 @@ export class HouseholdStoreError extends Error {
 
 /**
  * The only way screens reach stored household data. Implementations can be
- * swapped (IndexedDB now, a shared database later, memory in tests).
+ * swapped (PowerSync's local database in the app, memory in tests).
  */
 export interface HouseholdStore {
   load(): Promise<LoadResult>;
@@ -30,4 +30,9 @@ export interface HouseholdStore {
   saveStep<S extends Step>(step: S, patch: StepPatches[S]): Promise<Household>;
   /** Removes the stored profile. Rejects with HouseholdStoreError when storage is unavailable. */
   clear(): Promise<void>;
+  /**
+   * Calls `listener` after any change to the stored household: a local save now,
+   * changes from other devices once sync is on. Returns a function that unsubscribes.
+   */
+  subscribe(listener: () => void): () => void;
 }

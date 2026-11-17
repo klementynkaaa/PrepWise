@@ -47,5 +47,9 @@ export {
 } from "./steps";
 export { summarise, type HouseholdSummary } from "./summary";
 export { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
-export { createIndexedDbStore } from "./indexeddb-store";
+export {
+  createPowerSyncStore,
+  type PowerSyncHouseholdStore,
+  type PowerSyncStoreOptions,
+} from "./powersync-store";
 export { createMemoryStore } from "./memory-store";
