@@ -1,0 +1,9 @@
+{
+  "exceptions": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "reason": "picomatch ReDoS (<= 4.0.7, no patched release yet). Reached only through dev and build tools (Vite, Vitest, Storybook, ESLint plugins, next-intl's file watcher); the static export ships no picomatch and never matches user-supplied globs.",
+      "reviewBy": "2026-12-17"
+    }
+  ]
+}

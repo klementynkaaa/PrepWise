@@ -204,7 +204,7 @@ jobs:
           IS_HOTFIX: ${{ steps.hotfix.outputs.is_hotfix }}
           HOTFIX_REF: ${{ steps.hotfix.outputs.head_ref }}
         run: |
-          if npm audit --audit-level=high; then
+          if npm run audit; then
             exit 0
           fi
           if [ "$IS_HOTFIX" = "true" ]; then
