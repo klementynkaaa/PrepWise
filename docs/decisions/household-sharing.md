@@ -53,8 +53,11 @@ Sources: "owner" is a decision by the project owner; "research" and "plan" are t
   - An invite comes as a QR code, a link and a code. The code has 8 characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ` (no look-alike characters), shown as `XXXX-XXXX`.
   - The link is `/pl/join#CODE`, built with the locale helper. The code sits in the URL fragment, not in the path or the query.
   - An invite is valid for 48 hours, works once and can be revoked by its creator or the owner. A member using it again does not use it up.
-  - Only a hash of the code is stored. Checking or redeeming a code is capped at 10 failed attempts per person per hour.
-- **Reason:** a static export can't have a route per invite token. The service worker ignores the fragment, so the join page opens offline from the precache, and browsers never send the fragment to the server, so the code stays out of logs. The hash and the attempt cap protect against guessing.
+  - Only a hash of the code is stored. Checking or redeeming a code is capped at 10 failed attempts per account per hour.
+  - Leaving a household, being removed from it or deleting the account revokes the open invites that person created for it.
+  - Checking a code also says whether you already belong to that household (`already_member`). A valid code refused because you are in another household (`household_exists`) is logged but doesn't count towards the cap, because the code itself was right.
+  - Creating a household refuses an id that another account already uses (`household_id_taken`) and malformed arguments (`invalid_input`).
+- **Reason:** a static export can't have a route per invite token. The service worker ignores the fragment, so the join page opens offline from the precache, and browsers never send the fragment to the server, so the code stays out of logs. The hash, the large code space (31^8, about 8.5 × 10^11 codes) and the attempt cap protect against guessing. The cap counts per account, and anonymous accounts are free (Supabase allows 30 new ones per IP per hour), so on its own it limits one IP to about 300 guesses an hour. The CAPTCHA on anonymous sign-in (below) is what slows account creation down.
 - **Source:** owner, after research (link form chosen 2026-11-16).
 
 ## Backend: Supabase in Frankfurt plus PowerSync in the EU
@@ -67,7 +70,7 @@ Sources: "owner" is a decision by the project owner; "research" and "plan" are t
 ## Conflicts: per-field timestamps, delete wins
 
 - **Date:** 2026-11-16
-- **Choice:** concurrent edits merge per field: the edit with the later timestamp wins. Each row carries a timestamp per field, and the merge runs in Postgres, which caps any timestamp at the server's current time. For rows that can be deleted, delete wins: once a row is marked deleted, later edits don't bring it back.
+- **Choice:** concurrent edits merge per field: the edit with the later timestamp wins. Each row carries a timestamp per field, and the merge runs in Postgres, which caps any timestamp at the server's current time. For rows that can be deleted, delete wins: once a row is marked deleted, later edits don't bring it back. A changed field sent without its own timestamp gets the server's time, and a timestamp equal to the stored one counts as unchanged.
 - **Reason:** this is the owner's rule. PowerSync's default orders edits by arrival at the server, not by when they were made, so the merge has to live in the database.
 - **Source:** owner, after research.
 
@@ -139,8 +142,8 @@ Sources: "owner" is a decision by the project owner; "research" and "plan" are t
 ## CAPTCHA slot
 
 - **Date:** 2026-11-16
-- **Choice:** anonymous sign-in accepts an optional CAPTCHA token from the start. The provider (Turnstile or hCaptcha) is chosen in S-10, before production.
-- **Reason:** Supabase strongly recommends a CAPTCHA for anonymous sign-in, but choosing a provider adds a processor, which is not needed while nothing syncs.
+- **Choice:** anonymous sign-in accepts an optional CAPTCHA token from the start. The provider (Turnstile or hCaptcha) is chosen in S-10, and the CAPTCHA is required before sync goes live in production.
+- **Reason:** Supabase strongly recommends a CAPTCHA for anonymous sign-in, but choosing a provider adds a processor, which is not needed while nothing syncs. The invite attempt cap counts per account, so without a CAPTCHA, free anonymous accounts multiply the guesses one person can make (see Invites).
 - **Source:** plan.
 
 ## Account deletion
@@ -174,3 +177,4 @@ To be answered before production syncs (from the research on the GDPR basis for 
 4. How far does client-side encryption reduce our duties?
 5. How do erasure and consent withdrawal work in a shared household?
 6. Is the Supabase DPA enough, and are its sub-processors acceptable?
+7. How long may invite attempt logs (an account id and a time) be kept, and may a deleted account's id stay on the rows of a household that others still use?

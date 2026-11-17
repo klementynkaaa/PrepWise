@@ -14,7 +14,9 @@ export const defaultDeps: SaveDeps = {
 };
 
 /**
- * Pure core of `saveStep`, shared by every store. Validates the patch, applies
+ * The S-01 save rule on the assembled `Household`. The stores now save through
+ * `contract.ts` (`stepChanges`); this stays as the oracle `contract.test.ts`
+ * checks them against. Validates the patch, applies
  * it to the existing record (or a blank one: a new id on first save, or after
  * an invalid record), recomputes the status and validates the result.
  * Throws HouseholdStoreError("invalid") on bad data.

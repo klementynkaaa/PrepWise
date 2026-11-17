@@ -216,6 +216,22 @@ describe("PowerSync household store", () => {
       expect(await again.load()).toEqual({ kind: "found", household: saved });
     });
 
+    it("does not overwrite newer edits when `current` is still there on a later open", async () => {
+      const { store, v1DbName, dbFilename } = fresh(deps);
+      await idb(v1DbName, (s) => s.put(completeHouseholdV1(), RECORD_KEY));
+      await store.load();
+      const saved = await store.saveStep("housing", { housingType: "house" });
+      await store.close();
+
+      // As if deleting `current` had failed, or a second tab read it before the delete.
+      await idb(v1DbName, (s) => s.put(completeHouseholdV1(), RECORD_KEY));
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+
+      expect(await again.load()).toEqual({ kind: "found", household: saved });
+      expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
+    });
+
     it("keeps an invalid v1 record under BACKUP_KEY and starts empty", async () => {
       const { store, v1DbName } = fresh(deps);
       const broken = { id: "x", nonsense: true };
