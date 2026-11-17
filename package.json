@@ -22,7 +22,7 @@
     "build-storybook": "storybook build --quiet",
     "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
     "roadmap:sync:dry": "node scripts/sync-roadmap-issues.mjs --dry-run --show-body",
-    "audit": "npm audit --audit-level=high",
+    "audit": "node scripts/audit.mjs",
     "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
