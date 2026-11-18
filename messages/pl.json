@@ -198,6 +198,11 @@
     "housing": {
       "flat": "Mieszkanie w bloku",
       "house": "Dom jednorodzinny"
+    },
+    "cta": {
+      "lead": "Wszystko jest gotowe do planu. Plan liczy się na tym telefonie.",
+      "create": "Stwórz plan",
+      "show": "Pokaż plan"
     }
   },
   "saveError": {
@@ -224,6 +229,48 @@
     "body": "Sprawdź adres albo wróć do strony głównej. Twój plan i lista zakupów działają bez internetu."
   },
   "plan": {
+    "metaTitle": "Plan",
+    "title": "Plan",
+    "banner": {
+      "title": "Plan na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
+      "line": "Dla {who}."
+    },
+    "household": {
+      "adults": "{count, plural, one {# dorosłego} few {# dorosłych} many {# dorosłych} other {# dorosłego}}",
+      "seniors": "{count, plural, one {# seniora} few {# seniorów} many {# seniorów} other {# seniora}}",
+      "children": "{count, plural, one {# dziecka} few {# dzieci} many {# dzieci} other {# dziecka}}",
+      "smallChildren": "{count, plural, one {# małego dziecka} few {# małych dzieci} many {# małych dzieci} other {# małego dziecka}}",
+      "dogs": "{count, plural, one {# psa} few {# psów} many {# psów} other {# psa}}",
+      "cats": "{count, plural, one {# kota} few {# kotów} many {# kotów} other {# kota}}",
+      "otherSmall": "{count, plural, one {# innego małego zwierzęcia} few {# innych małych zwierząt} many {# innych małych zwierząt} other {# innego małego zwierzęcia}}"
+    },
+    "count": "{items, plural, one {# rzecz} few {# rzeczy} many {# rzeczy} other {# rzeczy}} · {tiers, plural, one {# priorytet} few {# priorytety} many {# priorytetów} other {# priorytetu}}{sections, plural, =0 {} one { i # sekcja} few { i # sekcje} many { i # sekcji} other { i # sekcji}}",
+    "itemCount": "{count, plural, one {# rzecz} few {# rzeczy} many {# rzeczy} other {# rzeczy}}",
+    "tierLabel": "Priorytet {tier}",
+    "first": "Najpierw",
+    "source": {
+      "official": {
+        "short": "Oficjalne",
+        "spoken": "źródło: zalecenie oficjalne"
+      },
+      "prepwise": {
+        "short": "PREPWISE",
+        "spoken": "źródło: rekomendacja PREPWISE"
+      }
+    },
+    "sources": {
+      "open": "Skąd te ilości?",
+      "title": "Skąd te ilości?",
+      "lead": "Ilość = ile na osobę na dzień × liczba osób × liczba dni. Przy każdej rzeczy jest jej źródło:",
+      "official": "ilość z oficjalnego poradnika",
+      "prepwise": "rekomendacja PREPWISE, gdy oficjalnej liczby brak",
+      "close": "Zamknij"
+    },
+    "unavailable": {
+      "title": "Nie da się otworzyć planu",
+      "body": "Przeglądarka nie pozwala odczytać danych zapisanych w telefonie. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+      "retry": "Spróbuj jeszcze raz"
+    },
     "items": {
       "drinking-water": {
         "name": "Woda pitna"
@@ -355,6 +402,20 @@
       },
       "diet": "zgodne z dietą",
       "tier": "priorytet {tier}"
+    }
+  },
+  "nav": {
+    "label": "Główna nawigacja",
+    "start": "Start",
+    "plan": "Plan"
+  },
+  "generating": {
+    "title": "Liczenie planu",
+    "steps": {
+      "match": "Dopasowanie do domowników",
+      "count": "Liczenie ilości",
+      "order": "Układanie kolejności",
+      "save": "Zapisywanie planu"
     }
   }
 }

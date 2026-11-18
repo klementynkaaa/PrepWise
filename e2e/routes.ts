@@ -10,5 +10,6 @@ export const routes: { path: string; name: string; profile?: true }[] = [
   { path: "/pl/start/housing", name: "housing", profile: true },
   { path: "/pl/start/needs", name: "needs", profile: true },
   { path: "/pl/household", name: "household", profile: true },
+  { path: "/pl/plan", name: "plan", profile: true },
   { path: "/offline", name: "offline" },
 ];

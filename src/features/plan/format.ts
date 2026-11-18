@@ -1,0 +1,146 @@
+import { useTranslations } from "next-intl";
+import type { HouseholdSummary } from "@/lib/household";
+import type {
+  FormulaParts,
+  FormulaTerm,
+  FormulaWho,
+  PetSectionKind,
+  Plan,
+  PlanRowData,
+  Unit,
+} from "@/lib/plan";
+import { PEOPLE_GROUPS } from "@/features/household/groups";
+
+/**
+ * A translator over the whole dictionary (keys like "plan.units.l"). Plan keys
+ * are built from content ids and slugs at runtime, which the typed keys can't
+ * follow; `content.test.ts` and the screen tests check that they exist.
+ */
+export type Translator = {
+  (key: string, values?: Record<string, string | number>): string;
+  has(key: string): boolean;
+};
+
+/** The whole-dictionary translator for the plan screens. */
+export function usePlanTranslator(): Translator {
+  return useTranslations() as unknown as Translator;
+}
+
+/** What item names and notes may use: the pet section kind and the children for the first-aid note. */
+export type ItemArgs = { kind: PetSectionKind; kids: "none" | "one" | "other" };
+
+/** The arguments every item message gets, derived once per plan. */
+export function itemArgs(summary: HouseholdSummary, plan: Plan): ItemArgs {
+  const pets = plan.sections.find((section) => section.id === "pets");
+  const kids = summary.people.children + summary.people.smallChildren;
+  return {
+    kind: pets?.id === "pets" ? pets.petKind : "dog",
+    kids: kids === 0 ? "none" : kids === 1 ? "one" : "other",
+  };
+}
+
+/** "27 l", "18 porcji", "na 3 dni": numbers get the Polish decimal comma from the plural rules. */
+export function formatAmount(t: Translator, unit: Unit, count: number): string {
+  return t(`plan.units.${unit}`, { count });
+}
+
+function formatWho(t: Translator, who: FormulaWho, count: number): string {
+  if (who === "people") return t("plan.formula.people", { count });
+  if (who === "animals") return t("plan.formula.animals", { count });
+  return t(`overview.counts.${who}`, { count });
+}
+
+function formatTerm(t: Translator, unit: Unit, term: FormulaTerm): string {
+  return t("plan.formula.term", {
+    amount: formatAmount(t, unit, term.amount),
+    who: formatWho(t, term.who, term.count),
+  });
+}
+
+/** The working behind a quantity, e.g. "3 l × 3 osoby × 3 dni". Null for a pointer row. */
+export function formatFormula(
+  t: Translator,
+  formula: FormulaParts,
+  list: Intl.ListFormat,
+): string | null {
+  switch (formula.kind) {
+    case "perDay": {
+      const [only] = formula.terms;
+      if (formula.terms.length === 1) {
+        return t("plan.formula.perDay", {
+          amount: formatAmount(t, formula.unit, only.amount),
+          who: formatWho(t, only.who, only.count),
+          days: formula.days,
+        });
+      }
+      return t("plan.formula.perDayMixed", {
+        terms: formula.terms
+          .map((term) => formatTerm(t, formula.unit, term))
+          .join(t("plan.formula.termJoin")),
+        days: formula.days,
+      });
+    }
+    case "perMember":
+      return formula.terms
+        .map((term) => formatTerm(t, formula.unit, term))
+        .join(t("plan.formula.termJoin"));
+    case "fixed":
+      return t("plan.formula.perHousehold");
+    case "dose":
+      return t("plan.formula.dose", { days: formula.days });
+    case "forDays":
+      if (formula.members.length === 0) return t("plan.formula.perHousehold");
+      return t("plan.formula.forDays", {
+        who: list.format(formula.members.map((m) => formatWho(t, m.who, m.count))),
+        days: formula.days,
+      });
+    case "pointer":
+      return null;
+  }
+}
+
+/**
+ * The caption under a row: formula, the item's note, the diet reminder and,
+ * on a section row that keeps one, its priority ("priorytet 1").
+ */
+export function formatCaption(
+  t: Translator,
+  row: PlanRowData,
+  args: ItemArgs,
+  list: Intl.ListFormat,
+): string {
+  const note = t.has(`plan.items.${row.itemId}.note`)
+    ? t(`plan.items.${row.itemId}.note`, args)
+    : null;
+  return [
+    formatFormula(t, row.formula, list),
+    note,
+    row.diet ? t("plan.formula.diet") : null,
+    row.tier ? t("plan.formula.tier", { tier: row.tier }) : null,
+  ]
+    .filter((part): part is string => part !== null && part !== "")
+    .join(" · ");
+}
+
+/** Rows that count as items: pointer rows only lead to an item shown elsewhere. */
+export function countItems(rows: readonly PlanRowData[]): number {
+  return rows.filter((row) => !row.pointer).length;
+}
+
+/** "2 dorosłych, małego dziecka i psa" style list: who the plan is for, in the genitive. */
+export function householdLine(
+  t: Translator,
+  summary: HouseholdSummary,
+  list: Intl.ListFormat,
+): string {
+  const dogs = summary.pets.smallDog + summary.pets.mediumDog + summary.pets.largeDog;
+  const parts = [
+    ...PEOPLE_GROUPS.map((group) => [group, summary.people[group]] as const),
+    ["dogs", dogs] as const,
+    ["cats", summary.pets.cat] as const,
+    ["otherSmall", summary.pets.otherSmall] as const,
+  ]
+    .filter(([, count]) => count > 0)
+    .map(([key, count]) => t(`plan.household.${key}`, { count }));
+  return t("plan.banner.line", { who: list.format(parts) });
+}

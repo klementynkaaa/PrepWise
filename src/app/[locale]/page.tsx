@@ -10,7 +10,7 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-// Welcome: shown at "/pl" unless a complete household is saved (WelcomeGate).
+// Welcome: shown at "/pl" unless a household is saved (WelcomeGate resumes it).
 // On a phone the content is centred and the button sits in the footer. From
 // `md` up everything is one centred column with the button under the content.
 export default async function Home({ params }: PageProps<"/[locale]">) {

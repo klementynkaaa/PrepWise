@@ -183,7 +183,7 @@ describe("start intro and welcome gate", () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it("shows Welcome when a draft is saved", async () => {
+  it("continues a saved draft at its first unfinished step instead of Welcome", async () => {
     renderScreen(
       <WelcomeGate locale="pl">
         <p>Welcome</p>
@@ -192,7 +192,8 @@ describe("start intro and welcome gate", () => {
         completeHousehold({ status: "draft", housingType: null, completedSteps: ["people"] }),
       ),
     );
-    expect(await screen.findByText("Welcome")).toBeInTheDocument();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/pl/start/pets"));
+    expect(screen.queryByText("Welcome")).not.toBeInTheDocument();
   });
 
   it("shows Welcome when storage is unavailable", async () => {
