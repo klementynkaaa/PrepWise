@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 type PanelProps = {
@@ -6,10 +7,22 @@ type PanelProps = {
   as?: "div" | "section";
 };
 
+const panel = "flex flex-col gap-3 rounded-lg bg-surface p-4 shadow-panel";
+
 /** A white panel on the mist background, with the system's only shadow. */
 export function Panel({ children, as: Tag = "div" }: PanelProps) {
+  return <Tag className={panel}>{children}</Tag>;
+}
+
+/**
+ * A whole panel that is one link, e.g. a plan tile on Start. Its words are
+ * the link's name, so keep them short. It fills its grid cell.
+ */
+export function LinkPanel({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Tag className="flex flex-col gap-3 rounded-lg bg-surface p-4 shadow-panel">{children}</Tag>
+    <Link href={href} className={`${panel} h-full active:opacity-80`}>
+      {children}
+    </Link>
   );
 }
 

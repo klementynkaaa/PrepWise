@@ -8,20 +8,23 @@ import { EmptyState, Icon, PageShell, PanelList } from "@/components/ui";
 const STEPS = ["match", "count", "order", "save"] as const;
 /** How long each step shows before the next one starts. */
 export const STEP_MS = 400;
+/** A save still pending after this long is treated as failed, so the screen never hangs. */
+export const SAVE_TIMEOUT_MS = 10_000;
 
 type GeneratingProps = {
   /** Stores that the plan exists (the last step). Rejects when storage fails. */
   save: () => Promise<void>;
   /** Called once the save resolved, e.g. to open the plan. */
   onSaved: () => void;
-  /** Called when the save rejected. */
+  /** Called when the save rejected or took longer than `SAVE_TIMEOUT_MS`. */
   onFailed: () => void;
 };
 
 /**
  * The short "Liczenie planu" screen after "Stwórz plan". The steps advance on
  * a timer; the last one awaits `save`. Unmounting clears the timers, and a
- * save that settles after unmount neither navigates nor reports an error.
+ * save that settles after unmount neither navigates nor reports an error. A
+ * save that hangs (e.g. storage locked by another tab) fails after a timeout.
  * Progress is announced through one status region.
  */
 export function Generating({ save, onSaved, onFailed }: GeneratingProps) {
@@ -31,33 +34,40 @@ export function Generating({ save, onSaved, onFailed }: GeneratingProps) {
   // text that is already there when a live region appears is often not read.
   const [announced, setAnnounced] = useState(false);
 
-  const runSave = useEffectEvent((isActive: () => boolean) => {
+  // Settles once: the first of the save's result and the timeout wins.
+  const runSave = useEffectEvent((isActive: () => boolean): number => {
+    let settled = false;
+    const settle = (done: () => void) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      if (isActive()) done();
+    };
+    const timeout = window.setTimeout(() => settle(onFailed), SAVE_TIMEOUT_MS);
     save().then(
-      () => {
-        if (isActive()) onSaved();
-      },
-      () => {
-        if (isActive()) onFailed();
-      },
+      () => settle(onSaved),
+      () => settle(onFailed),
     );
+    return timeout;
   });
 
   useEffect(() => {
     let active = true;
+    let saveTimeout: number | undefined;
     const first = window.setTimeout(() => setAnnounced(true), 0);
     const timers = STEPS.slice(1).map((_, index) =>
       window.setTimeout(
         () => {
           const step = index + 1;
           setCurrent(step);
-          if (step === STEPS.length - 1) runSave(() => active);
+          if (step === STEPS.length - 1) saveTimeout = runSave(() => active);
         },
         (index + 1) * STEP_MS,
       ),
     );
     return () => {
       active = false;
-      [first, ...timers].forEach((timer) => window.clearTimeout(timer));
+      [first, saveTimeout, ...timers].forEach((timer) => window.clearTimeout(timer));
     };
   }, []);
 

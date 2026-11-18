@@ -120,11 +120,13 @@ describe("start screen", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/pl/start/housing"));
   });
 
-  it("holds the page with a skeleton while storage is read", () => {
+  it("holds the page with a skeleton while storage is read", async () => {
     renderStart({ ...createMemoryStore(), load: () => new Promise(() => {}) });
     expect(screen.getByRole("heading", { level: 1, name: "Start" })).toBeInTheDocument();
-    expect(screen.getByText("Wczytywanie")).toHaveAttribute("role", "status");
+    expect(await screen.findByText("Wczytywanie")).toHaveAttribute("role", "status");
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    // Only <main> is busy: a busy group inside it could keep the status from being read.
+    expect(document.querySelectorAll("[aria-busy]")).toHaveLength(1);
   });
 
   it("shows the storage error with a retry when storage is unavailable", async () => {
@@ -133,7 +135,7 @@ describe("start screen", () => {
       load: () => Promise.resolve({ kind: "unavailable" }),
     });
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Nie da się otworzyć planu" }),
+      await screen.findByRole("heading", { level: 1, name: "Nie da się wczytać danych domu" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Spróbuj jeszcze raz" })).toBeInTheDocument();
   });

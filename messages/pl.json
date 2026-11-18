@@ -412,6 +412,11 @@
   "home": {
     "metaTitle": "Start",
     "title": "Start",
+    "unavailable": {
+      "title": "Nie da się wczytać danych domu",
+      "body": "Przeglądarka nie pozwala odczytać danych zapisanych w telefonie. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+      "retry": "Spróbuj jeszcze raz"
+    },
     "household": {
       "title": "Wasz dom",
       "line": "{who}.",

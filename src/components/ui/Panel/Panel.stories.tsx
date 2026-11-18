@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Divider, KeyValueRow, ListSectionLabel, Panel, PanelList } from "./Panel";
+import { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } from "./Panel";
 import { MemberChip } from "../Pills";
 import { TextLink } from "../TextLink";
 
@@ -42,5 +42,33 @@ export const HouseholdCard: Story = {
       </div>
       <TextLink href="/">Zmień dane domu</TextLink>
     </Panel>
+  ),
+};
+
+/**
+ * Cały panel jest jednym linkiem, np. kafelek planu na ekranie Start. Słowa
+ * w środku są nazwą linku, więc niech będą krótkie. Nie wkładaj do niego
+ * innych linków ani przycisków.
+ */
+export const AsLink: Story = {
+  render: () => (
+    <ul className="grid grid-cols-2 gap-2">
+      <li>
+        <LinkPanel href="/">
+          <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <span className="text-body-sm font-bold">Dla dziecka</span>
+            <span className="text-caption text-ink-muted">2 rzeczy</span>
+          </span>
+        </LinkPanel>
+      </li>
+      <li>
+        <LinkPanel href="/">
+          <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <span className="text-body-sm font-bold">Dla psa i kota w jednym domu</span>
+            <span className="text-caption text-ink-muted">3 rzeczy</span>
+          </span>
+        </LinkPanel>
+      </li>
+    </ul>
   ),
 };

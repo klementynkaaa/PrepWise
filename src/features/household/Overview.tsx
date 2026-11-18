@@ -24,7 +24,7 @@ import { summarise, type Household, type HouseholdSummary, type Step } from "@/l
 import { HeldPage } from "./HeldPage";
 import { PEOPLE_GROUPS, PET_KINDS } from "./groups";
 import { SaveError } from "./SaveError";
-import { targetHref } from "./paths";
+import { appHref, targetHref } from "./paths";
 import { useCompleteProfile } from "./useCompleteProfile";
 import { useHousehold } from "./useHousehold";
 
@@ -79,7 +79,7 @@ function OverviewScreen({
     return (
       <Generating
         save={markPlanCreated}
-        onSaved={() => router.push(localePath("/plan", locale))}
+        onSaved={() => router.push(appHref("plan", locale))}
         onFailed={() => stop("failed")}
       />
     );
@@ -156,7 +156,7 @@ function OverviewRows({
       <PageFooter>
         <p className="pb-1.5 text-center text-body-sm text-ink-muted">{t("cta.lead")}</p>
         {planCreated ? (
-          <ButtonLink href={localePath("/plan", locale)}>{t("cta.show")}</ButtonLink>
+          <ButtonLink href={appHref("plan", locale)}>{t("cta.show")}</ButtonLink>
         ) : (
           <Button onClick={onCreate}>{t("cta.create")}</Button>
         )}

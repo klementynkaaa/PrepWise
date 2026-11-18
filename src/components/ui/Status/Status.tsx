@@ -2,22 +2,49 @@ import type { ReactNode } from "react";
 import { cn } from "../_shared/cn";
 
 type PriorityHeaderProps = {
-  tier: number;
-  /** Spoken in full before the name, e.g. "Priorytet 2". Not shown. */
-  tierLabel: string;
   children: ReactNode;
+  /** A count on the right, e.g. "4 rzeczy". */
+  meta?: ReactNode;
   level?: 2 | 3;
-};
+} & (
+  | {
+      tier: number;
+      /** Spoken in full before the name, e.g. "Priorytet 2". Not shown. */
+      tierLabel: string;
+    }
+  /** A panel heading with no priority (a member section): no number. */
+  | { tier?: undefined; tierLabel?: undefined }
+);
 
-/** Heading of a priority panel: the number in a circle, then the name. */
-export function PriorityHeader({ tier, tierLabel, children, level = 2 }: PriorityHeaderProps) {
+/**
+ * Heading of a plan panel: the priority number in a circle (when there is
+ * one), the name, and an optional count on the right.
+ */
+export function PriorityHeader({
+  tier,
+  tierLabel,
+  meta,
+  children,
+  level = 2,
+}: PriorityHeaderProps) {
   const Heading = level === 2 ? "h2" : "h3";
-  return (
+  const heading = (
     <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
-      <PriorityBadge tier={tier} />
-      <span className="sr-only">{tierLabel}: </span>
+      {tier !== undefined && (
+        <>
+          <PriorityBadge tier={tier} />
+          <span className="sr-only">{tierLabel}: </span>
+        </>
+      )}
       {children}
     </Heading>
+  );
+  if (meta === undefined) return heading;
+  return (
+    <div className="flex items-center justify-between gap-2 pr-2.5">
+      {heading}
+      <span className="text-caption font-semibold whitespace-nowrap text-ink-muted">{meta}</span>
+    </div>
   );
 }
 

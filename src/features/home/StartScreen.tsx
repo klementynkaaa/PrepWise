@@ -1,17 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, type ReactNode } from "react";
 import {
   Banner,
-  Button,
   ButtonLink,
-  EmptyState,
+  LinkPanel,
   Notice,
   PageBody,
-  Panel,
   PriorityBadge,
   SectionHeader,
   Skeleton,
@@ -24,6 +21,7 @@ import { useCompleteProfile } from "@/features/household/useCompleteProfile";
 import { countItems, householdMembers, PLAN_DAYS, tierItemCount } from "@/features/plan/format";
 import { sectionAnchor, tierAnchor } from "@/features/plan/PlanTiers";
 import { AppFrame } from "@/features/shell/AppFrame";
+import { AppUnavailable } from "@/features/shell/AppUnavailable";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household } from "@/lib/household";
 import { buildPlan, planStage } from "@/lib/plan";
@@ -60,7 +58,7 @@ function StartLoading({ locale }: { locale: AppLocale }) {
       {/* Busy until Start shows, like the held page, so nothing reads the placeholders. */}
       <main aria-busy="true" className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-6">
         <h1 className="sr-only">{t("home.title")}</h1>
-        <SkeletonGroup label={t("common.loading")}>
+        <SkeletonGroup label={t("common.loading")} busy={false}>
           <Skeleton shape="banner" />
           <Skeleton className="w-1/2" />
           <Skeleton shape="block" />
@@ -73,21 +71,8 @@ function StartLoading({ locale }: { locale: AppLocale }) {
 }
 
 function StartUnavailable({ locale }: { locale: AppLocale }) {
-  const t = useTranslations("plan.unavailable");
-  return (
-    <AppFrame locale={locale} connection={false}>
-      <main className="flex flex-1 flex-col justify-center px-4 py-6">
-        <EmptyState
-          illustration="storage-error"
-          headingLevel={1}
-          title={t("title")}
-          action={<Button onClick={() => window.location.reload()}>{t("retry")}</Button>}
-        >
-          {t("body")}
-        </EmptyState>
-      </main>
-    </AppFrame>
-  );
+  const t = useTranslations("home.unavailable");
+  return <AppUnavailable locale={locale} title={t("title")} body={t("body")} retry={t("retry")} />;
 }
 
 function StartReady({ household, locale }: { household: Household; locale: AppLocale }) {
@@ -191,16 +176,12 @@ function PlanTile({
   count: string;
 }) {
   return (
-    <Link href={href} className="grid h-full rounded-lg active:opacity-80">
-      <Panel>
-        {badge}
-        <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-          <span className="min-w-0 text-body-sm font-bold wrap-break-word hyphens-auto">
-            {name}
-          </span>
-          <span className="text-caption text-ink-muted">{count}</span>
-        </span>
-      </Panel>
-    </Link>
+    <LinkPanel href={href}>
+      {badge}
+      <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <span className="min-w-0 text-body-sm font-bold wrap-break-word hyphens-auto">{name}</span>
+        <span className="text-caption text-ink-muted">{count}</span>
+      </span>
+    </LinkPanel>
   );
 }

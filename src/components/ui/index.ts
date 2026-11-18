@@ -17,13 +17,13 @@ export {
 export { Banner } from "./Banner";
 export { Alert, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
-export { Divider, KeyValueRow, ListSectionLabel, Panel, PanelList } from "./Panel";
+export { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } from "./Panel";
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";
 export { PlanRow } from "./PlanRow";
 export { ProgressBar, ProgressBarRow, ProgressRing } from "./Progress";
 export { SectionHeader } from "./SectionHeader";
 export { FactChip, PriorityBadge, PriorityHeader, SaveStatus, type SaveState } from "./Status";
-export { BackLink, TextLink } from "./TextLink";
+export { BackLink, TextButton, TextLink, type TextLinkSize } from "./TextLink";
 export { BottomSheet } from "./BottomSheet";
 export { ChecklistRow } from "./ChecklistRow";
 export { ChipGroup, ChipLink } from "./ChipGroup";

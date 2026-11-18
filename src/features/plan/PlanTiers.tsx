@@ -2,7 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { Divider, ListSectionLabel, PanelList, PlanRow, PriorityHeader } from "@/components/ui";
+import {
+  Divider,
+  ListSectionLabel,
+  PanelList,
+  PlanRow,
+  PriorityHeader,
+  TextLink,
+} from "@/components/ui";
 import type { PlanRowData, PlanSection, PlanTier } from "@/lib/plan";
 import {
   countItems,
@@ -27,11 +34,14 @@ export function TierPanel({ tier, ctx }: { tier: PlanTier; ctx: RowContext }) {
     <PanelSection
       id={tierAnchor(tier.tier)}
       heading={
-        <PriorityHeader tier={tier.tier} tierLabel={t("tierLabel", { tier: tier.tier })}>
+        <PriorityHeader
+          tier={tier.tier}
+          tierLabel={t("tierLabel", { tier: tier.tier })}
+          meta={t("itemCount", { count: tierItemCount(tier) })}
+        >
           {t(`tiers.${tier.tier}`)}
         </PriorityHeader>
       }
-      count={t("itemCount", { count: tierItemCount(tier) })}
     >
       {tier.categories.map((category, index) => (
         <div key={category.id}>
@@ -52,11 +62,10 @@ export function SectionPanel({ section, ctx }: { section: PlanSection; ctx: RowC
     <PanelSection
       id={sectionAnchor(section.id)}
       heading={
-        <h2 className="px-2.5 py-2 text-control font-bold">
+        <PriorityHeader meta={t("itemCount", { count: countItems(section.rows) })}>
           {t(`sections.${section.id}`, { kind })}
-        </h2>
+        </PriorityHeader>
       }
-      count={t("itemCount", { count: countItems(section.rows) })}
     >
       <PlanRows rows={section.rows} ctx={ctx} />
     </PanelSection>
@@ -66,23 +75,16 @@ export function SectionPanel({ section, ctx }: { section: PlanSection; ctx: RowC
 function PanelSection({
   id,
   heading,
-  count,
   children,
 }: {
   id: string;
   heading: ReactNode;
-  count: string;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="scroll-mt-4">
       <PanelList>
-        <div className="flex items-center justify-between gap-2 pr-2.5">
-          {heading}
-          <span className="text-caption font-semibold whitespace-nowrap text-ink-muted">
-            {count}
-          </span>
-        </div>
+        {heading}
         {children}
       </PanelList>
     </section>
@@ -104,12 +106,9 @@ function PlanRows({ rows, ctx }: { rows: readonly PlanRowData[]; ctx: RowContext
 function PlanRowItem({ row, ctx: { t, args, list } }: { row: PlanRowData; ctx: RowContext }) {
   const formula = row.pointer ? (
     // Leads to the item in its own section further down; the row itself has no link.
-    <a
-      href={`#${sectionAnchor(row.pointer)}`}
-      className="inline-flex min-h-6 items-center font-semibold text-accent"
-    >
+    <TextLink href={`#${sectionAnchor(row.pointer)}`} size="caption">
       {t(`plan.formula.pointer.${row.pointer}`)}
-    </a>
+    </TextLink>
   ) : (
     formatCaption(t, row, args, list)
   );

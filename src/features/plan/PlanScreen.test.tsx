@@ -116,6 +116,9 @@ describe("plan screen", () => {
     renderPlan(createMemoryStore(defaultHousehold()));
     await screen.findByText("Plan na 72 godziny");
     expect(screen.getByText("Online")).toBeInTheDocument();
+    // One banner landmark (the app header): the page title's <header> sits inside
+    // <main>, where it is no landmark. jsdom's role mapping ignores that scoping.
+    expect(document.querySelectorAll("header:not(main header)")).toHaveLength(1);
     const nav = screen.getByRole("navigation", { name: "Główna nawigacja" });
     expect(within(nav).getByRole("link", { name: "Start" })).toHaveAttribute("href", "/pl/home");
     expect(within(nav).getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
@@ -129,15 +132,18 @@ describe("plan screen", () => {
     expect(mark).not.toHaveBeenCalled();
   });
 
-  it("holds the plan's shape with a skeleton while storage is read", () => {
+  it("holds the plan's shape with a skeleton while storage is read", async () => {
     const store: HouseholdStore = {
       ...createMemoryStore(),
       load: () => new Promise(() => {}),
     };
     renderPlan(store);
     expect(screen.getByRole("heading", { level: 1, name: "Plan" })).toBeInTheDocument();
-    expect(screen.getByText("Wczytywanie")).toHaveAttribute("role", "status");
+    expect(await screen.findByText("Wczytywanie")).toHaveAttribute("role", "status");
     expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    // Only <main> is busy: a busy group inside it could keep the status from being read.
+    expect(document.querySelectorAll("[aria-busy]")).toHaveLength(1);
+    expect(document.querySelectorAll("header:not(main header)")).toHaveLength(1);
   });
 
   it("shows the storage error with a retry when storage is unavailable", async () => {

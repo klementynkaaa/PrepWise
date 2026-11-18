@@ -37,6 +37,20 @@ export const Priority: Story = {
   ),
 };
 
+/** Nagłówek panelu planu z liczbą rzeczy po prawej. */
+export const PriorityWithCount: Story = {
+  render: () => (
+    <PriorityHeader tier={1} tierLabel="Priorytet 1" meta="4 rzeczy">
+      Najważniejsze
+    </PriorityHeader>
+  ),
+};
+
+/** Sekcja bez priorytetu (np. „Dla psa”): ten sam nagłówek, bez numeru. */
+export const SectionWithoutTier: Story = {
+  render: () => <PriorityHeader meta="3 rzeczy">Dla psa</PriorityHeader>,
+};
+
 /**
  * Sam numer priorytetu, np. na kafelku planu na ekranie Start. Jest ozdobny:
  * priorytet trzeba podać słowami obok (np. ukryte „Priorytet 1:”).

@@ -2,17 +2,10 @@
 
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
-import {
-  Banner,
-  Button,
-  EmptyState,
-  PageBody,
-  PageHeader,
-  Skeleton,
-  SkeletonGroup,
-} from "@/components/ui";
+import { Banner, PageHeader, Skeleton, SkeletonGroup, TextButton } from "@/components/ui";
 import { useCompleteProfile } from "@/features/household/useCompleteProfile";
 import { AppFrame } from "@/features/shell/AppFrame";
+import { AppUnavailable } from "@/features/shell/AppUnavailable";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household } from "@/lib/household";
 import { buildPlan } from "@/lib/plan";
@@ -37,10 +30,11 @@ function PlanLoading({ locale }: { locale: AppLocale }) {
   const t = useTranslations();
   return (
     <AppFrame locale={locale}>
-      <PageHeader title={t("plan.title")} />
-      {/* Busy until the plan shows, like the held page, so nothing reads the placeholders. */}
-      <main aria-busy="true" className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-6">
-        <SkeletonGroup label={t("common.loading")}>
+      {/* Busy until the plan shows, like the held page, so nothing reads the placeholders.
+          The title sits inside <main> so it isn't a second banner under AppHeader. */}
+      <main aria-busy="true" className="flex flex-1 flex-col">
+        <PageHeader title={t("plan.title")} />
+        <SkeletonGroup label={t("common.loading")} busy={false} className="flex-1 px-4 pt-4 pb-6">
           <Skeleton shape="banner" />
           <Skeleton className="w-1/2" />
           <Skeleton shape="block" />
@@ -54,20 +48,7 @@ function PlanLoading({ locale }: { locale: AppLocale }) {
 
 function PlanUnavailable({ locale }: { locale: AppLocale }) {
   const t = useTranslations("plan.unavailable");
-  return (
-    <AppFrame locale={locale} connection={false}>
-      <main className="flex flex-1 flex-col justify-center px-4 py-6">
-        <EmptyState
-          illustration="storage-error"
-          headingLevel={1}
-          title={t("title")}
-          action={<Button onClick={() => window.location.reload()}>{t("retry")}</Button>}
-        >
-          {t("body")}
-        </EmptyState>
-      </main>
-    </AppFrame>
-  );
+  return <AppUnavailable locale={locale} title={t("title")} body={t("body")} retry={t("retry")} />;
 }
 
 function PlanReady({ household, locale }: { household: Household; locale: AppLocale }) {
@@ -91,42 +72,44 @@ function PlanReady({ household, locale }: { household: Household; locale: AppLoc
 
   return (
     <AppFrame locale={locale}>
-      <PageHeader title={t("plan.title")} />
-      <PageBody>
-        <div className="flex flex-col gap-1.5">
-          <Banner
-            illustration="banner-plan-ready"
-            titleAs="h2"
-            title={t("plan.banner.title", { hours: plan.days * 24 })}
-          >
-            {householdLine(t, summary, list)}
-          </Banner>
-          <div className="flex flex-wrap items-center justify-between gap-x-3 px-1">
-            <p className="text-body-sm text-ink-muted">
-              {t("plan.count", {
-                items: plan.itemCount,
-                tiers: plan.tiers.length,
-                sections: plan.sections.length,
-              })}
-            </p>
-            <button
-              ref={sourcesOpener}
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => setSourcesOpen(true)}
-              className="inline-flex min-h-touch items-center text-body-strong text-accent"
+      {/* The title sits inside <main> so it isn't a second banner under AppHeader;
+          the inner column keeps PageBody's spacing. */}
+      <main className="flex flex-1 flex-col">
+        <PageHeader title={t("plan.title")} />
+        <div className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-6">
+          <div className="flex flex-col gap-1.5">
+            <Banner
+              illustration="banner-plan-ready"
+              titleAs="h2"
+              title={t("plan.banner.title", { hours: plan.days * 24 })}
             >
-              {t("plan.sources.open")}
-            </button>
+              {householdLine(t, summary, list)}
+            </Banner>
+            <div className="flex flex-wrap items-center justify-between gap-x-3 px-1">
+              <p className="text-body-sm text-ink-muted">
+                {t("plan.count", {
+                  items: plan.itemCount,
+                  tiers: plan.tiers.length,
+                  sections: plan.sections.length,
+                })}
+              </p>
+              <TextButton
+                ref={sourcesOpener}
+                aria-haspopup="dialog"
+                onClick={() => setSourcesOpen(true)}
+              >
+                {t("plan.sources.open")}
+              </TextButton>
+            </div>
           </div>
+          {plan.tiers.map((tier) => (
+            <TierPanel key={tier.tier} tier={tier} ctx={ctx} />
+          ))}
+          {plan.sections.map((section) => (
+            <SectionPanel key={section.id} section={section} ctx={ctx} />
+          ))}
         </div>
-        {plan.tiers.map((tier) => (
-          <TierPanel key={tier.tier} tier={tier} ctx={ctx} />
-        ))}
-        {plan.sections.map((section) => (
-          <SectionPanel key={section.id} section={section} ctx={ctx} />
-        ))}
-      </PageBody>
+      </main>
       <SourcesSheet open={sourcesOpen} onClose={closeSources} />
     </AppFrame>
   );

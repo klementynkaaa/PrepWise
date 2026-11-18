@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "../_shared/cn";
 
 export type SkeletonShape = "line" | "block" | "banner";
@@ -32,21 +34,33 @@ export function Skeleton({
 
 /**
  * Wraps the placeholders of one page: marks it busy and says the label
- * (e.g. "Wczytywanie…") once to a screen reader.
+ * (e.g. "Wczytywanie…") once to a screen reader. The status starts empty and
+ * gets the label right after mount, because text already in a live region
+ * when it appears is often not read. Inside a container that is already
+ * `aria-busy` (e.g. the page's `<main>`), pass `busy={false}`: nested busy
+ * regions can keep the status from being read.
  */
 export function SkeletonGroup({
   label,
   children,
   className,
+  busy = true,
 }: {
   label: string;
   children: ReactNode;
   className?: string;
+  /** Set `aria-busy` on the group. Off when an outer container already is busy. */
+  busy?: boolean;
 }) {
+  const [announced, setAnnounced] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAnnounced(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   return (
-    <div aria-busy="true" className={cn("flex flex-col gap-3", className)}>
+    <div aria-busy={busy || undefined} className={cn("flex flex-col gap-3", className)}>
       <p role="status" className="sr-only">
-        {label}
+        {announced ? label : null}
       </p>
       {children}
     </div>
