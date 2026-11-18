@@ -10,6 +10,10 @@
     "loading": "Wczytywanie",
     "next": "Dalej"
   },
+  "connection": {
+    "online": "Online",
+    "offline": "Offline"
+  },
   "welcome": {
     "title": "Spokój zaczyna się od przygotowania.",
     "lead": "Zadbaj o bezpieczeństwo swoje i swoich bliskich. Dowiedz się, co warto przygotować na nieprzewidziane sytuacje.",
@@ -157,7 +161,7 @@
     "title": "Profil domu",
     "status": {
       "saved": "Zapisane na tym telefonie",
-      "offline": "Bez internetu — wszystko działa"
+      "offline": "Offline"
     },
     "change": "Zmień",
     "changeLabel": "Zmień: {row}",

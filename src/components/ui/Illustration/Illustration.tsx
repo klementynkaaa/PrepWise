@@ -29,6 +29,7 @@ const illustrations = {
   "banner-install": "banner",
   "banner-plan-ready": "banner",
   "banner-extend": "banner",
+  "banner-household": "banner",
   "hero-welcome": "hero",
   "item-water": "item",
   "item-food": "item",

@@ -36,3 +36,4 @@ export { OptionRadio } from "./OptionRadio";
 export { OptionGroup } from "./OptionGroup";
 export { SummaryRow } from "./SummaryRow";
 export { StepPage } from "./StepPage";
+export { Skeleton, SkeletonGroup, type SkeletonShape } from "./Skeleton";

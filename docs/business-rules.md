@@ -36,6 +36,8 @@ Priority goes by criticality, not by a fixed category order:
 
 Within a tier, items that are completely missing come before partly available ones. v1 has no inventory and ticks are yes/no, so every unticked item counts as missing and items within a tier are ordered by criticality alone.
 
+**Member-specific sections.** Supplies that exist only for pets or only for small children (0–3) are shown in their own sections after the three tiers. Pet supplies have no tier there. Small-child supplies keep their tier and show it, and a small child's essential food also appears in tier 1 as a pointer to its section, so it never looks less urgent than water.
+
 ## Scenarios
 
 Every plan includes the 72-hour baseline. Each optional emergency adds the items specific to it. If the user picks none, the plan is a general household plan covering water, food, first aid, lighting and hygiene.
