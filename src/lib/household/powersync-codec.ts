@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { TABLE_COLUMNS, rowSchemas, type RowOf, type TableName } from "./rows";
 
 /**
@@ -68,9 +69,26 @@ export const LOCAL_TABLES = {
   household_steps: "local_household_steps",
 } as const satisfies Record<TableName, string>;
 
-/** Local-only table with one row (`DEVICE_ROW_ID`): the household this device shows. */
+/**
+ * Local-only table with one row (`DEVICE_ROW_ID`): the household this device
+ * shows (`household_id`) and when this device created its plan
+ * (`plan_created_at`). Rows written before that column existed read it as NULL.
+ */
 export const DEVICE_TABLE = "device_state";
 export const DEVICE_ROW_ID = "device";
+
+const planCreatedAtSchema = z.iso.datetime({ offset: true }).nullable();
+
+/**
+ * The stored `plan_created_at`, validated at this boundary. An unreadable value
+ * counts as not set: the flag only chooses between "show" and "create" the plan.
+ */
+export function decodePlanCreatedAt(value: unknown): string | null {
+  const parsed = planCreatedAtSchema.safeParse(
+    typeof value === "string" ? normalizeTimestamp(value) : value,
+  );
+  return parsed.success ? parsed.data : null;
+}
 
 const POSTGRES_TEXT = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/;
 const SHORT_OFFSET = /(T\d{2}:\d{2}:\d{2}(?:\.\d+)?[+-]\d{2})$/;

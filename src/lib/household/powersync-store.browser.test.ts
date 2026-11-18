@@ -83,7 +83,7 @@ describe("PowerSync household store", () => {
 
     const again = createPowerSyncStore({ dbFilename, v1DbName });
     opened.push(again);
-    expect(await again.load()).toEqual({ kind: "found", household: done });
+    expect(await again.load()).toEqual({ kind: "found", household: done, planCreatedAt: null });
   });
 
   it("writes only the local-only tables, so nothing waits for upload", async () => {
@@ -163,7 +163,7 @@ describe("PowerSync household store", () => {
     expect(removed.needs).toEqual(["limitedMobility"]);
     const back = await store.saveStep("needs", { needs: ["specialDiet"] });
     expect(back.needs).toEqual(["specialDiet"]);
-    expect(await store.load()).toEqual({ kind: "found", household: back });
+    expect(await store.load()).toEqual({ kind: "found", household: back, planCreatedAt: null });
   });
 
   it("rejects an invalid patch with a typed error and writes nothing", async () => {
@@ -203,7 +203,11 @@ describe("PowerSync household store", () => {
       const { store, v1DbName, dbFilename } = fresh(deps);
       await idb(v1DbName, (s) => s.put(completeHouseholdV1(), RECORD_KEY));
 
-      expect(await store.load()).toEqual({ kind: "found", household: completeHousehold() });
+      expect(await store.load()).toEqual({
+        kind: "found",
+        household: completeHousehold(),
+        planCreatedAt: null,
+      });
       expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
       expect(await idb(v1DbName, (s) => s.get(BACKUP_KEY))).toBeUndefined();
 
@@ -213,7 +217,7 @@ describe("PowerSync household store", () => {
       await store.close();
       const again = createPowerSyncStore({ dbFilename, v1DbName });
       opened.push(again);
-      expect(await again.load()).toEqual({ kind: "found", household: saved });
+      expect(await again.load()).toEqual({ kind: "found", household: saved, planCreatedAt: null });
     });
 
     it("does not overwrite newer edits when `current` is still there on a later open", async () => {
@@ -228,7 +232,7 @@ describe("PowerSync household store", () => {
       const again = createPowerSyncStore({ dbFilename, v1DbName });
       opened.push(again);
 
-      expect(await again.load()).toEqual({ kind: "found", household: saved });
+      expect(await again.load()).toEqual({ kind: "found", household: saved, planCreatedAt: null });
       expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
     });
 
@@ -240,6 +244,94 @@ describe("PowerSync household store", () => {
       expect(await store.load()).toEqual({ kind: "none" });
       expect(await idb(v1DbName, (s) => s.get(BACKUP_KEY))).toEqual(broken);
       expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
+    });
+  });
+
+  describe("plan created flag", () => {
+    const planCreatedAt = async (store: PowerSyncHouseholdStore) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.planCreatedAt : undefined;
+    };
+
+    it("is not set by default", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await planCreatedAt(store)).toBeNull();
+    });
+
+    it("is set by markPlanCreated, keeps the first timestamp and survives a reopen", async () => {
+      let tick = 0;
+      const clock = () => new Date(Date.parse(TEST_TIME) + 1000 * tick++);
+      const { store, dbFilename, v1DbName } = fresh({ newId: () => TEST_ID, now: clock });
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.markPlanCreated();
+      const first = await planCreatedAt(store);
+      await store.markPlanCreated();
+      expect(await planCreatedAt(store)).toBe(first);
+      expect(first).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      await store.close();
+
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      expect(await planCreatedAt(again)).toBe(first);
+    });
+
+    it("is kept across a step save, with the household row intact", async () => {
+      const { store } = fresh(deps);
+      const saved = await store.saveStep("housing", { housingType: "flat" });
+      await store.markPlanCreated();
+      const next = await store.saveStep("housing", { housingType: "house" });
+      expect(next.id).toBe(saved.id);
+      expect(await store.load()).toEqual({
+        kind: "found",
+        household: next,
+        planCreatedAt: TEST_TIME,
+      });
+    });
+
+    it("is unset when a new household is created", async () => {
+      const { store, dbFilename, v1DbName } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.markPlanCreated();
+      await store.close();
+      // Unreadable rows: the next save starts a new household.
+      await inspect(dbFilename, (db) => db.execute("DELETE FROM local_households"));
+
+      // A new id: the old household's step rows are still in the database.
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      expect(await again.load()).toEqual({ kind: "invalid" });
+      await again.saveStep("housing", { housingType: "house" });
+      expect(await planCreatedAt(again)).toBeNull();
+    });
+
+    it("is removed by clear", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.markPlanCreated();
+      await store.clear();
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "device_state"))).toBe(0);
+    });
+
+    it("is rejected without a household, and writes nothing", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await expect(store.markPlanCreated()).rejects.toMatchObject({ code: "invalid" });
+      expect(await store.load()).toEqual({ kind: "none" });
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "device_state"))).toBe(0);
+    });
+
+    it("calls subscribers when it is set", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await new Promise((resolve) => setTimeout(resolve, 200)); // let the save's event pass
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+      await store.markPlanCreated();
+      await expect.poll(() => calls).toBeGreaterThan(0);
     });
   });
 });

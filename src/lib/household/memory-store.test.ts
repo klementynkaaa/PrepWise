@@ -31,7 +31,7 @@ describe("memory store", () => {
     await store.saveStep("housing", { housingType: "house" });
     const done = await store.saveStep("needs", { needs: [] });
     expect(done.status).toBe("complete");
-    expect(await store.load()).toEqual({ kind: "found", household: done });
+    expect(await store.load()).toEqual({ kind: "found", household: done, planCreatedAt: null });
   });
 
   it("rejects invalid patches with a typed error and stores nothing", async () => {
@@ -93,6 +93,59 @@ describe("memory store", () => {
     expect(await createMemoryStore(completeHousehold()).load()).toEqual({
       kind: "found",
       household: completeHousehold(),
+      planCreatedAt: null,
+    });
+  });
+
+  describe("plan created flag", () => {
+    const planCreatedAt = async (store: ReturnType<typeof createMemoryStore>) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.planCreatedAt : undefined;
+    };
+
+    it("is not set by default", async () => {
+      expect(await planCreatedAt(createMemoryStore(completeHousehold()))).toBeNull();
+    });
+
+    it("is set by markPlanCreated and keeps the first timestamp", async () => {
+      let tick = 0;
+      const store = createMemoryStore(completeHousehold(), {
+        now: () => new Date(Date.parse(TEST_TIME) + 1000 * tick++),
+      });
+      await store.markPlanCreated();
+      await store.markPlanCreated();
+      expect(await planCreatedAt(store)).toBe(TEST_TIME);
+    });
+
+    it("is kept across a step save", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.markPlanCreated();
+      await store.saveStep("housing", { housingType: "house" });
+      expect(await planCreatedAt(store)).toBe(TEST_TIME);
+    });
+
+    it("is removed by clear and unset for the next new household", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.markPlanCreated();
+      await store.clear();
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await planCreatedAt(store)).toBeNull();
+    });
+
+    it("is rejected without a household", async () => {
+      const store = createMemoryStore(null, deps());
+      await expect(store.markPlanCreated()).rejects.toBeInstanceOf(HouseholdStoreError);
+      await expect(store.markPlanCreated()).rejects.toMatchObject({ code: "invalid" });
+      expect(await store.load()).toEqual({ kind: "none" });
+    });
+
+    it("notifies subscribers once when it is set", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      const listener = vi.fn();
+      store.subscribe(listener);
+      await store.markPlanCreated();
+      await store.markPlanCreated();
+      expect(listener).toHaveBeenCalledTimes(1);
     });
   });
 });

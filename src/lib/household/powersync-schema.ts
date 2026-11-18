@@ -9,7 +9,8 @@ import { DEVICE_TABLE, LOCAL_TABLES, SQLITE_COLUMNS } from "./powersync-codec";
  * - The synced tables are declared now and stay empty until S-10 turns sync on.
  * - Their local-only twins hold the household while sync is off, so nothing
  *   queues for upload (decision record, "Store branch").
- * - `device_state` (local-only) holds the household this device shows.
+ * - `device_state` (local-only) holds the household this device shows and
+ *   when this device created its plan (`plan_created_at`, device state only).
  */
 function columns(table: TableName) {
   return Object.fromEntries(
@@ -33,5 +34,8 @@ export const householdSchema = new Schema({
       new Table(columns(table), { ...byHousehold(table), localOnly: true }),
     ]),
   ),
-  [DEVICE_TABLE]: new Table({ household_id: column.text }, { localOnly: true }),
+  [DEVICE_TABLE]: new Table(
+    { household_id: column.text, plan_created_at: column.text },
+    { localOnly: true },
+  ),
 });

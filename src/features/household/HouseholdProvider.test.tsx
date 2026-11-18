@@ -1,8 +1,15 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it } from "vitest";
-import { createMemoryStore, type HouseholdStore, type LoadResult } from "@/lib/household";
+import {
+  createMemoryStore,
+  HouseholdStoreError,
+  type HouseholdStore,
+  type LoadResult,
+} from "@/lib/household";
 import { completeHousehold } from "@/lib/household/fixtures";
 import { HouseholdProvider } from "./HouseholdProvider";
+import { storeWithPlan } from "./test-utils";
 import { useHousehold } from "./useHousehold";
 
 function Status() {
@@ -12,6 +19,30 @@ function Status() {
 function Housing() {
   const { status, household } = useHousehold();
   return <p>{status === "ready" ? (household?.housingType ?? "none") : status}</p>;
+}
+
+function PlanFlag() {
+  const { status, planCreated, markPlanCreated, saveStep } = useHousehold();
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <>
+      <p>{status === "ready" ? `plan: ${planCreated ? "yes" : "no"}` : status}</p>
+      <button
+        type="button"
+        onClick={() =>
+          void markPlanCreated().catch((e: unknown) =>
+            setError(e instanceof HouseholdStoreError ? e.code : "other"),
+          )
+        }
+      >
+        mark
+      </button>
+      <button type="button" onClick={() => void saveStep("housing", { housingType: "house" })}>
+        save
+      </button>
+      {error ? <p>error: {error}</p> : null}
+    </>
+  );
 }
 
 /** A store whose stored household changes from outside the provider (another device, later). */
@@ -69,11 +100,17 @@ describe("HouseholdProvider", () => {
     );
     expect(await screen.findByText("none")).toBeInTheDocument();
 
-    await act(async () => change({ kind: "found", household: completeHousehold() }));
+    await act(async () =>
+      change({ kind: "found", household: completeHousehold(), planCreatedAt: null }),
+    );
     expect(await screen.findByText("flat")).toBeInTheDocument();
 
     await act(async () =>
-      change({ kind: "found", household: completeHousehold({ housingType: "house" }) }),
+      change({
+        kind: "found",
+        household: completeHousehold({ housingType: "house" }),
+        planCreatedAt: null,
+      }),
     );
     expect(await screen.findByText("house")).toBeInTheDocument();
 
@@ -121,5 +158,62 @@ describe("HouseholdProvider", () => {
     expect(screen.getByText("house")).toBeInTheDocument();
     await act(async () => resolveFirst({ kind: "none" }));
     expect(screen.getByText("house")).toBeInTheDocument();
+  });
+
+  describe("plan created flag", () => {
+    it("reports planCreated from the store", async () => {
+      render(
+        <HouseholdProvider store={await storeWithPlan(completeHousehold())}>
+          <PlanFlag />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: yes")).toBeInTheDocument();
+    });
+
+    it("sets planCreated once markPlanCreated resolves", async () => {
+      render(
+        <HouseholdProvider store={createMemoryStore(completeHousehold())}>
+          <PlanFlag />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "mark" }).click());
+      expect(await screen.findByText("plan: yes")).toBeInTheDocument();
+    });
+
+    it("rejects markPlanCreated on a storage failure and keeps planCreated false", async () => {
+      const store: HouseholdStore = {
+        ...createMemoryStore(completeHousehold()),
+        markPlanCreated: () => Promise.reject(new HouseholdStoreError("unavailable")),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <PlanFlag />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "mark" }).click());
+      expect(await screen.findByText("error: unavailable")).toBeInTheDocument();
+      expect(screen.getByText("plan: no")).toBeInTheDocument();
+    });
+
+    it("keeps planCreated true after a step save", async () => {
+      // The save's own reload never finishes, so only the provider can keep the flag.
+      const memory = await storeWithPlan(completeHousehold());
+      let loads = 0;
+      const store: HouseholdStore = {
+        ...memory,
+        load: () => (loads++ === 0 ? memory.load() : new Promise<LoadResult>(() => {})),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <PlanFlag />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: yes")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "save" }).click());
+      await waitFor(() => expect(loads).toBeGreaterThan(1));
+      expect(screen.getByText("plan: yes")).toBeInTheDocument();
+    });
   });
 });
