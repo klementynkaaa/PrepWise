@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { routes } from "./routes";
-import { seedCompleteProfile } from "./seed";
+import { createPlanThroughUi, seedCompleteProfile } from "./seed";
 
 async function waitForControlledPage(page: Page) {
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -18,10 +18,15 @@ test("service worker controls the page and routes render offline", async ({ page
 
   await context.setOffline(true);
   let seeded = false;
+  let planned = false;
   for (const route of routes) {
     if (route.profile && !seeded) {
       await seedCompleteProfile(page);
       seeded = true;
+    }
+    if (route.plan && !planned) {
+      await createPlanThroughUi(page);
+      planned = true;
     }
     await page.goto(route.path);
     await expect(page.locator("main")).toBeVisible();

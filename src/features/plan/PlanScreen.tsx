@@ -1,30 +1,24 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
-  AppHeader,
   Banner,
   Button,
   EmptyState,
   PageBody,
   PageHeader,
-  PageShell,
   Skeleton,
   SkeletonGroup,
 } from "@/components/ui";
 import { useCompleteProfile } from "@/features/household/useCompleteProfile";
-import { AppTabs } from "@/features/shell/AppTabs";
-import { useOnline } from "@/features/shell/useOnline";
+import { AppFrame } from "@/features/shell/AppFrame";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household } from "@/lib/household";
 import { buildPlan } from "@/lib/plan";
-import { householdLine, itemArgs, usePlanTranslator } from "./format";
+import { householdLine, itemArgs, PLAN_DAYS, usePlanTranslator } from "./format";
 import { SectionPanel, TierPanel, type RowContext } from "./PlanTiers";
 import { SourcesSheet } from "./SourcesSheet";
-
-/** The 72-hour plan: S-02 has one length. */
-const PLAN_DAYS = 3;
 
 /**
  * The plan, derived from the stored profile and the bundled content every
@@ -39,35 +33,10 @@ export function PlanScreen({ locale }: { locale: AppLocale }) {
   return <PlanReady household={profile.household} locale={locale} />;
 }
 
-/** Logo and Online/Offline chip, the screen, then the tab bar. */
-function PlanFrame({
-  locale,
-  connection = true,
-  children,
-}: {
-  locale: AppLocale;
-  /** Show the Online/Offline chip (left out on the error screen, as drawn). */
-  connection?: boolean;
-  children: ReactNode;
-}) {
-  const t = useTranslations("connection");
-  const online = useOnline();
-  return (
-    <>
-      <AppHeader
-        saveState={connection ? (online ? "saved" : "offline") : undefined}
-        saveLabels={{ saved: t("online"), offline: t("offline") }}
-      />
-      <PageShell>{children}</PageShell>
-      <AppTabs locale={locale} />
-    </>
-  );
-}
-
 function PlanLoading({ locale }: { locale: AppLocale }) {
   const t = useTranslations();
   return (
-    <PlanFrame locale={locale}>
+    <AppFrame locale={locale}>
       <PageHeader title={t("plan.title")} />
       {/* Busy until the plan shows, like the held page, so nothing reads the placeholders. */}
       <main aria-busy="true" className="flex flex-1 flex-col gap-3 px-4 pt-4 pb-6">
@@ -79,14 +48,14 @@ function PlanLoading({ locale }: { locale: AppLocale }) {
           <Skeleton shape="block" />
         </SkeletonGroup>
       </main>
-    </PlanFrame>
+    </AppFrame>
   );
 }
 
 function PlanUnavailable({ locale }: { locale: AppLocale }) {
   const t = useTranslations("plan.unavailable");
   return (
-    <PlanFrame locale={locale} connection={false}>
+    <AppFrame locale={locale} connection={false}>
       <main className="flex flex-1 flex-col justify-center px-4 py-6">
         <EmptyState
           illustration="storage-error"
@@ -97,7 +66,7 @@ function PlanUnavailable({ locale }: { locale: AppLocale }) {
           {t("body")}
         </EmptyState>
       </main>
-    </PlanFrame>
+    </AppFrame>
   );
 }
 
@@ -121,7 +90,7 @@ function PlanReady({ household, locale }: { household: Household; locale: AppLoc
   const ctx: RowContext = { t, args: itemArgs(summary, plan), list };
 
   return (
-    <PlanFrame locale={locale}>
+    <AppFrame locale={locale}>
       <PageHeader title={t("plan.title")} />
       <PageBody>
         <div className="flex flex-col gap-1.5">
@@ -159,6 +128,6 @@ function PlanReady({ household, locale }: { household: Household; locale: AppLoc
         ))}
       </PageBody>
       <SourcesSheet open={sourcesOpen} onClose={closeSources} />
-    </PlanFrame>
+    </AppFrame>
   );
 }

@@ -4,7 +4,14 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Divider, ListSectionLabel, PanelList, PlanRow, PriorityHeader } from "@/components/ui";
 import type { PlanRowData, PlanSection, PlanTier } from "@/lib/plan";
-import { countItems, formatAmount, formatCaption, type ItemArgs, type Translator } from "./format";
+import {
+  countItems,
+  formatAmount,
+  formatCaption,
+  tierItemCount,
+  type ItemArgs,
+  type Translator,
+} from "./format";
 
 /** What every row needs to format itself, shared by the whole plan. */
 export type RowContext = { t: Translator; args: ItemArgs; list: Intl.ListFormat };
@@ -16,7 +23,6 @@ export const sectionAnchor = (id: PlanSection["id"]) => `section-${id}`;
 /** One priority panel: the numbered heading, then each category's rows. */
 export function TierPanel({ tier, ctx }: { tier: PlanTier; ctx: RowContext }) {
   const t = useTranslations("plan");
-  const items = tier.categories.reduce((sum, category) => sum + countItems(category.rows), 0);
   return (
     <PanelSection
       id={tierAnchor(tier.tier)}
@@ -25,7 +31,7 @@ export function TierPanel({ tier, ctx }: { tier: PlanTier; ctx: RowContext }) {
           {t(`tiers.${tier.tier}`)}
         </PriorityHeader>
       }
-      count={t("itemCount", { count: items })}
+      count={t("itemCount", { count: tierItemCount(tier) })}
     >
       {tier.categories.map((category, index) => (
         <div key={category.id}>

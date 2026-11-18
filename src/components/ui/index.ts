@@ -22,7 +22,7 @@ export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./
 export { PlanRow } from "./PlanRow";
 export { ProgressBar, ProgressBarRow, ProgressRing } from "./Progress";
 export { SectionHeader } from "./SectionHeader";
-export { FactChip, PriorityHeader, SaveStatus, type SaveState } from "./Status";
+export { FactChip, PriorityBadge, PriorityHeader, SaveStatus, type SaveState } from "./Status";
 export { BackLink, TextLink } from "./TextLink";
 export { BottomSheet } from "./BottomSheet";
 export { ChecklistRow } from "./ChecklistRow";

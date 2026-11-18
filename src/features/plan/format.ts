@@ -7,9 +7,13 @@ import type {
   PetSectionKind,
   Plan,
   PlanRowData,
+  PlanTier,
   Unit,
 } from "@/lib/plan";
 import { PEOPLE_GROUPS } from "@/features/household/groups";
+
+/** The 72-hour plan: S-02 has one length. */
+export const PLAN_DAYS = 3;
 
 /**
  * A translator over the whole dictionary (keys like "plan.units.l"). Plan keys
@@ -127,20 +131,35 @@ export function countItems(rows: readonly PlanRowData[]): number {
   return rows.filter((row) => !row.pointer).length;
 }
 
+/** Who is in the household, as the banners name them: dogs of every size count together. */
+export type HouseholdMember =
+  "adults" | "seniors" | "children" | "smallChildren" | "dogs" | "cats" | "otherSmall";
+
+/** The household's members with their counts, in display order, leaving out the absent ones. */
+export function householdMembers(summary: HouseholdSummary): [HouseholdMember, number][] {
+  const dogs = summary.pets.smallDog + summary.pets.mediumDog + summary.pets.largeDog;
+  const members: [HouseholdMember, number][] = [
+    ...PEOPLE_GROUPS.map((group): [HouseholdMember, number] => [group, summary.people[group]]),
+    ["dogs", dogs],
+    ["cats", summary.pets.cat],
+    ["otherSmall", summary.pets.otherSmall],
+  ];
+  return members.filter(([, count]) => count > 0);
+}
+
 /** "2 dorosłych, małego dziecka i psa" style list: who the plan is for, in the genitive. */
 export function householdLine(
   t: Translator,
   summary: HouseholdSummary,
   list: Intl.ListFormat,
 ): string {
-  const dogs = summary.pets.smallDog + summary.pets.mediumDog + summary.pets.largeDog;
-  const parts = [
-    ...PEOPLE_GROUPS.map((group) => [group, summary.people[group]] as const),
-    ["dogs", dogs] as const,
-    ["cats", summary.pets.cat] as const,
-    ["otherSmall", summary.pets.otherSmall] as const,
-  ]
-    .filter(([, count]) => count > 0)
-    .map(([key, count]) => t(`plan.household.${key}`, { count }));
+  const parts = householdMembers(summary).map(([key, count]) =>
+    t(`plan.household.${key}`, { count }),
+  );
   return t("plan.banner.line", { who: list.format(parts) });
+}
+
+/** The items in a tier: its categories' rows, without pointer rows. */
+export function tierItemCount(tier: PlanTier): number {
+  return tier.categories.reduce((sum, category) => sum + countItems(category.rows), 0);
 }

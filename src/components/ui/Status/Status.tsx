@@ -14,15 +14,25 @@ export function PriorityHeader({ tier, tierLabel, children, level = 2 }: Priorit
   const Heading = level === 2 ? "h2" : "h3";
   return (
     <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
-      <span
-        aria-hidden="true"
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-bold text-on-accent"
-      >
-        {tier}
-      </span>
+      <PriorityBadge tier={tier} />
       <span className="sr-only">{tierLabel}: </span>
       {children}
     </Heading>
+  );
+}
+
+/**
+ * The priority number in a circle, as in `PriorityHeader`. Decorative: the
+ * caller says the priority in words (e.g. a visually hidden "Priorytet 1:").
+ */
+export function PriorityBadge({ tier }: { tier: number }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-caption font-bold text-on-accent"
+    >
+      {tier}
+    </span>
   );
 }
 

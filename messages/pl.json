@@ -409,6 +409,46 @@
     "start": "Start",
     "plan": "Plan"
   },
+  "home": {
+    "metaTitle": "Start",
+    "title": "Start",
+    "household": {
+      "title": "Wasz dom",
+      "line": "{who}.",
+      "change": "Zmień",
+      "changeLabel": "Zmień profil domu",
+      "members": {
+        "adults": "{count, plural, one {# dorosły} few {# dorosłych} many {# dorosłych} other {# dorosłego}}",
+        "seniors": "{count, plural, one {# senior} few {# seniorów} many {# seniorów} other {# seniora}}",
+        "children": "{count, plural, one {# dziecko} few {# dzieci} many {# dzieci} other {# dziecka}}",
+        "smallChildren": "{count, plural, one {# małe dziecko} few {# małych dzieci} many {# małych dzieci} other {# małego dziecka}}",
+        "dogs": "{count, plural, one {# pies} few {# psy} many {# psów} other {# psa}}",
+        "cats": "{count, plural, one {# kot} few {# koty} many {# kotów} other {# kota}}",
+        "otherSmall": "{count, plural, one {# inne małe zwierzę} few {# inne małe zwierzęta} many {# innych małych zwierząt} other {# innego małego zwierzęcia}}"
+      }
+    },
+    "todo": {
+      "title": "Do zrobienia",
+      "ready": {
+        "title": "Plan gotowy — czas na kompletowanie",
+        "body": "Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka.",
+        "action": "Otwórz plan"
+      }
+    },
+    "plan": {
+      "title": "Plan na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
+      "all": "Cały plan",
+      "tiers": {
+        "1": "Najważniej\u00adsze",
+        "2": "Codzien\u00adność",
+        "3": "Dodatkowo"
+      },
+      "sections": {
+        "smallChild": "Dla dziecka",
+        "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+      }
+    }
+  },
   "generating": {
     "title": "Liczenie planu",
     "steps": {
