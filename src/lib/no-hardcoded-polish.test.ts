@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 // review still applies.
 
 const root = process.cwd();
-const scanned = ["src/app", "src/components", "src/features"];
+const scanned = ["src/app", "src/components", "src/features", "src/lib/plan"];
 const diacritics = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/;
 const skipFile = /\.(stories|test|int\.test)\.tsx?$/;
 
@@ -61,11 +61,13 @@ function polishTextInCode(file: string, code: string): string[] {
 const polishTextIn = (file: string) => polishTextInCode(file, readFileSync(file, "utf8"));
 
 describe("no hard-coded Polish", () => {
-  it("finds source files to scan", () => {
-    expect(scanned.flatMap((dir) => sourceFiles(join(root, dir))).length).toBeGreaterThan(0);
+  it("finds source files to scan in every scanned folder", () => {
+    for (const dir of scanned) {
+      expect(sourceFiles(join(root, dir)).length, dir).toBeGreaterThan(0);
+    }
   });
 
-  it("keeps Polish text out of src/app, src/components and src/features", () => {
+  it("keeps Polish text out of src/app, src/components, src/features and src/lib/plan", () => {
     const hits = scanned.flatMap((dir) => sourceFiles(join(root, dir))).flatMap(polishTextIn);
     expect(hits, `Move this text to messages/pl.json:\n${hits.join("\n")}`).toEqual([]);
   });

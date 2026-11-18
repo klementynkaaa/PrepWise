@@ -222,5 +222,139 @@
     "metaTitle": "Nie ma takiej strony",
     "title": "Nie ma takiej strony",
     "body": "Sprawdź adres albo wróć do strony głównej. Twój plan i lista zakupów działają bez internetu."
+  },
+  "plan": {
+    "items": {
+      "drinking-water": {
+        "name": "Woda pitna"
+      },
+      "shelf-stable-food": {
+        "name": "Jedzenie, które nie wymaga gotowania"
+      },
+      "regular-medicines": {
+        "name": "Leki przyjmowane na stałe"
+      },
+      "medical-equipment-power": {
+        "name": "Zasilanie zapasowe do sprzętu medycznego",
+        "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem"
+      },
+      "first-aid-kit": {
+        "name": "Apteczka pierwszej pomocy",
+        "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}"
+      },
+      "flashlight": {
+        "name": "Latarka"
+      },
+      "flashlight-batteries": {
+        "name": "Baterie do latarek",
+        "note": "jeden komplet na latarkę"
+      },
+      "battery-radio": {
+        "name": "Radio na baterie lub na korbkę"
+      },
+      "power-bank": {
+        "name": "Powerbank",
+        "note": "naładowany, do telefonu"
+      },
+      "toilet-paper": {
+        "name": "Papier toaletowy"
+      },
+      "hand-hygiene": {
+        "name": "Mydło i płyn do dezynfekcji rąk"
+      },
+      "wet-wipes": {
+        "name": "Mokre chusteczki"
+      },
+      "flushing-water": {
+        "name": "Woda do spłukiwania toalety",
+        "note": "w bloku pompy nie działają bez prądu"
+      },
+      "blanket": {
+        "name": "Koc"
+      },
+      "heating-fuel": {
+        "name": "Zapasowe ogrzewanie",
+        "note": "opał lub grzejnik niezależny od prądu"
+      },
+      "mobility-aid-power": {
+        "name": "Zasilanie do sprzętu ułatwiającego poruszanie się",
+        "note": "zapasowe baterie lub ładowarka, do tego gwizdek"
+      },
+      "document-copies": {
+        "name": "Kopie dokumentów",
+        "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce"
+      },
+      "cash": {
+        "name": "Gotówka w drobnych"
+      },
+      "multitool": {
+        "name": "Nóż wielofunkcyjny"
+      },
+      "duct-tape": {
+        "name": "Taśma klejąca"
+      },
+      "small-child-food": {
+        "name": "Jedzenie dla małego dziecka",
+        "note": "mleko, kaszki, słoiczki"
+      },
+      "diapers": {
+        "name": "Pieluchy"
+      },
+      "pet-water": {
+        "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
+      },
+      "pet-food": {
+        "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
+      },
+      "pet-kit": {
+        "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}"
+      }
+    },
+    "units": {
+      "l": "{count, plural, other {# l}}",
+      "portion": "{count, plural, one {# porcja} few {# porcje} many {# porcji} other {# porcji}}",
+      "piece": "{count, plural, other {# szt.}}",
+      "pack": "{count, plural, other {# opak.}}",
+      "set": "{count, plural, one {# zestaw} few {# zestawy} many {# zestawów} other {# zestawu}}",
+      "roll": "{count, plural, one {# rolka} few {# rolki} many {# rolek} other {# rolki}}",
+      "day": "{count, plural, one {na # dzień} few {na # dni} many {na # dni} other {na # dnia}}"
+    },
+    "categories": {
+      "waterFood": "Woda i jedzenie",
+      "medicine": "Leki i apteczka",
+      "light": "Światło",
+      "communication": "Łączność",
+      "hygiene": "Higiena",
+      "warmth": "Ciepło",
+      "mobility": "Poruszanie się",
+      "documents": "Dokumenty i gotówka",
+      "tools": "Narzędzia"
+    },
+    "tiers": {
+      "1": "Najważniejsze",
+      "2": "Bezpieczeństwo i codzienność",
+      "3": "Dodatkowo"
+    },
+    "sections": {
+      "smallChild": "Dla małego dziecka",
+      "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+    },
+    "formula": {
+      "perDay": "{amount} × {who} × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+      "perDayMixed": "({terms}) × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+      "term": "{amount} × {who}",
+      "termJoin": " + ",
+      "perMember": "{amount} × {who}",
+      "perHousehold": "na cały dom",
+      "dose": "Wasza dawka × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}} — sprawdźcie zapas",
+      "forDays": "{who} × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+      "people": "{count, plural, one {# osoba} few {# osoby} many {# osób} other {# osoby}}",
+      "animals": "{count, plural, one {# zwierzę} few {# zwierzęta} many {# zwierząt} other {# zwierzęcia}}",
+      "pointer": {
+        "smallChild": "w sekcji „Dla małego dziecka” niżej"
+      },
+      "diet": "zgodne z dietą",
+      "tier": "priorytet {tier}"
+    }
   }
 }
