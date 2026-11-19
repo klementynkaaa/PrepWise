@@ -6,7 +6,8 @@ import { AppFrame } from "./AppFrame";
 
 /**
  * The app screens' (Start, Plan) storage error: storage can't be opened, so
- * the screen offers a reload. Each screen passes its own words.
+ * the screen offers a reload. Each screen passes its own words; the body
+ * line is optional (the list's error has only a title and the button).
  */
 export function AppUnavailable({
   locale,
@@ -16,7 +17,7 @@ export function AppUnavailable({
 }: {
   locale: AppLocale;
   title: string;
-  body: string;
+  body?: string;
   retry: string;
 }) {
   return (

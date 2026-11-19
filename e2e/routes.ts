@@ -14,5 +14,6 @@ export const routes: { path: string; name: string; profile?: true; plan?: true }
   { path: "/pl/household", name: "household", profile: true },
   { path: "/pl/plan", name: "plan", profile: true },
   { path: "/pl/home", name: "home-hub", profile: true, plan: true },
+  { path: "/pl/list", name: "list", profile: true, plan: true },
   { path: "/offline", name: "offline" },
 ];

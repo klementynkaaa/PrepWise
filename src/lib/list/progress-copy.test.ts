@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import messages from "../../../messages/pl.json";
 
 // Polish plural forms: one (1), few (2-4, 22-24), many (0, 5-21, 25-31), so
-// 1, 2, 5, 12 and 22 hit every form the list can show.
+// 1, 2, 5, 12 and 22 hit every form the list can show; 0 has its own words.
 const list = createTranslator({ locale: "pl", messages, namespace: "list" });
 const progress = createTranslator({ locale: "pl", messages, namespace: "progress" });
 
@@ -16,6 +16,10 @@ describe("list progress copy", () => {
       "Zostało 12 rzeczy do odhaczenia.",
       "Zostały 22 rzeczy do odhaczenia.",
     ]);
+  });
+
+  it("says everything is ticked when nothing is left", () => {
+    expect(list("progress.left", { count: 0 })).toBe("Wszystko odhaczone.");
   });
 
   it("formats the shared progress words", () => {

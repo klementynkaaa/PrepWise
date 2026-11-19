@@ -42,6 +42,17 @@ export const StorageError: Story = {
   },
 };
 
+/** A title that says it all: no sentence under it (e.g. the list's storage error). */
+export const TitleOnly: Story = {
+  args: {
+    illustration: "storage-error",
+    headingLevel: 1,
+    title: "Nie udało się otworzyć listy",
+    children: undefined,
+    action: <ButtonLink href="/">Spróbuj ponownie</ButtonLink>,
+  },
+};
+
 /** Same layout every time: only the art, the words and the optional button change. */
 export const AllSideBySide: Story = {
   render: () => (

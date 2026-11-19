@@ -273,88 +273,113 @@
     },
     "items": {
       "drinking-water": {
-        "name": "Woda pitna"
+        "name": "Woda pitna",
+        "listName": "Woda"
       },
       "shelf-stable-food": {
-        "name": "Jedzenie, które nie wymaga gotowania"
+        "name": "Jedzenie, które nie wymaga gotowania",
+        "listName": "Jedzenie"
       },
       "regular-medicines": {
-        "name": "Leki przyjmowane na stałe"
+        "name": "Leki przyjmowane na stałe",
+        "listName": "Leki na stałe"
       },
       "medical-equipment-power": {
         "name": "Zasilanie zapasowe do sprzętu medycznego",
-        "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem"
+        "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem",
+        "listName": "Zasilanie do sprzętu medycznego"
       },
       "first-aid-kit": {
         "name": "Apteczka pierwszej pomocy",
-        "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}"
+        "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}",
+        "listName": "Apteczka"
       },
       "flashlight": {
-        "name": "Latarka"
+        "name": "Latarka",
+        "listName": "Latarki"
       },
       "flashlight-batteries": {
         "name": "Baterie do latarek",
-        "note": "jeden komplet na latarkę"
+        "note": "jeden komplet na latarkę",
+        "listName": "Baterie do latarek"
       },
       "battery-radio": {
-        "name": "Radio na baterie lub na korbkę"
+        "name": "Radio na baterie lub na korbkę",
+        "listName": "Radio"
       },
       "power-bank": {
         "name": "Powerbank",
-        "note": "naładowany, do telefonu"
+        "note": "naładowany, do telefonu",
+        "listName": "Powerbank"
       },
       "toilet-paper": {
-        "name": "Papier toaletowy"
+        "name": "Papier toaletowy",
+        "listName": "Papier toaletowy"
       },
       "hand-hygiene": {
-        "name": "Mydło i płyn do dezynfekcji rąk"
+        "name": "Mydło i płyn do dezynfekcji rąk",
+        "listName": "Mydło i płyn do rąk"
       },
       "wet-wipes": {
-        "name": "Mokre chusteczki"
+        "name": "Mokre chusteczki",
+        "listName": "Mokre chusteczki"
       },
       "flushing-water": {
         "name": "Woda do spłukiwania toalety",
-        "note": "w bloku pompy nie działają bez prądu"
+        "note": "w bloku pompy nie działają bez prądu",
+        "listName": "Woda do spłukiwania"
       },
       "blanket": {
-        "name": "Koc"
+        "name": "Koc",
+        "listName": "Koce"
       },
       "heating-fuel": {
         "name": "Zapasowe ogrzewanie",
-        "note": "opał lub grzejnik niezależny od prądu"
+        "note": "opał lub grzejnik niezależny od prądu",
+        "listName": "Zapasowe ogrzewanie"
       },
       "mobility-aid-power": {
         "name": "Zasilanie do sprzętu ułatwiającego poruszanie się",
-        "note": "zapasowe baterie lub ładowarka, do tego gwizdek"
+        "note": "zapasowe baterie lub ładowarka, do tego gwizdek",
+        "listName": "Zasilanie do sprzętu do poruszania się"
       },
       "document-copies": {
         "name": "Kopie dokumentów",
-        "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce"
+        "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce",
+        "listName": "Kopie dokumentów"
       },
       "cash": {
-        "name": "Gotówka w drobnych"
+        "name": "Gotówka w drobnych",
+        "listName": "Gotówka"
       },
       "multitool": {
-        "name": "Nóż wielofunkcyjny"
+        "name": "Nóż wielofunkcyjny",
+        "listName": "Nóż wielofunkcyjny"
       },
       "duct-tape": {
-        "name": "Taśma klejąca"
+        "name": "Taśma klejąca",
+        "listName": "Taśma klejąca"
       },
       "small-child-food": {
         "name": "Jedzenie dla małego dziecka",
-        "note": "mleko, kaszki, słoiczki"
+        "note": "mleko, kaszki, słoiczki",
+        "listName": "Pokarm dla dziecka"
       },
       "diapers": {
-        "name": "Pieluchy"
+        "name": "Pieluchy",
+        "listName": "Pieluchy"
       },
       "pet-water": {
-        "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
+        "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}",
+        "listName": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
       },
       "pet-food": {
-        "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
+        "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}",
+        "listName": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
       },
       "pet-kit": {
-        "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}"
+        "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
+        "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
       }
     },
     "units": {
@@ -469,8 +494,28 @@
     "fraction": "{done}/{total}"
   },
   "list": {
+    "metaTitle": "Lista zakupów",
+    "title": "Lista zakupów",
+    "line": "Na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}} · dla {who}",
     "progress": {
-      "left": "{count, plural, one {Została # rzecz do odhaczenia.} few {Zostały # rzeczy do odhaczenia.} many {Zostało # rzeczy do odhaczenia.} other {Zostało # rzeczy do odhaczenia.}}"
-    }
+      "left": "{count, plural, =0 {Wszystko odhaczone.} one {Została # rzecz do odhaczenia.} few {Zostały # rzeczy do odhaczenia.} many {Zostało # rzeczy do odhaczenia.} other {Zostało # rzeczy do odhaczenia.}}",
+      "bar": "Postęp listy zakupów"
+    },
+    "empty": {
+      "title": "Lista jeszcze nie powstała",
+      "body": "Powstanie na podstawie planu na 72 godziny.",
+      "create": "Stwórz listę zakupów",
+      "failed": "Nie udało się stworzyć listy. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie."
+    },
+    "done": {
+      "title": "Wszystko na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}} gotowe",
+      "body": "{done} z {total} rzeczy odhaczone. Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków."
+    },
+    "unavailable": {
+      "title": "Nie udało się otworzyć listy",
+      "retry": "Spróbuj ponownie"
+    },
+    "loading": "Wczytywanie listy",
+    "saveFailed": "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie."
   }
 }
