@@ -113,9 +113,13 @@ export const HOUSEHOLD_TICK_FIELDS = ["item", "selected", "quantity"] as const;
 
 /**
  * A bundled item id: a kebab-case slug. Not an enum of today's catalogue, so a
- * device on an older catalogue still reads ticks of items added later.
+ * device on an older catalogue still reads ticks of items added later. Capped
+ * at 64 characters, as in the database.
  */
-export const itemIdSchema = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+export const itemIdSchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 
 const householdNeedShape = { ...sharedColumns, need: needSchema, selected: z.boolean() };
 const householdStepShape = { ...sharedColumns, step: stepSchema, selected: z.boolean() };

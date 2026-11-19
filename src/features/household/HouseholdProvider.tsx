@@ -176,10 +176,12 @@ export function HouseholdProvider({
     async (itemId: string, ticked: boolean, quantity: number) => {
       await store.setTick(itemId, ticked, quantity);
       // No optimistic layer: show what the store now holds. A newer read or
-      // save started meanwhile wins, as for the subscribe reload.
+      // save started meanwhile wins, as for the subscribe reload. The write is
+      // saved, so a failed read keeps the screen as it is (not the storage
+      // error); the next store event reloads it.
       const ticket = ++latest.current;
-      const next = await store.load().then(stateOf, () => UNAVAILABLE);
-      if (ticket === latest.current) setState(next);
+      const next = await store.load().then(stateOf, () => null);
+      if (next && ticket === latest.current) setState(next);
     },
     [store],
   );

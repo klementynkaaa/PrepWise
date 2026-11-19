@@ -244,6 +244,7 @@ describe("householdTickRowSchema", () => {
     ["an item with a trailing dash", { item: "water-", id: `${TEST_ID}:water-` }],
     ["an item with a double dash", { item: "a--b", id: `${TEST_ID}:a--b` }],
     ["an empty item", { item: "", id: `${TEST_ID}:` }],
+    ["an item over 64 characters", { item: "a".repeat(65), id: `${TEST_ID}:${"a".repeat(65)}` }],
     ["an id for another item", { id: `${TEST_ID}:candles` }],
     ["an id for another household", { id: `${OTHER_ID}:drinking-water` }],
     ["a negative quantity", { quantity: -1 }],

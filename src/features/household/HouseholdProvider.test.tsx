@@ -348,6 +348,30 @@ describe("HouseholdProvider", () => {
       expect(await screen.findByText("ticks: candles=off@2")).toBeInTheDocument();
     });
 
+    it("keeps the screen when the read after a saved tick fails", async () => {
+      const memory = createMemoryStore(completeHousehold());
+      let failLoad = false;
+      const store: HouseholdStore = {
+        ...memory,
+        load: () => (failLoad ? Promise.reject(new Error("read failed")) : memory.load()),
+        setTick: async (...args) => {
+          await memory.setTick(...args);
+          failLoad = true;
+        },
+        subscribe: () => () => {},
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "tick" }).click());
+      expect(screen.getByText("plan: no, list: no")).toBeInTheDocument();
+      expect(screen.queryByText("unavailable")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^error:/)).not.toBeInTheDocument();
+    });
+
     it("rejects setTick on a storage failure and changes nothing on screen", async () => {
       const store: HouseholdStore = {
         ...createMemoryStore(completeHousehold()),

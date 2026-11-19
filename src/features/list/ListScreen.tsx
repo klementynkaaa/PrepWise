@@ -81,9 +81,16 @@ function ListNotCreated({ locale, onCreated }: { locale: AppLocale; onCreated: (
   const t = useTranslations("list");
   const { markListCreated } = useHousehold();
   const [failed, setFailed] = useState(false);
+  // A second tap while the first is saving does nothing (as on Plan's panel).
+  const running = useRef(false);
   const create = () => {
+    if (running.current) return;
+    running.current = true;
     setFailed(false);
-    markListCreated().then(onCreated, () => setFailed(true));
+    markListCreated().then(onCreated, () => {
+      running.current = false;
+      setFailed(true);
+    });
   };
 
   return (
@@ -195,6 +202,8 @@ function ListReady({
 
   const onTick = (row: ListRow, checked: boolean) => {
     pending.current = { itemId: row.itemId, ticked: checked };
+    // Empty the live region first, so a repeated failure is read out again.
+    setSaveFailed(false);
     setTick(row.itemId, checked, row.quantity).then(
       () => {
         setSaveFailed(false);

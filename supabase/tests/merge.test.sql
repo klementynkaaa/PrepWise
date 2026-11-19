@@ -4,7 +4,7 @@
 -- idempotent.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(37);
 
 -- Test helpers, rolled back with the test.
 create schema t;
@@ -327,10 +327,31 @@ select throws_ok(
 );
 select throws_ok(
   $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      '11111111-1111-4111-8111-111111111111', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', true, 1, now(), '{}')$$,
+  '23514', null,
+  'a tick item is at most 64 characters'
+);
+select throws_ok(
+  $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
     values ('11111111-1111-4111-8111-111111111111:candles',
       '11111111-1111-4111-8111-111111111111', 'candles', true, -1, now(), '{}')$$,
   '23514', null,
   'a tick quantity is never negative'
+);
+select throws_ok(
+  $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:candles',
+      '11111111-1111-4111-8111-111111111111', 'candles', true, 'NaN', now(), '{}')$$,
+  '23514', null,
+  'a tick quantity is never NaN'
+);
+select throws_ok(
+  $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:candles',
+      '11111111-1111-4111-8111-111111111111', 'candles', true, 'Infinity', now(), '{}')$$,
+  '23514', null,
+  'a tick quantity is never infinite'
 );
 
 -- --- entity rows: delete wins (a test-only table with the shared triggers) ----------------
