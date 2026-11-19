@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 // review still applies.
 
 const root = process.cwd();
-const scanned = ["src/app", "src/components", "src/features", "src/lib/plan"];
+const scanned = ["src/app", "src/components", "src/features", "src/lib/plan", "src/lib/list"];
 const diacritics = /[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/;
 const skipFile = /\.(stories|test|int\.test)\.tsx?$/;
 
@@ -67,7 +67,7 @@ describe("no hard-coded Polish", () => {
     }
   });
 
-  it("keeps Polish text out of src/app, src/components, src/features and src/lib/plan", () => {
+  it("keeps Polish text out of src/app, src/components, src/features, src/lib/plan and src/lib/list", () => {
     const hits = scanned.flatMap((dir) => sourceFiles(join(root, dir))).flatMap(polishTextIn);
     expect(hits, `Move this text to messages/pl.json:\n${hits.join("\n")}`).toEqual([]);
   });
