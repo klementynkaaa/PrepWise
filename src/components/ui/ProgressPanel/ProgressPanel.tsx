@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { LinkPanel, Panel } from "../Panel";
-import { ProgressBar } from "../Progress";
+import { ProgressBar, ProgressRing } from "../Progress";
 
 type ProgressPanelProps = {
   /** The count in words, e.g. "Gotowe 7 z 22" (`progress.done`). */
@@ -18,6 +18,12 @@ type ProgressPanelProps = {
   title?: ReactNode;
   /** Makes the whole panel one link (e.g. to the list from Start). */
   href?: string;
+  /**
+   * Shows a large ring with this short count inside ("4/20",
+   * `progress.fraction`) beside the words, instead of the bar. Used at the
+   * top of Start.
+   */
+  ring?: { fraction: string };
 };
 
 /**
@@ -33,7 +39,31 @@ export function ProgressPanel({
   barLabel,
   title,
   href,
+  ring,
 }: ProgressPanelProps) {
+  if (ring) {
+    const ringBody = (
+      <>
+        {title && <h2 className="text-heading-sm">{title}</h2>}
+        <div className="flex items-center gap-4">
+          <ProgressRing
+            done={done}
+            total={total}
+            label={barLabel}
+            fraction={ring.fraction}
+            size="lg"
+            decorative={href !== undefined}
+          />
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-body-strong">{count}</p>
+            <p className="text-body-sm text-ink-muted">{left}</p>
+          </div>
+        </div>
+      </>
+    );
+    return href ? <LinkPanel href={href}>{ringBody}</LinkPanel> : <Panel>{ringBody}</Panel>;
+  }
+
   const bar = <ProgressBar done={done} total={total} label={barLabel} />;
   const body = (
     <>

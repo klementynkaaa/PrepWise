@@ -123,6 +123,8 @@ function StartReady({
           </span>
         </Banner>
 
+        {listCreated ? <Readiness plan={plan} ticks={ticks} locale={locale} /> : null}
+
         <div className="flex flex-col gap-2">
           <SectionHeader title={t("todo.title")} />
           <Notice>
@@ -134,11 +136,7 @@ function StartReady({
           </Notice>
         </div>
 
-        {listCreated ? (
-          <Readiness plan={plan} ticks={ticks} locale={locale} />
-        ) : (
-          <PlanTiles plan={plan} locale={locale} />
-        )}
+        {listCreated ? null : <PlanTiles plan={plan} locale={locale} />}
       </PageBody>
     </AppFrame>
   );
@@ -195,7 +193,7 @@ function PlanTiles({ plan, locale }: { plan: Plan; locale: AppLocale }) {
 }
 
 /**
- * Once the list exists: one progress panel that opens the list. Its numbers
+ * Once the list exists, right under the banner: a ring panel that opens the list. Its numbers
  * come from the list itself, so Start, Plan and the list show the same count.
  */
 function Readiness({ plan, ticks, locale }: { plan: Plan; ticks: Tick[]; locale: AppLocale }) {
@@ -214,6 +212,7 @@ function Readiness({ plan, ticks, locale }: { plan: Plan; ticks: Tick[]; locale:
         done={progress.done}
         total={progress.total}
         barLabel={t("list.progress.bar")}
+        ring={{ fraction: t("progress.fraction", { done: progress.done, total: progress.total }) }}
       />
     </div>
   );

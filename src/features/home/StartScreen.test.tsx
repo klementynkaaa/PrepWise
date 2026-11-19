@@ -96,6 +96,11 @@ describe("start screen", () => {
     const panel = screen.getByRole("link", { name: /^Gotowe 1 z 22/ });
     expect(panel).toHaveAttribute("href", "/pl/list");
     expect(within(panel).getByText("Zostało 21 rzeczy do odhaczenia.")).toBeInTheDocument();
+    // A ring with the short count, at the top: right after the banner, before "Do zrobienia".
+    expect(within(panel).getByText("1/22")).toBeInTheDocument();
+    const readiness = screen.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" });
+    const todo = screen.getByRole("heading", { level: 2, name: "Do zrobienia" });
+    expect(readiness.compareDocumentPosition(todo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The tiles give way to the one panel.
     expect(screen.queryByRole("heading", { name: "Plan na 72 godziny" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^Priorytet \d:/ })).not.toBeInTheDocument();

@@ -30,4 +30,29 @@ describe("ProgressPanel", () => {
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Gotowość na 72 godziny" })).toBeInTheDocument();
   });
+
+  it("shows a large ring with the short count instead of the bar", () => {
+    render(
+      <ProgressPanel {...props} barLabel="Postęp listy zakupów" ring={{ fraction: "7/22" }} />,
+    );
+    expect(screen.getByRole("img", { name: "Postęp listy zakupów" }).tagName).toBe("svg");
+    expect(screen.getByText("7/22")).toBeInTheDocument();
+    expect(screen.getByText("Gotowe 7 z 22")).toBeVisible();
+    expect(screen.getByText("Zostało 15 rzeczy do odhaczenia.")).toBeVisible();
+  });
+
+  it("keeps the ring out of the link's name when the ring panel is a link", () => {
+    render(
+      <ProgressPanel
+        {...props}
+        barLabel="Postęp listy zakupów"
+        ring={{ fraction: "7/22" }}
+        href="/pl/list"
+      />,
+    );
+    expect(screen.getByRole("link")).toHaveAccessibleName(
+      "Gotowe 7 z 22 Zostało 15 rzeczy do odhaczenia.",
+    );
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
 });

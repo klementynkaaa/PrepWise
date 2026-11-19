@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { progressPercent } from "@/lib/progress";
 import { StatusPill } from "../Pills";
+import { cn } from "../_shared/cn";
 
 const RADIUS = 20;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -16,17 +17,42 @@ type ProgressProps = {
 type ProgressRingProps = ProgressProps & {
   /** The short count inside the ring, e.g. "3/7" (`progress.fraction`). */
   fraction: string;
+  /** `lg` (80px) heads a screen, as on Start; `md` (48px) sits in a row. */
+  size?: "md" | "lg";
+  /**
+   * Hidden from screen readers when visible words beside it already say the
+   * count (e.g. inside a link, where it would join the link's name).
+   */
+  decorative?: boolean;
 };
 
 /**
  * 48px ring. The fraction is one string ("3/7") so it can never render
  * half-filled (the mockups' "/38" bug); screen readers hear the label.
  */
-export function ProgressRing({ done, total, label, fraction }: ProgressRingProps) {
+export function ProgressRing({
+  done,
+  total,
+  label,
+  fraction,
+  size = "md",
+  decorative = false,
+}: ProgressRingProps) {
   const length = (CIRCUMFERENCE * progressPercent(done, total)) / 100;
   return (
-    <div className="relative size-progress-ring shrink-0">
-      <svg role="img" aria-label={label} viewBox="0 0 48 48" className="size-full">
+    <div
+      aria-hidden={decorative || undefined}
+      className={cn(
+        "relative shrink-0",
+        size === "lg" ? "size-progress-ring-lg" : "size-progress-ring",
+      )}
+    >
+      <svg
+        role={decorative ? undefined : "img"}
+        aria-label={decorative ? undefined : label}
+        viewBox="0 0 48 48"
+        className="size-full"
+      >
         <circle
           cx="24"
           cy="24"
@@ -51,7 +77,10 @@ export function ProgressRing({ done, total, label, fraction }: ProgressRingProps
       </svg>
       <span
         aria-hidden="true"
-        className="absolute inset-0 flex items-center justify-center text-label"
+        className={cn(
+          "absolute inset-0 flex items-center justify-center",
+          size === "lg" ? "text-body-strong font-bold" : "text-label",
+        )}
       >
         {fraction}
       </span>
