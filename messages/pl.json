@@ -533,7 +533,7 @@
     },
     "unavailable": {
       "title": "Nie udało się otworzyć listy",
-      "retry": "Spróbuj ponownie"
+      "retry": "Spróbuj jeszcze raz"
     },
     "loading": "Wczytywanie listy",
     "saveFailed": "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie."

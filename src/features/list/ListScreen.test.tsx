@@ -194,7 +194,7 @@ describe("list screen", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Nie udało się otworzyć listy" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Spróbuj ponownie" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Spróbuj jeszcze raz" })).toBeInTheDocument();
     expect(screen.getByRole("main").querySelector("p")).toBeNull();
   });
 
