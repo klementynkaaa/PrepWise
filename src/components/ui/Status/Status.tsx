@@ -25,6 +25,8 @@ type PriorityHeaderProps = {
 );
 
 const metaText = "text-caption font-semibold whitespace-nowrap text-ink-muted";
+/** A finished group's "✓ x z y": accent, so done reads at a glance. */
+const doneMetaText = "text-caption font-semibold whitespace-nowrap text-accent";
 
 /**
  * Heading of a plan or list panel: the priority number in a circle (when
@@ -66,16 +68,15 @@ export function PriorityHeader({
           className="flex min-h-touch w-full items-center gap-2 rounded-md px-2.5 py-2 text-left active:bg-surface-sunken"
         >
           {title}{" "}
-          <span className={cn("ml-auto inline-flex items-center gap-1 pl-2", metaText)}>
-            <span className="text-accent">
-              <Icon name="check" />
-            </span>
+          <span className={cn("ml-auto inline-flex items-center gap-1 pl-2", doneMetaText)}>
+            <Icon name="check" />
             {meta}
           </span>
           <span
             className={cn(
               "motion-safe:transition-transform",
-              collapse.expanded ? "rotate-90" : "-rotate-90",
+              // The "back" chevron turned: points right while folded, down when open.
+              collapse.expanded ? "-rotate-90" : "rotate-180",
             )}
           >
             <Icon name="back" />

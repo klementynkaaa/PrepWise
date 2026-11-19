@@ -81,6 +81,13 @@ describe("PriorityHeader with collapse", () => {
     expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("shows a finished group's count in accent, not muted", () => {
+    render(<Folded />);
+    const count = screen.getByText("5 z 5");
+    expect(count).toHaveClass("text-accent");
+    expect(count).not.toHaveClass("text-ink-muted");
+  });
+
   it("forwards its ref to the button so focus can move to it", () => {
     const ref = createRef<HTMLButtonElement>();
     render(<Folded ref={ref} />);

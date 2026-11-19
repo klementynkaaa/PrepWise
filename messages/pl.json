@@ -474,6 +474,11 @@
         "title": "Teraz: kompletowanie zapasów",
         "body": "Lista zakupów jest gotowa do odhaczania.",
         "action": "Otwórz listę"
+      },
+      "complete": {
+        "title": "Zapasy na 72 godziny gotowe",
+        "body": "Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków.",
+        "action": "Otwórz listę"
       }
     },
     "readiness": {

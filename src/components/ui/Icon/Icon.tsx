@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "../_shared/cn";
 
 // Line icons: 2px stroke, rounded caps, drawn on a 24 grid. Only for
 // navigation and controls — never on list rows. Always decorative
@@ -65,8 +66,11 @@ const paths: Record<IconName, ReactNode> = {
 
 type IconProps = {
   name: IconName;
-  /** "md" is 20px (controls, notices), "lg" is 24px (tab bar). */
-  size?: "md" | "lg";
+  /**
+   * "md" is 20px (controls, notices), "lg" is 24px (tab bar), "xl" is 32px
+   * (the check inside the large progress ring).
+   */
+  size?: "md" | "lg" | "xl";
 };
 
 export function Icon({ name, size = "md" }: IconProps) {
@@ -80,7 +84,7 @@ export function Icon({ name, size = "md" }: IconProps) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={size === "lg" ? "size-6 shrink-0" : "size-5 shrink-0"}
+      className={cn("shrink-0", size === "xl" ? "size-8" : size === "lg" ? "size-6" : "size-5")}
     >
       {paths[name]}
     </svg>

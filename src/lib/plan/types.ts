@@ -148,4 +148,4 @@ export type Plan = {
  * The household's stage on Start: the plan is ready, or, once the shopping
  * list exists, the household is collecting supplies.
  */
-export type PlanStage = "ready" | "collecting";
+export type PlanStage = "ready" | "collecting" | "complete";

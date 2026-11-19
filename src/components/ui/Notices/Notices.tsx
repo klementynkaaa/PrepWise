@@ -3,7 +3,8 @@ import { Icon } from "../Icon";
 
 type NoticeProps = {
   children: ReactNode;
-  icon?: "info" | "offline";
+  /** `check` marks something finished (e.g. every supply ticked on Start). */
+  icon?: "info" | "offline" | "check";
   /**
    * `false` when the notice appears only after something happened (a failed
    * save): a live region added already filled is often not read, so the
@@ -19,7 +20,9 @@ export function Notice({ children, icon = "info", live = true }: NoticeProps) {
       role={live ? "status" : undefined}
       className="flex items-start gap-2.5 rounded-md bg-notice-bg px-4 py-3 text-body-sm"
     >
-      <Icon name={icon} />
+      <span className={icon === "check" ? "text-accent" : undefined}>
+        <Icon name={icon} />
+      </span>
       <span>{children}</span>
     </div>
   );

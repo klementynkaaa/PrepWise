@@ -8,6 +8,7 @@ import {
   Notice,
   LiveStatus,
   PageHeader,
+  Panel,
   ProgressPanel,
   Skeleton,
   SkeletonGroup,
@@ -224,18 +225,22 @@ function ListReady({
               {t("plan.sources.open")}
             </TextButton>
           </div>
-          <ProgressPanel
-            count={t("progress.done", { done: progress.done, total: progress.total })}
-            left={t("list.progress.left", { count: progress.left })}
-            done={progress.done}
-            total={progress.total}
-            barLabel={t("list.progress.bar")}
-          />
+          {/* All ticked: the success panel takes the progress panel's place. */}
           {progress.left === 0 ? (
-            <EmptyState illustration="kit-complete" title={t("list.done.title", { hours })}>
-              {t("list.done.body", { done: progress.done, total: progress.total })}
-            </EmptyState>
-          ) : null}
+            <Panel>
+              <EmptyState illustration="kit-complete" title={t("list.done.title", { hours })}>
+                {t("list.done.body", { done: progress.done, total: progress.total })}
+              </EmptyState>
+            </Panel>
+          ) : (
+            <ProgressPanel
+              count={t("progress.done", { done: progress.done, total: progress.total })}
+              left={t("list.progress.left", { count: progress.left })}
+              done={progress.done}
+              total={progress.total}
+              barLabel={t("list.progress.bar")}
+            />
+          )}
           {saveFailed ? <Notice live={false}>{t("list.saveFailed")}</Notice> : null}
           <div ref={groupsRoot} className="flex flex-col gap-3">
             {shopping.groups.map((group) => {

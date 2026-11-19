@@ -25,7 +25,7 @@ import { AppFrame } from "@/features/shell/AppFrame";
 import { AppUnavailable } from "@/features/shell/AppUnavailable";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household, type Tick } from "@/lib/household";
-import { buildList } from "@/lib/list";
+import { buildList, type ListProgress } from "@/lib/list";
 import { buildPlan, planStage, type Plan } from "@/lib/plan";
 
 /**
@@ -104,10 +104,12 @@ function StartReady({
       householdMembers(summary).map(([key, count]) => t(`household.members.${key}`, { count })),
     );
   }, [summary, locale, t]);
-  const stage = planStage(plan, listCreated);
+  // The list's own numbers, so Start, Plan and the list agree.
+  const progress = useMemo(() => buildList(plan, ticks).progress, [plan, ticks]);
+  const stage = planStage(plan, listCreated, progress.left === 0);
   const planHref = appHref("plan", locale);
   // "Do zrobienia" leads to where the work is: the plan, then the list.
-  const todoHref = stage === "collecting" ? appHref("list", locale) : planHref;
+  const todoHref = stage === "ready" ? planHref : appHref("list", locale);
 
   return (
     <AppFrame locale={locale}>
@@ -123,11 +125,11 @@ function StartReady({
           </span>
         </Banner>
 
-        {listCreated ? <Readiness plan={plan} ticks={ticks} locale={locale} /> : null}
+        {listCreated ? <Readiness plan={plan} progress={progress} locale={locale} /> : null}
 
         <div className="flex flex-col gap-2">
           <SectionHeader title={t("todo.title")} />
-          <Notice>
+          <Notice icon={stage === "complete" ? "check" : "info"}>
             <span className="flex flex-col gap-1">
               <span className="text-body-strong">{t(`todo.${stage}.title`)}</span>
               <span>{t(`todo.${stage}.body`)}</span>
@@ -196,9 +198,16 @@ function PlanTiles({ plan, locale }: { plan: Plan; locale: AppLocale }) {
  * Once the list exists, right under the banner: a ring panel that opens the list. Its numbers
  * come from the list itself, so Start, Plan and the list show the same count.
  */
-function Readiness({ plan, ticks, locale }: { plan: Plan; ticks: Tick[]; locale: AppLocale }) {
+function Readiness({
+  plan,
+  progress,
+  locale,
+}: {
+  plan: Plan;
+  progress: ListProgress;
+  locale: AppLocale;
+}) {
   const t = useTranslations();
-  const progress = useMemo(() => buildList(plan, ticks).progress, [plan, ticks]);
   return (
     <div className="flex flex-col gap-2">
       <SectionHeader

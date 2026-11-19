@@ -39,10 +39,14 @@ export function effectiveSource(item: PlanItem): Source {
     : "prepwise";
 }
 
-/** The household's stage on Start: "collecting" once the shopping list exists. */
-export function planStage(plan: Plan, listCreated: boolean): PlanStage {
+/**
+ * The household's stage on Start: "collecting" once the shopping list
+ * exists, "complete" once everything on it is ticked.
+ */
+export function planStage(plan: Plan, listCreated: boolean, allDone = false): PlanStage {
   void plan;
-  return listCreated ? "collecting" : "ready";
+  if (!listCreated) return "ready";
+  return allDone ? "complete" : "collecting";
 }
 
 function isPeopleGroup(group: MemberGroup): group is PeopleGroup {

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { progressPercent } from "@/lib/progress";
 import { StatusPill } from "../Pills";
 import { cn } from "../_shared/cn";
+import { Icon } from "../Icon";
 
 const RADIUS = 20;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -17,7 +18,10 @@ type ProgressProps = {
 type ProgressRingProps = ProgressProps & {
   /** The short count inside the ring, e.g. "3/7" (`progress.fraction`). */
   fraction: string;
-  /** `lg` (80px) heads a screen, as on Start; `md` (48px) sits in a row. */
+  /**
+   * `lg` (80px) heads a screen, as on Start, and shows a check mark instead
+   * of the fraction once everything is done; `md` (48px) sits in a row.
+   */
   size?: "md" | "lg";
   /**
    * Hidden from screen readers when visible words beside it already say the
@@ -82,7 +86,13 @@ export function ProgressRing({
           size === "lg" ? "text-body-strong font-bold" : "text-label",
         )}
       >
-        {fraction}
+        {size === "lg" && total > 0 && done >= total ? (
+          <span className="text-accent">
+            <Icon name="check" size="xl" />
+          </span>
+        ) : (
+          fraction
+        )}
       </span>
     </div>
   );

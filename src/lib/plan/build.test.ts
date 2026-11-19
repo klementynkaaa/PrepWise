@@ -423,5 +423,9 @@ describe("buildPlan — rules", () => {
     const plan = buildPlan(minimalSummary(), 3);
     expect(planStage(plan, false)).toBe("ready");
     expect(planStage(plan, true)).toBe("collecting");
+    expect(planStage(plan, true, false)).toBe("collecting");
+    expect(planStage(plan, true, true)).toBe("complete");
+    // Without a list nothing can be complete.
+    expect(planStage(plan, false, true)).toBe("ready");
   });
 });

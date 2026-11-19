@@ -34,4 +34,17 @@ describe("ProgressBarRow", () => {
     expect(screen.queryByText("100%")).not.toBeInTheDocument();
     expect(screen.getByText("3 z 3")).toBeInTheDocument();
   });
+
+  it("shows a check mark instead of the fraction in a full large ring", () => {
+    const { container, rerender } = render(
+      <ProgressRing done={19} total={20} label="Gotowe 19 z 20" fraction="19/20" size="lg" />,
+    );
+    expect(screen.getByText("19/20")).toBeInTheDocument();
+    rerender(
+      <ProgressRing done={20} total={20} label="Gotowe 20 z 20" fraction="20/20" size="lg" />,
+    );
+    expect(screen.queryByText("20/20")).not.toBeInTheDocument();
+    expect(container.querySelector("[aria-hidden] svg")).not.toBeNull();
+    expect(screen.getByRole("img", { name: "Gotowe 20 z 20" })).toBeInTheDocument();
+  });
 });

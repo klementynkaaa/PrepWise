@@ -1,6 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMemoryStore, type HouseholdStore } from "@/lib/household";
+import { createMemoryStore, summarise, type HouseholdStore } from "@/lib/household";
+import { buildList } from "@/lib/list";
+import { buildPlan } from "@/lib/plan";
+import { PLAN_DAYS } from "@/features/plan/format";
 import { completeHousehold } from "@/lib/household/fixtures";
 import { renderScreen, storeWithPlan } from "@/features/household/test-utils";
 import { StartScreen } from "./StartScreen";
@@ -104,6 +107,27 @@ describe("start screen", () => {
     // The tiles give way to the one panel.
     expect(screen.queryByRole("heading", { name: "Plan na 72 godziny" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^Priorytet \d:/ })).not.toBeInTheDocument();
+  });
+
+  it("marks the stage as done once every supply on the list is ticked", async () => {
+    const household = defaultHousehold();
+    const store = await storeWithPlan(household);
+    await store.markListCreated();
+    const list = buildList(buildPlan(summarise(household), PLAN_DAYS), []);
+    for (const row of list.groups.flatMap((group) => group.rows)) {
+      await store.setTick(row.itemId, true, row.quantity);
+    }
+    renderStart(store);
+
+    expect(await screen.findByText("Zapasy na 72 godziny gotowe")).toBeInTheDocument();
+    expect(
+      screen.getByText("Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Teraz: kompletowanie zapasów")).not.toBeInTheDocument();
+    const panel = screen.getByRole("link", { name: /^Gotowe 22 z 22/ });
+    // The full ring shows a check mark instead of "22/22".
+    expect(within(panel).queryByText("22/22")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Wszystko odhaczone.")).toBeInTheDocument();
   });
 
   it("leaves the section tiles out when the plan has no sections", async () => {

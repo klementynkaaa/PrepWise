@@ -157,7 +157,9 @@ describe("list screen", () => {
       await screen.findByRole("heading", { level: 2, name: "Wszystko na 72 godziny gotowe" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/^22 z 22 rzeczy odhaczone\./)).toBeInTheDocument();
-    expect(screen.getByText("Wszystko odhaczone.")).toBeInTheDocument();
+    // The success panel takes the progress panel's place.
+    expect(screen.queryByText("Wszystko odhaczone.")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Gotowe \d+ z \d+$/, { selector: "p:not(.sr-only)" })).toBeNull();
     expect(screen.getAllByRole("button", { expanded: false })).toHaveLength(4);
   });
 
