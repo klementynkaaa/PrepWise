@@ -1,0 +1,28 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { ProgressPanel } from "./ProgressPanel";
+
+const props = {
+  count: "Gotowe 7 z 22",
+  left: "Zostało 15 rzeczy do odhaczenia.",
+  done: 7,
+  total: 22,
+  barLabel: "Gotowe 7 z 22",
+};
+
+describe("ProgressPanel", () => {
+  it("shows the count, one bar and what is left", () => {
+    render(<ProgressPanel {...props} />);
+    expect(screen.getByText("Gotowe 7 z 22")).toBeVisible();
+    expect(screen.getAllByRole("img", { name: "Gotowe 7 z 22" })).toHaveLength(1);
+    expect(screen.getByText("Zostało 15 rzeczy do odhaczenia.")).toBeVisible();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("becomes one link with a heading when given a title and href", () => {
+    render(<ProgressPanel {...props} title="Gotowość na 72 godziny" href="/pl/list" />);
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/pl/list");
+    expect(screen.getByRole("heading", { name: "Gotowość na 72 godziny" })).toBeInTheDocument();
+  });
+});

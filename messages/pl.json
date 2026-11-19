@@ -462,5 +462,15 @@
       "order": "Układanie kolejności",
       "save": "Zapisywanie planu"
     }
+  },
+  "progress": {
+    "count": "{done} z {total}",
+    "done": "Gotowe {done} z {total}",
+    "fraction": "{done}/{total}"
+  },
+  "list": {
+    "progress": {
+      "left": "{count, plural, one {Została # rzecz do odhaczenia.} few {Zostały # rzeczy do odhaczenia.} many {Zostało # rzeczy do odhaczenia.} other {Zostało # rzeczy do odhaczenia.}}"
+    }
   }
 }

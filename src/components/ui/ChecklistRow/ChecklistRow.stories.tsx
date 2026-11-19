@@ -1,18 +1,28 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { useState } from "react";
 import { useArgs } from "storybook/preview-api";
 import { fn } from "storybook/test";
 import { ChecklistRow } from "./ChecklistRow";
-import { Divider, PanelList } from "../Panel";
-import { UndoBar } from "../UndoBar";
+import { PanelList } from "../Panel";
 
 const meta = {
   title: "Lista/ChecklistRow",
   component: ChecklistRow,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Wiersz listy zakupów do odhaczenia: pole wyboru, nazwa z opisem i ilość po prawej. Odhaczony wiersz " +
+          "jest szary, z zaznaczonym polem — bez przekreślenia i bez dodatkowego słowa. „Najpierw” oznacza " +
+          "pierwszą rzecz do zrobienia. Nie używaj go do wyboru opcji w formularzu (do tego jest " +
+          "`OptionCheckbox`) ani do wierszy planu bez odhaczania (`PlanRow`).",
+      },
+    },
+  },
   args: {
-    name: "Kup wodę pitną",
-    detail: "27 l · np. 6 butelek po 5 l",
+    name: "Woda",
+    detail: "3 l × 3 osoby × 3 dni",
+    quantity: "27 l",
     checked: false,
     onChange: fn(),
   },
@@ -40,60 +50,34 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ToDo: Story = {};
+export const Unticked: Story = {};
 
-/** Done: sunken row, check mark and "Mam" — never struck through. */
-export const Done: Story = { args: { checked: true } };
+/** Ticked: grey row and a checked box. The quantity stays. */
+export const Ticked: Story = { args: { checked: true } };
 
-const items = [
-  { id: "water", name: "Kup wodę pitną", detail: "27 l · np. 6 butelek po 5 l" },
-  { id: "food", name: "Konserwy i suchy prowiant", detail: "na 3 dni dla 3 osób" },
-  { id: "radio", name: "Radio na baterie", detail: "1 szt." },
-] as const;
+/** The first unticked thing on the list: tinted, labelled "Najpierw". */
+export const First: Story = { args: { first: { label: "Najpierw" } } };
 
-type ItemId = (typeof items)[number]["id"];
-
-/** A list with undo after unticking, as on the Lista screen. */
-export const ListWithUndo: Story = {
-  decorators: [(Story) => <Story />],
-  render: function Render() {
-    const [done, setDone] = useState<ReadonlySet<ItemId>>(new Set(["radio"]));
-    const [undo, setUndo] = useState<ItemId | null>(null);
-
-    function toggle(id: ItemId, checked: boolean) {
-      setDone((previous) => {
-        const next = new Set(previous);
-        if (checked) next.add(id);
-        else next.delete(id);
-        return next;
-      });
-      setUndo(checked ? null : id);
-    }
-
-    const undoItem = items.find((item) => item.id === undo);
-
-    return (
-      <div className="flex flex-col gap-3">
-        <PanelList>
-          {items.map((item, index) => (
-            <div key={item.id}>
-              {index > 0 && <Divider />}
-              <ChecklistRow
-                name={item.name}
-                detail={item.detail}
-                checked={done.has(item.id)}
-                onChange={(checked) => toggle(item.id, checked)}
-              />
-            </div>
-          ))}
-        </PanelList>
-        {undoItem && (
-          <UndoBar
-            message={`Odznaczono: ${undoItem.name}`}
-            onUndo={() => toggle(undoItem.id, true)}
-          />
-        )}
-      </div>
-    );
+/** Long name and detail wrap; the quantity stays on the right. */
+export const LongText: Story = {
+  args: {
+    name: "Leki przyjmowane na stałe i zapas recept",
+    detail: "na 3 dni dla każdej osoby, która je bierze, plus kopia listy leków",
+    quantity: "3 opakowania",
   },
+};
+
+/**
+ * Narrow container, as at a large system font size (200 %): the quantity
+ * moves under the name and stays readable.
+ */
+export const LargeText: Story = {
+  args: { first: { label: "Najpierw" } },
+  decorators: [
+    (Story) => (
+      <div className="w-64">
+        <Story />
+      </div>
+    ),
+  ],
 };

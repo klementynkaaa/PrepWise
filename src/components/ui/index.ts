@@ -21,6 +21,7 @@ export { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } f
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";
 export { PlanRow } from "./PlanRow";
 export { ProgressBar, ProgressBarRow, ProgressRing } from "./Progress";
+export { ProgressPanel } from "./ProgressPanel";
 export { SectionHeader } from "./SectionHeader";
 export { FactChip, PriorityBadge, PriorityHeader, SaveStatus, type SaveState } from "./Status";
 export { BackLink, TextButton, TextLink, type TextLinkSize } from "./TextLink";

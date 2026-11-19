@@ -1,4 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { useState } from "react";
+import { expect, userEvent, within } from "storybook/test";
+import { ChecklistRow } from "../ChecklistRow";
+import { PanelList } from "../Panel";
 import { FactChip, PriorityBadge, PriorityHeader, SaveStatus } from "./Status";
 
 const meta = {
@@ -49,6 +53,60 @@ export const PriorityWithCount: Story = {
 /** Sekcja bez priorytetu (np. „Dla psa”): ten sam nagłówek, bez numeru. */
 export const SectionWithoutTier: Story = {
   render: () => <PriorityHeader meta="3 rzeczy">Dla psa</PriorityHeader>,
+};
+
+/**
+ * A finished group on the list: the header is a disclosure button ("✓ 2 z 2"
+ * and a chevron). Tapping it opens or folds the group's rows.
+ */
+function FoldedGroup({ initiallyExpanded }: { initiallyExpanded: boolean }) {
+  const [expanded, setExpanded] = useState(initiallyExpanded);
+  return (
+    <PanelList>
+      <PriorityHeader
+        tier={1}
+        tierLabel="Priorytet 1"
+        meta="2 z 2"
+        collapse={{
+          expanded,
+          onToggle: () => setExpanded((open) => !open),
+          controls: "group-1-rows",
+        }}
+      >
+        Najważniejsze
+      </PriorityHeader>
+      <div id="group-1-rows" hidden={!expanded}>
+        <ChecklistRow name="Woda" quantity="27 l" checked onChange={() => {}} />
+        <ChecklistRow name="Jedzenie" quantity="27 porcji" checked onChange={() => {}} />
+      </div>
+    </PanelList>
+  );
+}
+
+export const Collapsed: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "`PriorityHeader` z `collapse`: ukończona grupa na liście zwija się do nagłówka-przycisku. " +
+          "Użyj go tylko dla grupy, w której wszystko jest odhaczone; nie używaj go do sekcji planu ani " +
+          "do grup, w których coś zostało do zrobienia.",
+      },
+    },
+  },
+  render: () => <FoldedGroup initiallyExpanded={false} />,
+};
+
+export const Expanded: Story = { render: () => <FoldedGroup initiallyExpanded /> };
+
+/** Keyboard focus on the disclosure button, as after a tick folds the group. */
+export const CollapsedFocus: Story = {
+  render: () => <FoldedGroup initiallyExpanded={false} />,
+  play: async ({ canvasElement }) => {
+    await userEvent.tab();
+    const button = within(canvasElement).getByRole("button", { expanded: false });
+    await expect(button).toHaveFocus();
+  },
 };
 
 /**

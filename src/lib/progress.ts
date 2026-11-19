@@ -1,12 +1,18 @@
 /**
- * Progress arithmetic and labels for rings and bars. Display helpers never
- * throw: invalid input is clamped, so a bad count can't break a screen.
+ * Progress arithmetic for rings, bars and counts. Display helpers never
+ * throw: invalid input is clamped, so a bad count can't break a screen. The
+ * words ("Gotowe 3 z 7") live in messages/pl.json (`progress.*`); callers
+ * format them from `clampProgress`, so the numbers match the bar.
  */
 
-function sanitize(done: number, total: number): [number, number] {
+/**
+ * Whole, non-negative counts with done never above total. Non-finite input
+ * counts as 0.
+ */
+export function clampProgress(done: number, total: number): { done: number; total: number } {
   const t = Number.isFinite(total) ? Math.max(0, Math.floor(total)) : 0;
   const d = Number.isFinite(done) ? Math.min(Math.max(0, Math.floor(done)), t) : 0;
-  return [d, t];
+  return { done: d, total: t };
 }
 
 /**
@@ -14,23 +20,6 @@ function sanitize(done: number, total: number): [number, number] {
  * is done (199 of 200 is 99 %, not 100 %). An empty total is 0 %.
  */
 export function progressPercent(done: number, total: number): number {
-  const [d, t] = sanitize(done, total);
+  const { done: d, total: t } = clampProgress(done, total);
   return t === 0 ? 0 : Math.floor((d / t) * 100);
-}
-
-/** Count in words, e.g. "12 z 38". */
-export function progressCountLabel(done: number, total: number): string {
-  const [d, t] = sanitize(done, total);
-  return `${d} z ${t}`;
-}
-
-/** Short fraction for the inside of the progress ring, e.g. "12/38". */
-export function progressFractionLabel(done: number, total: number): string {
-  const [d, t] = sanitize(done, total);
-  return `${d}/${t}`;
-}
-
-/** What a screen reader hears for a ring or bar, e.g. "Gotowe 12 z 38". */
-export function progressAriaLabel(done: number, total: number): string {
-  return `Gotowe ${progressCountLabel(done, total)}`;
 }

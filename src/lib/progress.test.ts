@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  progressAriaLabel,
-  progressCountLabel,
-  progressFractionLabel,
-  progressPercent,
-} from "./progress";
+import { clampProgress, progressPercent } from "./progress";
 
 describe("progressPercent", () => {
   it("rounds down to a whole percentage", () => {
@@ -37,21 +32,14 @@ describe("progressPercent", () => {
   });
 });
 
-describe("progress labels", () => {
-  it("formats the count in words", () => {
-    expect(progressCountLabel(12, 38)).toBe("12 z 38");
+describe("clampProgress", () => {
+  it("keeps valid counts", () => {
+    expect(clampProgress(12, 38)).toEqual({ done: 12, total: 38 });
   });
 
-  it("formats the short fraction for the ring", () => {
-    expect(progressFractionLabel(3, 7)).toBe("3/7");
-  });
-
-  it("formats the spoken label", () => {
-    expect(progressAriaLabel(12, 38)).toBe("Gotowe 12 z 38");
-  });
-
-  it("clamps labels the same way as the percentage", () => {
-    expect(progressCountLabel(9, 7)).toBe("7 z 7");
-    expect(progressFractionLabel(-2, 7)).toBe("0/7");
+  it("clamps the same way as the percentage", () => {
+    expect(clampProgress(9, 7)).toEqual({ done: 7, total: 7 });
+    expect(clampProgress(-2, 7)).toEqual({ done: 0, total: 7 });
+    expect(clampProgress(3.9, Number.NaN)).toEqual({ done: 0, total: 0 });
   });
 });
