@@ -169,14 +169,21 @@ describe("list screen", () => {
     };
     renderList(failing);
     await screen.findByText("Gotowe 0 z 22");
+    // The live region is there, empty, before anything fails, so the failure is read.
+    const region = liveRegion();
+    expect(region).toHaveTextContent("");
 
     await userEvent.click(box("Woda"));
 
-    expect(await screen.findByText(/^Nie udało się zapisać odhaczenia\./)).toBeInTheDocument();
+    await waitFor(() => expect(region).toHaveTextContent(/^Nie udało się zapisać odhaczenia\./));
+    expect(liveRegion()).toBe(region);
+    // The visible notice is not a second live region.
+    const notices = screen.getAllByText(/^Nie udało się zapisać odhaczenia\./);
+    expect(notices).toHaveLength(2);
+    expect(notices.filter((element) => element.closest('[role="status"]'))).toEqual([region]);
     expect(box("Woda")).not.toBeChecked();
     expect(groupOrder("tier-1")).toEqual(TIER_1);
     expect(screen.getByText("Gotowe 0 z 22")).toBeInTheDocument();
-    expect(liveRegion()).toHaveTextContent("");
   });
 
   it("shows the storage error with only a title and a retry", async () => {

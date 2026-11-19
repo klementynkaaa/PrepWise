@@ -23,6 +23,11 @@ describe("ProgressPanel", () => {
     render(<ProgressPanel {...props} title="Gotowość na 72 godziny" href="/pl/list" />);
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/pl/list");
+    // The link is named by its words; the bar adds nothing to that name.
+    expect(link).toHaveAccessibleName(
+      "Gotowość na 72 godziny Gotowe 7 z 22 Zostało 15 rzeczy do odhaczenia.",
+    );
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Gotowość na 72 godziny" })).toBeInTheDocument();
   });
 });

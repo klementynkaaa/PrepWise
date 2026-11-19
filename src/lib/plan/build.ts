@@ -39,10 +39,10 @@ export function effectiveSource(item: PlanItem): Source {
     : "prepwise";
 }
 
-/** The household's stage on Start. S-02 has one stage. */
-export function planStage(plan: Plan): PlanStage {
+/** The household's stage on Start: "collecting" once the shopping list exists. */
+export function planStage(plan: Plan, listCreated: boolean): PlanStage {
   void plan;
-  return "ready";
+  return listCreated ? "collecting" : "ready";
 }
 
 function isPeopleGroup(group: MemberGroup): group is PeopleGroup {

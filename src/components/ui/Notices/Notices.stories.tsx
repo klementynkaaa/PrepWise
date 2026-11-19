@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Alert, Notice, Tip } from "./Notices";
+import { Alert, LiveStatus, Notice, Tip } from "./Notices";
 
 const meta = {
   title: "Komunikaty/Notice",
@@ -19,6 +19,25 @@ export const Offline: Story = {
     icon: "offline",
     children: "Jesteś offline. Wszystko działa — zmiany zapisują się w telefonie.",
   },
+};
+
+/**
+ * Pojawia się dopiero po zdarzeniu (np. nieudany zapis). Sama nie jest
+ * komunikatem na żywo: te same słowa trafiają do `LiveStatus`, który jest
+ * na ekranie od początku, więc czytnik ekranu na pewno je odczyta.
+ */
+export const AfterAnEvent: Story = {
+  args: {
+    live: false,
+    children:
+      "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+  },
+  render: (args) => (
+    <>
+      <Notice {...args} />
+      <LiveStatus>{args.children}</LiveStatus>
+    </>
+  ),
 };
 
 export const Hint: Story = {

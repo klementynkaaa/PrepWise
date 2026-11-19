@@ -6,6 +6,7 @@ import {
   Button,
   EmptyState,
   Notice,
+  LiveStatus,
   PageHeader,
   ProgressPanel,
   Skeleton,
@@ -96,7 +97,8 @@ function ListNotCreated({ locale, onCreated }: { locale: AppLocale; onCreated: (
           >
             {t("empty.body")}
           </EmptyState>
-          {failed ? <Notice>{t("empty.failed")}</Notice> : null}
+          {failed ? <Notice live={false}>{t("empty.failed")}</Notice> : null}
+          <LiveStatus>{failed ? t("empty.failed") : null}</LiveStatus>
         </div>
       </main>
     </AppFrame>
@@ -234,7 +236,7 @@ function ListReady({
               {t("list.done.body", { done: progress.done, total: progress.total })}
             </EmptyState>
           ) : null}
-          {saveFailed ? <Notice>{t("list.saveFailed")}</Notice> : null}
+          {saveFailed ? <Notice live={false}>{t("list.saveFailed")}</Notice> : null}
           <div ref={groupsRoot} className="flex flex-col gap-3">
             {shopping.groups.map((group) => {
               const key = groupKey(group);
@@ -258,10 +260,15 @@ function ListReady({
               );
             })}
           </div>
-          {/* One polite announcement per saved tick; present from the start so it is read. */}
-          <p role="status" className="sr-only">
-            {announce ? t("progress.done", { done: progress.done, total: progress.total }) : null}
-          </p>
+          {/* Present from the start so it is read: the new count after a saved
+              tick, or why a tick could not be saved. */}
+          <LiveStatus>
+            {saveFailed
+              ? t("list.saveFailed")
+              : announce
+                ? t("progress.done", { done: progress.done, total: progress.total })
+                : null}
+          </LiveStatus>
         </div>
       </main>
       <SourcesSheet open={sourcesOpen} onClose={closeSources} />

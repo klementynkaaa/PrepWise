@@ -266,9 +266,14 @@
       "prepwise": "rekomendacja PREPWISE, gdy oficjalnej liczby brak",
       "close": "Zamknij"
     },
+    "list": {
+      "title": "Lista zakupów",
+      "line": "{count, plural, one {Ta sama # rzecz do odhaczania — z postępem zapisanym w telefonie.} few {Te same # rzeczy do odhaczania — od najważniejszych, z postępem zapisanym w telefonie.} many {Te same # rzeczy do odhaczania — od najważniejszych, z postępem zapisanym w telefonie.} other {Te same # rzeczy do odhaczania — od najważniejszych, z postępem zapisanym w telefonie.}}",
+      "create": "Stwórz listę zakupów",
+      "open": "Otwórz listę"
+    },
     "unavailable": {
       "title": "Nie da się otworzyć planu",
-      "body": "Przeglądarka nie pozwala odczytać danych zapisanych w telefonie. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
       "retry": "Spróbuj jeszcze raz"
     },
     "items": {
@@ -432,7 +437,8 @@
   "nav": {
     "label": "Główna nawigacja",
     "start": "Start",
-    "plan": "Plan"
+    "plan": "Plan",
+    "list": "Lista"
   },
   "home": {
     "metaTitle": "Start",
@@ -463,7 +469,16 @@
         "title": "Plan gotowy — czas na kompletowanie",
         "body": "Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka.",
         "action": "Otwórz plan"
+      },
+      "collecting": {
+        "title": "Teraz: kompletowanie zapasów",
+        "body": "Lista zakupów jest gotowa do odhaczania.",
+        "action": "Otwórz listę"
       }
+    },
+    "readiness": {
+      "title": "Gotowość na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
+      "plan": "Plan"
     },
     "plan": {
       "title": "Plan na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",

@@ -11,7 +11,8 @@ const meta = {
         component:
           "Postęp całej listy w jednym panelu: „Gotowe x z y”, jeden pasek i „Zostało N rzeczy do " +
           "odhaczenia.”. Użyj go na górze listy zakupów i na ekranie Start (z tytułem i linkiem do listy). " +
-          "Nie dziel go na grupy — każda grupa ma własne „x z y” w nagłówku — i nie używaj go do wczytywania.",
+          "Nie dziel go na grupy — każda grupa ma własne „x z y” w nagłówku — i nie używaj go do wczytywania. " +
+          "Jako link czytnik ekranu słyszy tylko jego słowa; pasek jest wtedy ukryty przed czytnikiem.",
       },
     },
   },
@@ -47,7 +48,10 @@ export const Done: Story = {
   },
 };
 
-/** On Start: a title, and the whole panel opens the list. */
+/**
+ * On Start: the whole panel opens the list. The link is named by its words,
+ * so the bar is hidden from screen readers here.
+ */
 export const AsLink: Story = {
   args: { title: "Gotowość na 72 godziny", href: "/" },
 };

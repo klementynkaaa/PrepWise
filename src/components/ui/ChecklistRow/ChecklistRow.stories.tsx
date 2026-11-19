@@ -15,7 +15,8 @@ const meta = {
           "Wiersz listy zakupów do odhaczenia: pole wyboru, nazwa z opisem i ilość po prawej. Odhaczony wiersz " +
           "jest szary, z zaznaczonym polem — bez przekreślenia i bez dodatkowego słowa. „Najpierw” oznacza " +
           "pierwszą rzecz do zrobienia. Nie używaj go do wyboru opcji w formularzu (do tego jest " +
-          "`OptionCheckbox`) ani do wierszy planu bez odhaczania (`PlanRow`).",
+          "`OptionCheckbox`) ani do wierszy planu bez odhaczania (`PlanRow`). Odstęp między wierszami " +
+          "ustala lista (`gap-2`), nie sam wiersz — także między dwoma szarymi wierszami.",
       },
     },
   },
@@ -65,6 +66,38 @@ export const LongText: Story = {
     detail: "na 3 dni dla każdej osoby, która je bierze, plus kopia listy leków",
     quantity: "3 opakowania",
   },
+};
+
+/**
+ * Several rows as on the list: the list sets an 8px gap, so two ticked
+ * (grey) rows never touch.
+ */
+export const List: Story = {
+  render: (args) => (
+    <ul className="flex flex-col gap-2">
+      <li>
+        <ChecklistRow
+          {...args}
+          name="Pokarm dla dziecka"
+          detail="mleko, kaszki, słoiczki"
+          quantity="na 3 dni"
+          first={{ label: "Najpierw" }}
+        />
+      </li>
+      <li>
+        <ChecklistRow {...args} checked />
+      </li>
+      <li>
+        <ChecklistRow
+          {...args}
+          name="Jedzenie"
+          detail="zgodne z dietą"
+          quantity="18 porcji"
+          checked
+        />
+      </li>
+    </ul>
+  ),
 };
 
 /**

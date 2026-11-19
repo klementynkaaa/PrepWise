@@ -40,7 +40,7 @@ export function ChecklistRow({
   ].filter(Boolean);
 
   return (
-    <div className="@container mb-1 last:mb-0">
+    <div className="@container">
       <label
         className={cn(
           "flex items-center gap-3 rounded-md p-2.5",

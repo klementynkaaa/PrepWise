@@ -15,7 +15,7 @@ export {
   type StateIllustrationName,
 } from "./Illustration";
 export { Banner } from "./Banner";
-export { Alert, Notice, Tip } from "./Notices";
+export { Alert, LiveStatus, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
 export { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } from "./Panel";
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";

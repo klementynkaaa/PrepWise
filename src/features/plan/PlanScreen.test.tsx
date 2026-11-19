@@ -112,7 +112,61 @@ describe("plan screen", () => {
     await waitFor(() => expect(opener).toHaveFocus());
   });
 
-  it("shows the Online chip and the Start · Plan tabs", async () => {
+  it("ends with the Lista zakupów panel that creates the list and opens it", async () => {
+    const store = createMemoryStore(defaultHousehold());
+    const mark = vi.spyOn(store, "markListCreated");
+    renderPlan(store);
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Lista zakupów" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Te same 22 rzeczy do odhaczania — od najważniejszych, z postępem zapisanym w telefonie.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Otwórz listę" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Stwórz listę zakupów" }));
+
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/pl/list"));
+    expect(mark).toHaveBeenCalledTimes(1);
+    const load = await store.load();
+    expect(load.kind === "found" && load.listCreatedAt).not.toBeNull();
+  });
+
+  it("shows the list's progress and Otwórz listę once the list exists", async () => {
+    const store = createMemoryStore(defaultHousehold());
+    await store.markListCreated();
+    // Water ticked at today's amount, food at less than it needs now: one counts.
+    await store.setTick("drinking-water", true, 27);
+    await store.setTick("shelf-stable-food", true, 0);
+    renderPlan(store);
+
+    expect(await screen.findByText("Gotowe 1 z 22")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Postęp listy zakupów" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Otwórz listę" })).toHaveAttribute("href", "/pl/list");
+    expect(screen.queryByRole("button", { name: "Stwórz listę zakupów" })).not.toBeInTheDocument();
+  });
+
+  it("stays on Plan and explains when the list can't be created", async () => {
+    const store = createMemoryStore(defaultHousehold());
+    renderPlan({ ...store, markListCreated: () => Promise.reject(new Error("storage")) });
+    const create = await screen.findByRole("button", { name: "Stwórz listę zakupów" });
+    // The live region is there, empty, before the failure, so the failure is read.
+    const region = screen
+      .getAllByRole("status")
+      .find((element) => element.classList.contains("sr-only"))!;
+    expect(region).toHaveTextContent("");
+
+    await userEvent.click(create);
+
+    await waitFor(() => expect(region).toHaveTextContent(/^Nie udało się stworzyć listy\./));
+    expect(screen.getAllByText(/^Nie udało się stworzyć listy\./)).toHaveLength(2);
+    expect(router.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Stwórz listę zakupów" })).toBeInTheDocument();
+  });
+
+  it("shows the Online chip and the Start · Plan · Lista tabs", async () => {
     renderPlan(createMemoryStore(defaultHousehold()));
     await screen.findByText("Plan na 72 godziny");
     expect(screen.getByText("Online")).toBeInTheDocument();
@@ -122,6 +176,7 @@ describe("plan screen", () => {
     const nav = screen.getByRole("navigation", { name: "Główna nawigacja" });
     expect(within(nav).getByRole("link", { name: "Start" })).toHaveAttribute("href", "/pl/home");
     expect(within(nav).getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Lista" })).toHaveAttribute("href", "/pl/list");
   });
 
   it("does not write the plan flag when it opens", async () => {
@@ -156,6 +211,8 @@ describe("plan screen", () => {
       await screen.findByRole("heading", { level: 1, name: "Nie da się otworzyć planu" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Spróbuj jeszcze raz" })).toBeInTheDocument();
+    // The short error: a title and the button, no body line.
+    expect(screen.getByRole("main").querySelector("p")).toBeNull();
   });
 
   it("continues at the first unfinished step when the profile is not complete", async () => {

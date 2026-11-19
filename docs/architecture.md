@@ -40,13 +40,14 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 - **Locale routes.** Every screen lives under `/pl/...` (`src/app/[locale]/`), so adding a language later moves no URL. Links are built only with the locale helper (`localePath` in `src/i18n/paths.ts`), never typed by hand.
 - **Two root layouts.** `src/app/(root)/` holds `/` and `/offline`, which sit outside the locale; `src/app/[locale]/` holds everything else. `/` is a static page that forwards to `/pl` (a server redirect is not possible in a static export): a meta refresh, a client-side replace and a visible link as the last fallback.
-- **App screens.** After the household profile (`/pl/start/...`, overview at `/pl/household`) come the app screens with the Start · Plan tab bar: Start (`/pl/home`), the hub a returning household lands on, and the plan (`/pl/plan`).
+- **App screens.** After the household profile (`/pl/start/...`, overview at `/pl/household`) come the app screens with the Start · Plan · Lista tab bar: Start (`/pl/home`), the hub a returning household lands on, the plan (`/pl/plan`) and the shopping list (`/pl/list`).
 - **Where the app opens.** `/pl` resumes a saved household on the client (a static export has no server to redirect): an unfinished profile continues at its first unfinished step, a complete profile opens the overview until this device has created a plan, and then Start. With nothing saved, Welcome shows.
 - **One dictionary.** All user-facing text lives in `messages/pl.json`, not in components, routes or features. Screens read it through next-intl, so a second language is a second file.
 
 ## Household data
 
 - **Storage interface.** Screens reach the household profile only through the `HouseholdStore` interface in `src/lib/household`. The implementation is PowerSync's local database on the device (`powersync-store.ts`, stored in the browser's origin private file system), with no server connection; an in-memory one serves tests. While sync is off, it writes local-only twins of the synced tables, so nothing waits for upload. `subscribe` tells the screens about every change. Data read back is validated at the boundary. Where the database can't open (a private Safari window), screens show the existing "storage unavailable" states.
+- **Ticks.** Each ticked item on the shopping list is one row of the synced `household_ticks` set table (id `<household_id>:<item id>`), holding `selected` and the quantity it was ticked at. A tick row that can't be read is skipped, never making the profile unreadable.
 - **Shared household.** Each person belongs to one household, shared by its members on all their devices, with an `owner` and `member`s. Accounts are anonymous by default, with optional email-code linking. The Supabase backend enforces membership with row-level security and merges concurrent edits per field by timestamp. The screens and the sync client come in a later change (S-10); until then nothing syncs.
 
 ### Data contract
@@ -59,13 +60,14 @@ Every piece of household data that may be shared follows these rules, so later f
 - **Shared columns.** Every synced row has `household_id`, `updated_at` and `field_ts`, which records when each column last changed. The server fills `created_by` and `updated_by`; the device never sends who it is.
 - **Flat fields, patch saves.** Columns are plain values in `snake_case`, matching Postgres one to one, never nested objects. A save writes only the columns that changed, with a `field_ts` entry for each, so edits from two devices merge column by column (latest timestamp wins). Fields are only ever added, never renamed or removed.
 - **One source for shapes.** Row shapes are Zod schemas in `rows.ts`. A change that adds or alters a table adds the matching migration in `supabase/migrations/` in the same change.
-- **Device-only state** (which household this device shows, when this device created its plan (`plan_created_at`), filters, hints) lives in the local-only `device_state` table and other local-only tables that never sync.
+- **Device-only state** (which household this device shows, when this device created its plan (`plan_created_at`) and its shopping list (`list_created_at`), filters, hints) lives in the local-only `device_state` table and other local-only tables that never sync.
 - **Bundled item ids** (plan items, emergencies) are kebab-case slugs written by hand. They never change and are never reused, because stored rows refer to them.
 - **Rules that span fields are applied on read.** A merge can combine two valid edits into an odd mix (say, "no pets" with a cat count). Turning rows into the household that screens use (`assemble`) normalises this: without pets, pet counts read as 0. The profile status is computed there too, never stored.
 
 ## Plan
 
 - **Derived, not stored.** `src/lib/plan` holds the bundled plan content (typed items with permanent slugs, amounts per member group or pet kind, a source label and a verified flag) and a pure `buildPlan`, which turns the profile summary and the number of days into tiers, categories and member sections. Screens build the plan from the stored profile every time they open, so profile edits flow in without a new "generate". The only stored value is the device-only "plan created" timestamp, which decides where the app opens. All plan words live in `messages/pl.json`; `src/lib/plan` holds no Polish.
+- **The shopping list is derived too.** `src/lib/list` has a pure `buildList`, which turns the plan and the stored ticks into groups by priority (pets last), the "Najpierw" item and the progress count. The list, Plan's list panel and Start all take their count from it. Only the ticks and the device-only "list created" timestamp are stored; a tick on any device also counts as the list existing.
 
 ## Offline behaviour
 

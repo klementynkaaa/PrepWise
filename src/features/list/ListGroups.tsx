@@ -66,7 +66,11 @@ export function ListGroupPanel({ group, ctx, collapse, headerRef, onTick }: List
     <section>
       <PanelList>
         {header}
-        <ul id={rowsId} hidden={collapse !== undefined && !collapse.expanded}>
+        <ul
+          id={rowsId}
+          hidden={collapse !== undefined && !collapse.expanded}
+          className="flex flex-col gap-2"
+        >
           {group.rows.map((row) => (
             <li key={row.itemId} data-list-item={row.itemId}>
               <ListRowItem row={row} ctx={ctx} onTick={onTick} />

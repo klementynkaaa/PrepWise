@@ -144,5 +144,8 @@ export type Plan = {
   itemCount: number;
 };
 
-/** The household's stage on Start. S-02 has one: the plan is ready. */
-export type PlanStage = "ready";
+/**
+ * The household's stage on Start: the plan is ready, or, once the shopping
+ * list exists, the household is collecting supplies.
+ */
+export type PlanStage = "ready" | "collecting";

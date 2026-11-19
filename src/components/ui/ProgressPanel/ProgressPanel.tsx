@@ -9,7 +9,10 @@ type ProgressPanelProps = {
   left: ReactNode;
   done: number;
   total: number;
-  /** What a screen reader hears for the bar, e.g. "Gotowe 7 z 22". */
+  /**
+   * What a screen reader hears for the bar, e.g. "Postęp listy zakupów". With
+   * `href` the bar is hidden from screen readers: the link is named by its words.
+   */
   barLabel: string;
   /** A heading above the count, e.g. "Gotowość na 72 godziny" on Start. */
   title?: ReactNode;
@@ -31,12 +34,13 @@ export function ProgressPanel({
   title,
   href,
 }: ProgressPanelProps) {
+  const bar = <ProgressBar done={done} total={total} label={barLabel} />;
   const body = (
     <>
       {title && <h2 className="text-heading-sm">{title}</h2>}
       <div className="flex flex-col gap-2">
         <p className="text-body-strong">{count}</p>
-        <ProgressBar done={done} total={total} label={barLabel} />
+        {href ? <span aria-hidden="true">{bar}</span> : bar}
         <p className="text-body-sm text-ink-muted">{left}</p>
       </div>
     </>
