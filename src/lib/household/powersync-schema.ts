@@ -10,14 +10,12 @@ import { DEVICE_TABLE, LOCAL_TABLES, SQLITE_COLUMNS } from "./powersync-codec";
  * - Their local-only twins hold the household while sync is off, so nothing
  *   queues for upload (decision record, "Store branch").
  * - `device_state` (local-only) holds the household this device shows and
- *   when this device created its plan (`plan_created_at`, device state only).
+ *   when this device created its plan (`plan_created_at`) and its shopping
+ *   list (`list_created_at`), device state only.
  */
 function columns(table: TableName) {
   return Object.fromEntries(
-    Object.entries(SQLITE_COLUMNS[table]).map(([name, type]) => [
-      name,
-      type === "integer" ? column.integer : column.text,
-    ]),
+    Object.entries(SQLITE_COLUMNS[table]).map(([name, type]) => [name, column[type]]),
   );
 }
 
@@ -35,7 +33,7 @@ export const householdSchema = new Schema({
     ]),
   ),
   [DEVICE_TABLE]: new Table(
-    { household_id: column.text, plan_created_at: column.text },
+    { household_id: column.text, plan_created_at: column.text, list_created_at: column.text },
     { localOnly: true },
   ),
 });

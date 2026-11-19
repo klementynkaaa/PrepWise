@@ -9,47 +9,88 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Household, HouseholdStore, LoadResult, Step, StepPatches } from "@/lib/household";
+import type {
+  Household,
+  HouseholdStore,
+  LoadResult,
+  Step,
+  StepPatches,
+  Tick,
+} from "@/lib/household";
 
 /** What the stored profile looked like when the page opened. */
 export type HouseholdKind = "none" | "found" | "invalid";
 
-/** `planCreated`: this device has created a plan for the stored household. */
+/**
+ * - `ticks`: the household's stored shopping-list ticks.
+ * - `listCreated`: the shopping list exists, created on this device or ticked
+ *   on any device (a member or a reinstalled device receives the ticks).
+ * - `planCreated`: this device has created a plan for the stored household, or
+ *   the list exists (a list implies a plan).
+ */
+type Empty = { kind: null; household: null; ticks: Tick[]; planCreated: false; listCreated: false };
 type State =
-  | { status: "loading"; kind: null; household: null; planCreated: false }
-  | { status: "ready"; kind: HouseholdKind; household: Household | null; planCreated: boolean }
-  | { status: "unavailable"; kind: null; household: null; planCreated: false };
+  | ({ status: "loading" } & Empty)
+  | {
+      status: "ready";
+      kind: HouseholdKind;
+      household: Household | null;
+      ticks: Tick[];
+      planCreated: boolean;
+      listCreated: boolean;
+    }
+  | ({ status: "unavailable" } & Empty);
 
 export type HouseholdContextValue = State & {
   /** Saves one step. Rejects when storage fails; callers then stay on the step. */
   saveStep: <S extends Step>(step: S, patch: StepPatches[S]) => Promise<void>;
   /** Records that this device created a plan. Rejects when storage fails. */
   markPlanCreated: () => Promise<void>;
+  /** Records that this device created the shopping list. Rejects when storage fails. */
+  markListCreated: () => Promise<void>;
+  /**
+   * Ticks or unticks one item, then shows the stored ticks. Rejects when
+   * storage fails; nothing on screen changes then.
+   */
+  setTick: (itemId: string, ticked: boolean, quantity: number) => Promise<void>;
 };
 
 export const HouseholdContext = createContext<HouseholdContextValue | null>(null);
 
-const LOADING: State = { status: "loading", kind: null, household: null, planCreated: false };
-const UNAVAILABLE: State = {
-  status: "unavailable",
+const EMPTY: Empty = {
   kind: null,
   household: null,
+  ticks: [],
   planCreated: false,
+  listCreated: false,
 };
+const LOADING: State = { status: "loading", ...EMPTY };
+const UNAVAILABLE: State = { status: "unavailable", ...EMPTY };
 
 function stateOf(result: LoadResult): State {
   switch (result.kind) {
-    case "found":
+    case "found": {
+      const listCreated = result.listCreatedAt !== null || result.ticks.some((t) => t.selected);
       return {
         status: "ready",
         kind: "found",
         household: result.household,
-        planCreated: result.planCreatedAt !== null,
+        ticks: result.ticks,
+        planCreated: result.planCreatedAt !== null || listCreated,
+        listCreated,
       };
+    }
     case "unavailable":
       return UNAVAILABLE;
     default:
-      return { status: "ready", kind: result.kind, household: null, planCreated: false };
+      return {
+        status: "ready",
+        kind: result.kind,
+        household: null,
+        ticks: [],
+        planCreated: false,
+        listCreated: false,
+      };
   }
 }
 
@@ -96,14 +137,19 @@ export function HouseholdProvider({
     async <S extends Step>(step: S, patch: StepPatches[S]) => {
       const saved = await store.saveStep(step, patch);
       latest.current += 1;
-      // A step save never changes the plan flag; keep it, as this cancels the
-      // reload that would have read it.
-      setState((previous) => ({
-        status: "ready",
-        kind: "found",
-        household: saved,
-        planCreated: previous.status === "ready" && previous.planCreated,
-      }));
+      // A step save never changes the ticks or the plan and list flags; keep
+      // them, as this cancels the reload that would have read them.
+      setState((previous) => {
+        const ready = previous.status === "ready";
+        return {
+          status: "ready",
+          kind: "found",
+          household: saved,
+          ticks: ready ? previous.ticks : [],
+          planCreated: ready && previous.planCreated,
+          listCreated: ready && previous.listCreated,
+        };
+      });
     },
     [store],
   );
@@ -116,9 +162,31 @@ export function HouseholdProvider({
     );
   }, [store]);
 
+  const markListCreated = useCallback(async () => {
+    await store.markListCreated();
+    latest.current += 1;
+    setState((previous) =>
+      previous.status === "ready"
+        ? { ...previous, listCreated: true, planCreated: true }
+        : previous,
+    );
+  }, [store]);
+
+  const setTick = useCallback(
+    async (itemId: string, ticked: boolean, quantity: number) => {
+      await store.setTick(itemId, ticked, quantity);
+      // No optimistic layer: show what the store now holds. A newer read or
+      // save started meanwhile wins, as for the subscribe reload.
+      const ticket = ++latest.current;
+      const next = await store.load().then(stateOf, () => UNAVAILABLE);
+      if (ticket === latest.current) setState(next);
+    },
+    [store],
+  );
+
   const value = useMemo<HouseholdContextValue>(
-    () => ({ ...state, saveStep, markPlanCreated }),
-    [state, saveStep, markPlanCreated],
+    () => ({ ...state, saveStep, markPlanCreated, markListCreated, setTick }),
+    [state, saveStep, markPlanCreated, markListCreated, setTick],
   );
 
   return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>;

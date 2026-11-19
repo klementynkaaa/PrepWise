@@ -11,7 +11,7 @@ import { TABLE_COLUMNS, rowSchemas, type RowOf, type TableName } from "./rows";
  * with the `rows.ts` schemas at this boundary.
  */
 
-export type SqliteType = "text" | "integer";
+export type SqliteType = "text" | "integer" | "real";
 export type SqliteValue = string | number | null;
 export type SqliteRow = Record<string, unknown>;
 
@@ -31,6 +31,8 @@ const INTEGER_COLUMNS: ReadonlySet<string> = new Set([
   "other_small",
   "schema_version",
 ]);
+/** Columns stored as floating point numbers (a quantity may be fractional). */
+const REAL_COLUMNS: ReadonlySet<string> = new Set(["quantity"]);
 /** Columns only the server fills; NULL on rows this device wrote. */
 const SERVER_ONLY_COLUMNS: ReadonlySet<string> = new Set([
   "created_by",
@@ -48,14 +50,21 @@ export const SQLITE_COLUMNS: { [T in TableName]: Record<string, SqliteType> } = 
   households: columnTypes("households"),
   household_needs: columnTypes("household_needs"),
   household_steps: columnTypes("household_steps"),
+  household_ticks: columnTypes("household_ticks"),
 };
 
 function columnTypes(table: TableName): Record<string, SqliteType> {
   return Object.fromEntries(
     TABLE_COLUMNS[table]
       .filter((column) => column !== "id")
-      .map((column) => [column, INTEGER_COLUMNS.has(column) ? "integer" : "text"]),
+      .map((column) => [column, sqliteType(column)]),
   );
+}
+
+function sqliteType(column: string): SqliteType {
+  if (INTEGER_COLUMNS.has(column)) return "integer";
+  if (REAL_COLUMNS.has(column)) return "real";
+  return "text";
 }
 
 /**
@@ -67,27 +76,41 @@ export const LOCAL_TABLES = {
   households: "local_households",
   household_needs: "local_household_needs",
   household_steps: "local_household_steps",
+  household_ticks: "local_household_ticks",
 } as const satisfies Record<TableName, string>;
 
 /**
  * Local-only table with one row (`DEVICE_ROW_ID`): the household this device
- * shows (`household_id`) and when this device created its plan
- * (`plan_created_at`). Rows written before that column existed read it as NULL.
+ * shows (`household_id`), when this device created its plan (`plan_created_at`)
+ * and its shopping list (`list_created_at`). Rows written before a column
+ * existed read it as NULL.
  */
 export const DEVICE_TABLE = "device_state";
 export const DEVICE_ROW_ID = "device";
 
-const planCreatedAtSchema = z.iso.datetime({ offset: true }).nullable();
+const deviceTimestampSchema = z.iso.datetime({ offset: true }).nullable();
+
+function decodeDeviceTimestamp(value: unknown): string | null {
+  const parsed = deviceTimestampSchema.safeParse(
+    typeof value === "string" ? normalizeTimestamp(value) : value,
+  );
+  return parsed.success ? parsed.data : null;
+}
 
 /**
  * The stored `plan_created_at`, validated at this boundary. An unreadable value
  * counts as not set: the flag only chooses between "show" and "create" the plan.
  */
 export function decodePlanCreatedAt(value: unknown): string | null {
-  const parsed = planCreatedAtSchema.safeParse(
-    typeof value === "string" ? normalizeTimestamp(value) : value,
-  );
-  return parsed.success ? parsed.data : null;
+  return decodeDeviceTimestamp(value);
+}
+
+/**
+ * The stored `list_created_at`, with the same rules as `decodePlanCreatedAt`:
+ * an unreadable value counts as not set.
+ */
+export function decodeListCreatedAt(value: unknown): string | null {
+  return decodeDeviceTimestamp(value);
 }
 
 const POSTGRES_TEXT = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/;

@@ -6,7 +6,9 @@ import {
   householdNeedRowSchema,
   householdRowSchema,
   householdStepRowSchema,
+  householdTickRowSchema,
   HOUSEHOLD_FIELDS,
+  HOUSEHOLD_TICK_FIELDS,
   ROW_SCHEMA_VERSION,
   rowSchemas,
   setRowId,
@@ -15,6 +17,7 @@ import {
   type HouseholdNeedRow,
   type HouseholdRow,
   type HouseholdStepRow,
+  type HouseholdTickRow,
 } from "./rows";
 import { MAX_COUNT, NAME_MAX_LENGTH, SCHEMA_VERSION } from "./types";
 
@@ -51,9 +54,23 @@ function stepRow(overrides: Record<string, unknown> = {}): HouseholdStepRow {
   } as HouseholdStepRow;
 }
 
+function tickRow(overrides: Record<string, unknown> = {}): HouseholdTickRow {
+  return {
+    id: `${TEST_ID}:drinking-water`,
+    household_id: TEST_ID,
+    item: "drinking-water",
+    selected: true,
+    quantity: 4.5,
+    updated_at: TEST_TIME,
+    field_ts: { item: TEST_TIME, selected: TEST_TIME, quantity: TEST_TIME },
+    ...overrides,
+  } as HouseholdTickRow;
+}
+
 const okHousehold = (value: unknown) => householdRowSchema.safeParse(value).success;
 const okNeed = (value: unknown) => householdNeedRowSchema.safeParse(value).success;
 const okStep = (value: unknown) => householdStepRowSchema.safeParse(value).success;
+const okTick = (value: unknown) => householdTickRowSchema.safeParse(value).success;
 
 describe("column lists (mirrored by the database tests' columns_are)", () => {
   const shared = [
@@ -99,8 +116,17 @@ describe("column lists (mirrored by the database tests' columns_are)", () => {
     );
   });
 
+  it("household_ticks", () => {
+    expect([...TABLE_COLUMNS.household_ticks].sort()).toEqual(
+      [...shared, "item", "selected", "quantity"].sort(),
+    );
+    for (const field of HOUSEHOLD_TICK_FIELDS) {
+      expect(TABLE_COLUMNS.household_ticks).toContain(field);
+    }
+  });
+
   it("lists a validator and columns for every table", () => {
-    expect(TABLES).toEqual(["households", "household_needs", "household_steps"]);
+    expect(TABLES).toEqual(["households", "household_needs", "household_steps", "household_ticks"]);
     expect(Object.keys(rowSchemas)).toEqual([...TABLES]);
     expect(Object.keys(TABLE_COLUMNS)).toEqual([...TABLES]);
   });
@@ -198,6 +224,37 @@ describe("set row schemas", () => {
     ["an unknown column", okStep, stepRow({ extra: 1 })],
   ])("reject %s", (_name, ok, value) => {
     expect(ok(value)).toBe(false);
+  });
+});
+
+describe("householdTickRowSchema", () => {
+  it("accepts ticked and unticked rows, a fractional and a zero quantity", () => {
+    expect(okTick(tickRow())).toBe(true);
+    expect(okTick(tickRow({ selected: false }))).toBe(true);
+    expect(okTick(tickRow({ quantity: 0 }))).toBe(true);
+    expect(okTick(tickRow({ quantity: 12 }))).toBe(true);
+  });
+
+  it("accepts an item id the catalogue does not know yet", () => {
+    expect(okTick(tickRow({ item: "solar-radio-2", id: `${TEST_ID}:solar-radio-2` }))).toBe(true);
+  });
+
+  it.each([
+    ["a camelCase item", { item: "drinkingWater", id: `${TEST_ID}:drinkingWater` }],
+    ["an item with a trailing dash", { item: "water-", id: `${TEST_ID}:water-` }],
+    ["an item with a double dash", { item: "a--b", id: `${TEST_ID}:a--b` }],
+    ["an empty item", { item: "", id: `${TEST_ID}:` }],
+    ["an id for another item", { id: `${TEST_ID}:candles` }],
+    ["an id for another household", { id: `${OTHER_ID}:drinking-water` }],
+    ["a negative quantity", { quantity: -1 }],
+    ["an infinite quantity", { quantity: Infinity }],
+    ["a NaN quantity", { quantity: NaN }],
+    ["a quantity as text", { quantity: "4" }],
+    ["a missing quantity", { quantity: undefined }],
+    ["a selected stored as a number", { selected: 1 }],
+    ["an unknown column", { unit: "l" }],
+  ])("rejects %s", (_name, override) => {
+    expect(okTick(tickRow(override))).toBe(false);
   });
 });
 

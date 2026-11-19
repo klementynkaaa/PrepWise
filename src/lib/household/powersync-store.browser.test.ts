@@ -83,13 +83,20 @@ describe("PowerSync household store", () => {
 
     const again = createPowerSyncStore({ dbFilename, v1DbName });
     opened.push(again);
-    expect(await again.load()).toEqual({ kind: "found", household: done, planCreatedAt: null });
+    expect(await again.load()).toEqual({
+      kind: "found",
+      household: done,
+      ticks: [],
+      planCreatedAt: null,
+      listCreatedAt: null,
+    });
   });
 
   it("writes only the local-only tables, so nothing waits for upload", async () => {
     const { store, dbFilename } = fresh(deps);
     await store.saveStep("people", { people: one, hasPets: false });
     await store.saveStep("needs", { needs: ["specialDiet", "limitedMobility"] });
+    await store.setTick("drinking-water", true, 4);
     await store.close();
     const counts = await inspect(dbFilename, async (db) => ({
       crud: await count(db, "ps_crud"),
@@ -97,6 +104,8 @@ describe("PowerSync household store", () => {
       localHouseholds: await count(db, "local_households"),
       localNeeds: await count(db, "local_household_needs"),
       localSteps: await count(db, "local_household_steps"),
+      ticks: await count(db, "household_ticks"),
+      localTicks: await count(db, "local_household_ticks"),
     }));
     expect(counts).toEqual({
       crud: 0,
@@ -104,6 +113,8 @@ describe("PowerSync household store", () => {
       localHouseholds: 1,
       localNeeds: 2,
       localSteps: 2,
+      ticks: 0,
+      localTicks: 1,
     });
   });
 
@@ -163,7 +174,13 @@ describe("PowerSync household store", () => {
     expect(removed.needs).toEqual(["limitedMobility"]);
     const back = await store.saveStep("needs", { needs: ["specialDiet"] });
     expect(back.needs).toEqual(["specialDiet"]);
-    expect(await store.load()).toEqual({ kind: "found", household: back, planCreatedAt: null });
+    expect(await store.load()).toEqual({
+      kind: "found",
+      household: back,
+      ticks: [],
+      planCreatedAt: null,
+      listCreatedAt: null,
+    });
   });
 
   it("rejects an invalid patch with a typed error and writes nothing", async () => {
@@ -206,7 +223,9 @@ describe("PowerSync household store", () => {
       expect(await store.load()).toEqual({
         kind: "found",
         household: completeHousehold(),
+        ticks: [],
         planCreatedAt: null,
+        listCreatedAt: null,
       });
       expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
       expect(await idb(v1DbName, (s) => s.get(BACKUP_KEY))).toBeUndefined();
@@ -217,7 +236,13 @@ describe("PowerSync household store", () => {
       await store.close();
       const again = createPowerSyncStore({ dbFilename, v1DbName });
       opened.push(again);
-      expect(await again.load()).toEqual({ kind: "found", household: saved, planCreatedAt: null });
+      expect(await again.load()).toEqual({
+        kind: "found",
+        household: saved,
+        ticks: [],
+        planCreatedAt: null,
+        listCreatedAt: null,
+      });
     });
 
     it("does not overwrite newer edits when `current` is still there on a later open", async () => {
@@ -232,7 +257,13 @@ describe("PowerSync household store", () => {
       const again = createPowerSyncStore({ dbFilename, v1DbName });
       opened.push(again);
 
-      expect(await again.load()).toEqual({ kind: "found", household: saved, planCreatedAt: null });
+      expect(await again.load()).toEqual({
+        kind: "found",
+        household: saved,
+        ticks: [],
+        planCreatedAt: null,
+        listCreatedAt: null,
+      });
       expect(await idb(v1DbName, (s) => s.get(RECORD_KEY))).toBeUndefined();
     });
 
@@ -285,7 +316,9 @@ describe("PowerSync household store", () => {
       expect(await store.load()).toEqual({
         kind: "found",
         household: next,
+        ticks: [],
         planCreatedAt: TEST_TIME,
+        listCreatedAt: null,
       });
     });
 
@@ -332,6 +365,193 @@ describe("PowerSync household store", () => {
       });
       await store.markPlanCreated();
       await expect.poll(() => calls).toBeGreaterThan(0);
+    });
+  });
+
+  describe("list created flag", () => {
+    const listCreatedAt = async (store: PowerSyncHouseholdStore) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.listCreatedAt : undefined;
+    };
+
+    it("is set by markListCreated, keeps the first timestamp and survives a reopen", async () => {
+      let tick = 0;
+      const clock = () => new Date(Date.parse(TEST_TIME) + 1000 * tick++);
+      const { store, dbFilename, v1DbName } = fresh({ newId: () => TEST_ID, now: clock });
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await listCreatedAt(store)).toBeNull();
+      await store.markListCreated();
+      const first = await listCreatedAt(store);
+      await store.markListCreated();
+      expect(await listCreatedAt(store)).toBe(first);
+      expect(first).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      const loaded = await store.load();
+      expect(loaded.kind === "found" && loaded.planCreatedAt).toBeNull();
+      await store.close();
+
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      expect(await listCreatedAt(again)).toBe(first);
+    });
+
+    it("is unset when a new household is created", async () => {
+      const { store, dbFilename, v1DbName } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.markListCreated();
+      await store.close();
+      await inspect(dbFilename, (db) => db.execute("DELETE FROM local_households"));
+
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      await again.saveStep("housing", { housingType: "house" });
+      expect(await listCreatedAt(again)).toBeNull();
+    });
+
+    it("is removed by clear", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.markListCreated();
+      await store.clear();
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "device_state"))).toBe(0);
+    });
+
+    it("is rejected without a household, and writes nothing", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await expect(store.markListCreated()).rejects.toMatchObject({ code: "invalid" });
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "device_state"))).toBe(0);
+    });
+  });
+
+  describe("ticks", () => {
+    const ticks = async (store: PowerSyncHouseholdStore) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.ticks : undefined;
+    };
+
+    it("ticks and unticks an item, keeping a fractional quantity, across a reopen", async () => {
+      const { store, dbFilename, v1DbName } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setTick("pet-water", true, 1.5);
+      expect(await ticks(store)).toEqual([{ item: "pet-water", selected: true, quantity: 1.5 }]);
+      await store.setTick("pet-water", false, 3);
+      expect(await ticks(store)).toEqual([{ item: "pet-water", selected: false, quantity: 1.5 }]);
+      await store.setTick("pet-water", true, 3);
+      await store.setTick("candles", true, 2);
+      await store.close();
+
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      expect(await ticks(again)).toEqual(
+        expect.arrayContaining([
+          { item: "pet-water", selected: true, quantity: 3 },
+          { item: "candles", selected: true, quantity: 2 },
+        ]),
+      );
+      expect(await ticks(again)).toHaveLength(2);
+    });
+
+    it("keeps every tick when several run at once", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setTick("matches", true, 1);
+      await Promise.all([
+        store.setTick("candles", true, 2),
+        store.setTick("drinking-water", true, 4),
+        store.setTick("matches", false, 1),
+      ]);
+      const loaded = await ticks(store);
+      expect(loaded).toHaveLength(3);
+      expect(loaded).toEqual(
+        expect.arrayContaining([
+          { item: "candles", selected: true, quantity: 2 },
+          { item: "drinking-water", selected: true, quantity: 4 },
+          { item: "matches", selected: false, quantity: 1 },
+        ]),
+      );
+    });
+
+    it("rejects a tick without a household, and writes nothing", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await expect(store.setTick("candles", true, 1)).rejects.toMatchObject({ code: "invalid" });
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "local_household_ticks"))).toBe(0);
+    });
+
+    it("rejects a bad item id or quantity", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await expect(store.setTick("Candles", true, 1)).rejects.toMatchObject({ code: "invalid" });
+      await expect(store.setTick("candles", true, -1)).rejects.toMatchObject({ code: "invalid" });
+      expect(await ticks(store)).toEqual([]);
+    });
+
+    it("are removed by clear", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setTick("candles", true, 2);
+      await store.clear();
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "local_household_ticks"))).toBe(0);
+    });
+
+    it("calls subscribers after a tick", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await new Promise((resolve) => setTimeout(resolve, 200)); // let the save's event pass
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+      await store.setTick("candles", true, 2);
+      await expect.poll(() => calls).toBeGreaterThan(0);
+    });
+
+    describe("with an unreadable tick row", () => {
+      /** A store whose household has one malformed tick row for `item`. */
+      async function withBadTick(item: string) {
+        const { store, dbFilename, v1DbName } = fresh(deps);
+        const saved = await store.saveStep("housing", { housingType: "flat" });
+        await store.setTick("candles", true, 2);
+        await store.close();
+        await inspect(dbFilename, (db) =>
+          db.execute(
+            `INSERT INTO local_household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+             VALUES (?, ?, ?, 1, -5, ?, '{}')`,
+            [`${TEST_ID}:${item}`, TEST_ID, item, TEST_TIME],
+          ),
+        );
+        const again = createPowerSyncStore({ dbFilename, v1DbName, ...deps });
+        opened.push(again);
+        return { store: again, saved };
+      }
+
+      it("still loads the profile and the readable ticks", async () => {
+        const { store, saved } = await withBadTick("drinking-water");
+        expect(await store.load()).toEqual({
+          kind: "found",
+          household: saved,
+          ticks: [{ item: "candles", selected: true, quantity: 2 }],
+          planCreatedAt: null,
+          listCreatedAt: null,
+        });
+      });
+
+      it("keeps the same household on the next step save", async () => {
+        const { store, saved } = await withBadTick("drinking-water");
+        const next = await store.saveStep("housing", { housingType: "house" });
+        expect(next.id).toBe(saved.id);
+        expect(next.housingType).toBe("house");
+      });
+
+      it("does not block ticking that item", async () => {
+        const { store } = await withBadTick("drinking-water");
+        await store.setTick("drinking-water", true, 4);
+        expect(await ticks(store)).toEqual(
+          expect.arrayContaining([{ item: "drinking-water", selected: true, quantity: 4 }]),
+        );
+      });
     });
   });
 });

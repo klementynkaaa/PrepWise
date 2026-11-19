@@ -4,12 +4,15 @@ import {
   assemble,
   newHousehold,
   stepChanges,
+  tickChanges,
+  ticksOf,
   type HouseholdRows,
   type RowChange,
 } from "./contract";
 import { DB_NAME, removeV1Backup } from "./indexeddb-store";
 import { importV1, type V1ImportWrite } from "./import-v1";
 import {
+  decodeListCreatedAt,
   decodePlanCreatedAt,
   decodeRow,
   DEVICE_ROW_ID,
@@ -18,7 +21,7 @@ import {
   LOCAL_TABLES,
   type SqliteRow,
 } from "./powersync-codec";
-import { TABLES } from "./rows";
+import { TABLES, type HouseholdTickRow } from "./rows";
 import { defaultDeps, type SaveDeps } from "./save-step";
 import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
 import type { Household } from "./types";
@@ -41,24 +44,32 @@ export type PowerSyncHouseholdStore = HouseholdStore & {
 };
 
 const WATCHED_TABLES = [...TABLES.map((table) => LOCAL_TABLES[table]), DEVICE_TABLE];
-const EMPTY: HouseholdRows = { household: null, needs: [], steps: [] };
+const EMPTY: HouseholdRows = { household: null, needs: [], steps: [], ticks: [] };
+
+type DeviceState = {
+  householdId: string | null;
+  planCreatedAt: string | null;
+  listCreatedAt: string | null;
+};
 
 type Read =
   | { kind: "none" }
-  | { kind: "found"; rows: HouseholdRows; planCreatedAt: string | null }
+  | ({ kind: "found"; rows: HouseholdRows } & Omit<DeviceState, "householdId">)
   | { kind: "invalid" };
 
-type DeviceState = { householdId: string | null; planCreatedAt: string | null };
-
-/** The household this device shows and when it created its plan, each validated. */
+/** The household this device shows and when it created its plan and list, each validated. */
 async function deviceState(ctx: LockContext): Promise<DeviceState> {
-  const row = await ctx.getOptional<{ household_id: unknown; plan_created_at: unknown }>(
-    `SELECT household_id, plan_created_at FROM ${DEVICE_TABLE} WHERE id = ?`,
-    [DEVICE_ROW_ID],
-  );
+  const row = await ctx.getOptional<{
+    household_id: unknown;
+    plan_created_at: unknown;
+    list_created_at: unknown;
+  }>(`SELECT household_id, plan_created_at, list_created_at FROM ${DEVICE_TABLE} WHERE id = ?`, [
+    DEVICE_ROW_ID,
+  ]);
   return {
     householdId: typeof row?.household_id === "string" ? row.household_id : null,
     planCreatedAt: decodePlanCreatedAt(row?.plan_created_at ?? null),
+    listCreatedAt: decodeListCreatedAt(row?.list_created_at ?? null),
   };
 }
 
@@ -67,9 +78,24 @@ async function deviceHouseholdId(ctx: LockContext): Promise<string | null> {
   return (await deviceState(ctx)).householdId;
 }
 
+/**
+ * The tick rows that are valid. An unreadable one is left out rather than
+ * failing the read: it must never make the household unreadable, or the next
+ * save would start a new household and leave this one behind.
+ */
+function readableTicks(raw: readonly SqliteRow[]): HouseholdTickRow[] {
+  return raw.flatMap((row) => {
+    try {
+      return [decodeRow("household_ticks", row)];
+    } catch {
+      return [];
+    }
+  });
+}
+
 /** The device's household rows, each validated at this boundary. */
 async function readRows(ctx: LockContext): Promise<Read> {
-  const { householdId: id, planCreatedAt } = await deviceState(ctx);
+  const { householdId: id, planCreatedAt, listCreatedAt } = await deviceState(ctx);
   if (!id) return { kind: "none" };
   // One query at a time: they share the lock's connection.
   const households = await ctx.getAll<SqliteRow>(
@@ -84,20 +110,27 @@ async function readRows(ctx: LockContext): Promise<Read> {
     `SELECT * FROM ${LOCAL_TABLES.household_steps} WHERE household_id = ?`,
     [id],
   );
+  const ticks = await ctx.getAll<SqliteRow>(
+    `SELECT * FROM ${LOCAL_TABLES.household_ticks} WHERE household_id = ?`,
+    [id],
+  );
   if (households.length !== 1) return { kind: "invalid" };
+  let profile: Omit<HouseholdRows, "ticks">;
   try {
-    return {
-      kind: "found",
-      rows: {
-        household: decodeRow("households", households[0]),
-        needs: needs.map((row) => decodeRow("household_needs", row)),
-        steps: steps.map((row) => decodeRow("household_steps", row)),
-      },
-      planCreatedAt,
+    profile = {
+      household: decodeRow("households", households[0]),
+      needs: needs.map((row) => decodeRow("household_needs", row)),
+      steps: steps.map((row) => decodeRow("household_steps", row)),
     };
   } catch {
     return { kind: "invalid" };
   }
+  return {
+    kind: "found",
+    rows: { ...profile, ticks: readableTicks(ticks) },
+    planCreatedAt,
+    listCreatedAt,
+  };
 }
 
 /**
@@ -116,7 +149,9 @@ async function writeChanges(tx: LockContext, changes: readonly RowChange[], next
       );
       continue;
     }
-    const merged = [next.household, ...next.needs, ...next.steps].find((r) => r?.id === change.id);
+    const merged = [next.household, ...next.needs, ...next.steps, ...next.ticks].find(
+      (r) => r?.id === change.id,
+    );
     const { columns, values } = encodeColumns({ ...change.fields, field_ts: merged?.field_ts });
     await tx.execute(
       `UPDATE ${table} SET ${columns.map((c) => `${c} = ?`).join(", ")} WHERE id = ?`,
@@ -127,7 +162,7 @@ async function writeChanges(tx: LockContext, changes: readonly RowChange[], next
 
 /**
  * Makes `householdId` the household this device shows. Runs only when a
- * household is created or imported, so the plan-created flag starts unset.
+ * household is created or imported, so the plan- and list-created flags start unset.
  */
 async function setDeviceHousehold(tx: LockContext, householdId: string) {
   await tx.execute(`DELETE FROM ${DEVICE_TABLE}`);
@@ -157,7 +192,7 @@ function importWriter(db: PowerSyncDatabase): V1ImportWrite {
       const id = rows.household.id;
       if (await alreadyImported(tx, id)) return;
       await tx.execute(`DELETE FROM ${LOCAL_TABLES.households} WHERE id = ?`, [id]);
-      for (const table of ["household_needs", "household_steps"] as const) {
+      for (const table of ["household_needs", "household_steps", "household_ticks"] as const) {
         await tx.execute(`DELETE FROM ${LOCAL_TABLES[table]} WHERE household_id = ?`, [id]);
       }
       const changes: RowChange[] = [
@@ -184,6 +219,22 @@ function toStoreError(error: unknown): HouseholdStoreError {
   return error instanceof HouseholdStoreError
     ? error
     : new HouseholdStoreError("unavailable", { cause: error });
+}
+
+/**
+ * Sets a device-state timestamp unless it is already set. Only the flag
+ * changes; the device's household stays as it is.
+ */
+async function markDeviceTimestamp(
+  tx: LockContext,
+  column: "plan_created_at" | "list_created_at",
+  at: Date,
+) {
+  if (!(await deviceHouseholdId(tx))) throw new HouseholdStoreError("invalid");
+  await tx.execute(`UPDATE ${DEVICE_TABLE} SET ${column} = ? WHERE id = ? AND ${column} IS NULL`, [
+    at.toISOString(),
+    DEVICE_ROW_ID,
+  ]);
 }
 
 /**
@@ -256,7 +307,13 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
       if (read.kind !== "found") return read;
       const household = assemble(read.rows);
       return household
-        ? { kind: "found", household, planCreatedAt: read.planCreatedAt }
+        ? {
+            kind: "found",
+            household,
+            ticks: ticksOf(read.rows),
+            planCreatedAt: read.planCreatedAt,
+            listCreatedAt: read.listCreatedAt,
+          }
         : { kind: "invalid" };
     },
 
@@ -288,13 +345,40 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
     async markPlanCreated() {
       try {
         const db = await database();
+        await db.writeTransaction((tx) => markDeviceTimestamp(tx, "plan_created_at", deps.now()));
+      } catch (error) {
+        throw toStoreError(error);
+      }
+    },
+
+    async markListCreated() {
+      try {
+        const db = await database();
+        await db.writeTransaction((tx) => markDeviceTimestamp(tx, "list_created_at", deps.now()));
+      } catch (error) {
+        throw toStoreError(error);
+      }
+    },
+
+    async setTick(itemId, ticked, quantity) {
+      try {
+        const db = await database();
+        // Read and write in ONE write transaction, as saveStep does, so two quick
+        // ticks (or a tick and an untick) never start from the same rows.
         await db.writeTransaction(async (tx) => {
-          // Only the flag changes; the device's household stays as it is.
-          if (!(await deviceHouseholdId(tx))) throw new HouseholdStoreError("invalid");
-          await tx.execute(
-            `UPDATE ${DEVICE_TABLE} SET plan_created_at = ? WHERE id = ? AND plan_created_at IS NULL`,
-            [deps.now().toISOString(), DEVICE_ROW_ID],
-          );
+          const read = await readRows(tx);
+          if (read.kind !== "found") throw new HouseholdStoreError("invalid");
+          const changes = tickChanges(read.rows, itemId, ticked, quantity, deps.now());
+          if (changes.length === 0) return;
+          // An unreadable row of this item was left out of the read, but its id
+          // is still taken, and the tables are views with no upsert: remove it first.
+          for (const change of changes) {
+            if (change.op !== "insert") continue;
+            await tx.execute(`DELETE FROM ${LOCAL_TABLES.household_ticks} WHERE id = ?`, [
+              change.id,
+            ]);
+          }
+          await writeChanges(tx, changes, applyChanges(read.rows, changes));
         });
       } catch (error) {
         throw toStoreError(error);
