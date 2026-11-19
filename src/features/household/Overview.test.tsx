@@ -119,7 +119,7 @@ describe("overview", () => {
 
   it("names its status chip", async () => {
     renderScreen(<Overview locale="pl" />, createMemoryStore(completeHousehold()));
-    expect(await screen.findByText("Zapisane na tym telefonie")).toBeInTheDocument();
+    expect(await screen.findByText("Zapisane", { exact: true })).toBeInTheDocument();
   });
 });
 
