@@ -13,7 +13,9 @@ recommended quantity = amount per person per day × number of people × number o
 - **Children** get age-appropriate food, clothing, medication and hygiene supplies.
 - **Elderly people** get extra items for mobility, medication and specific care needs.
 - **Pets** get separate food and water amounts, based on animal type and size.
-- **Declared medical needs** add the relevant supplies.
+- **Declared medical needs** add the relevant supplies: regular medicines add a reminder to keep the household's own dose for the period (never a calculated dose), and powered medical equipment adds backup power.
+- **Housing** adds an item: water for flushing in a flat, backup heating in a house.
+- **Limited mobility** adds spare power for mobility aids and a whistle.
 
 _Example (illustrative, figure not yet verified):_ at 3 L of drinking water per person per day, a household of three needs 3 × 3 × 3 = **27 L** for 72 hours.
 
@@ -24,7 +26,7 @@ Every recommended quantity shows exactly one of these labels:
 - **Official guidance:** the figure comes from official Polish recommendations.
 - **PREPWISE recommendation:** the figure is PREPWISE's own estimate. Use this where official guidance gives no per-person amount.
 
-Never show an estimate as if it were official.
+Never show an estimate as if it were official. A figure shows "Official guidance" only once it has been verified against a named official source; until then, including every draft figure, it shows "PREPWISE recommendation". The code enforces this, not the content author.
 
 ## Priority
 
@@ -35,6 +37,8 @@ Priority goes by criticality, not by a fixed category order:
 3. **Additional preparedness:** tools, backup equipment, comfort and longer-term supplies
 
 Within a tier, items that are completely missing come before partly available ones. v1 has no inventory and ticks are yes/no, so every unticked item counts as missing and items within a tier are ordered by criticality alone.
+
+**Member-specific sections.** Supplies that exist only for pets or only for small children (0–3) are shown in their own sections after the three tiers. Pet supplies have no tier there. Small-child supplies keep their tier and show it, and a small child's essential food also appears in tier 1 as a pointer to its section, so it never looks less urgent than water.
 
 ## Scenarios
 

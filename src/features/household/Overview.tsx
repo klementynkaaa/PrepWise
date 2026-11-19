@@ -2,68 +2,97 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import {
+  Button,
   ButtonLink,
   Divider,
   EmptyState,
   PageBody,
+  PageFooter,
   PageHeader,
   PageShell,
   PanelList,
   SaveStatus,
   SummaryRow,
 } from "@/components/ui";
+import { Generating } from "@/features/plan/Generating";
+import { useOnline } from "@/features/shell/useOnline";
 import { localePath } from "@/i18n/paths";
 import type { AppLocale } from "@/i18n/routing";
-import {
-  firstUnfinishedStep,
-  summarise,
-  type Household,
-  type HouseholdSummary,
-  type Step,
-} from "@/lib/household";
+import { summarise, type Household, type HouseholdSummary, type Step } from "@/lib/household";
 import { HeldPage } from "./HeldPage";
 import { PEOPLE_GROUPS, PET_KINDS } from "./groups";
-import { targetHref } from "./paths";
+import { SaveError } from "./SaveError";
+import { appHref, targetHref } from "./paths";
+import { useCompleteProfile } from "./useCompleteProfile";
 import { useHousehold } from "./useHousehold";
 
-function subscribeOnline(onChange: () => void) {
-  window.addEventListener("online", onChange);
-  window.addEventListener("offline", onChange);
-  return () => {
-    window.removeEventListener("online", onChange);
-    window.removeEventListener("offline", onChange);
-  };
-}
+/** The saved profile, one row per step with a link to change it, and the way into the plan. */
+export function Overview({ locale }: { locale: AppLocale }) {
+  const profile = useCompleteProfile(locale);
 
-/** Online unless the browser says otherwise; prerendering assumes online. */
-function useOnline() {
-  return useSyncExternalStore(
-    subscribeOnline,
-    () => navigator.onLine,
-    () => true,
+  if (profile.status === "unavailable") return <StorageUnavailable locale={locale} />;
+  if (profile.status === "held") return <HeldPage />;
+  return (
+    <OverviewScreen
+      household={profile.household}
+      planCreated={profile.planCreated}
+      locale={locale}
+    />
   );
 }
 
-/** The saved profile, one row per step with a link to change it. */
-export function Overview({ locale }: { locale: AppLocale }) {
-  const { status, household } = useHousehold();
+type Mode = "rows" | "generating" | "failed";
+
+/**
+ * The overview and, after "Stwórz plan", the generating screen in its place.
+ * The flag write is the generating screen's last step; the plan opens only
+ * after it resolves, and a failed write shows the save error here.
+ */
+function OverviewScreen({
+  household,
+  planCreated,
+  locale,
+}: {
+  household: Household;
+  planCreated: boolean;
+  locale: AppLocale;
+}) {
+  const { markPlanCreated } = useHousehold();
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("rows");
+  // A run starts once: a second tap before the screen swaps does nothing.
+  const running = useRef(false);
 
-  // Nothing complete to show yet: continue at the first unfinished step.
-  const incomplete = status === "ready" && household?.status !== "complete";
-  const resumeAt = household
-    ? targetHref(firstUnfinishedStep(household), locale)
-    : localePath("/start", locale);
+  const start = () => {
+    if (running.current) return;
+    running.current = true;
+    setMode("generating");
+  };
+  const stop = (next: Mode) => {
+    running.current = false;
+    setMode(next);
+  };
 
-  useEffect(() => {
-    if (incomplete) router.replace(resumeAt);
-  }, [incomplete, resumeAt, router]);
-
-  if (status === "unavailable") return <StorageUnavailable locale={locale} />;
-  if (status === "loading" || !household || incomplete) return <HeldPage />;
-  return <OverviewRows household={household} locale={locale} />;
+  if (mode === "generating") {
+    return (
+      <Generating
+        save={markPlanCreated}
+        onSaved={() => router.push(appHref("plan", locale))}
+        onFailed={() => stop("failed")}
+      />
+    );
+  }
+  if (mode === "failed") return <SaveError onRetry={start} onBack={() => stop("rows")} />;
+  return (
+    <OverviewRows
+      household={household}
+      planCreated={planCreated}
+      locale={locale}
+      onCreate={start}
+    />
+  );
 }
 
 function StorageUnavailable({ locale }: { locale: AppLocale }) {
@@ -84,7 +113,17 @@ function StorageUnavailable({ locale }: { locale: AppLocale }) {
   );
 }
 
-function OverviewRows({ household, locale }: { household: Household; locale: AppLocale }) {
+function OverviewRows({
+  household,
+  planCreated,
+  locale,
+  onCreate,
+}: {
+  household: Household;
+  planCreated: boolean;
+  locale: AppLocale;
+  onCreate: () => void;
+}) {
   const t = useTranslations("overview");
   const online = useOnline();
   const rows = overviewRows(summarise(household), t);
@@ -114,6 +153,14 @@ function OverviewRows({ household, locale }: { household: Household; locale: App
           ))}
         </PanelList>
       </PageBody>
+      <PageFooter>
+        <p className="pb-1.5 text-center text-body-sm text-ink-muted">{t("cta.lead")}</p>
+        {planCreated ? (
+          <ButtonLink href={appHref("plan", locale)}>{t("cta.show")}</ButtonLink>
+        ) : (
+          <Button onClick={onCreate}>{t("cta.create")}</Button>
+        )}
+      </PageFooter>
     </PageShell>
   );
 }

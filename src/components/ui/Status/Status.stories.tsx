@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { FactChip, PriorityHeader, SaveStatus } from "./Status";
+import { FactChip, PriorityBadge, PriorityHeader, SaveStatus } from "./Status";
 
 const meta = {
   title: "Komunikaty/SaveStatus",
@@ -34,6 +34,34 @@ export const Priority: Story = {
     <PriorityHeader tier={2} tierLabel="Priorytet 2">
       Światło i łączność
     </PriorityHeader>
+  ),
+};
+
+/** Nagłówek panelu planu z liczbą rzeczy po prawej. */
+export const PriorityWithCount: Story = {
+  render: () => (
+    <PriorityHeader tier={1} tierLabel="Priorytet 1" meta="4 rzeczy">
+      Najważniejsze
+    </PriorityHeader>
+  ),
+};
+
+/** Sekcja bez priorytetu (np. „Dla psa”): ten sam nagłówek, bez numeru. */
+export const SectionWithoutTier: Story = {
+  render: () => <PriorityHeader meta="3 rzeczy">Dla psa</PriorityHeader>,
+};
+
+/**
+ * Sam numer priorytetu, np. na kafelku planu na ekranie Start. Jest ozdobny:
+ * priorytet trzeba podać słowami obok (np. ukryte „Priorytet 1:”).
+ */
+export const Badge: Story = {
+  render: () => (
+    <p className="flex items-center gap-2 text-control font-bold">
+      <PriorityBadge tier={1} />
+      <span className="sr-only">Priorytet 1: </span>
+      Najważniejsze
+    </p>
   ),
 };
 

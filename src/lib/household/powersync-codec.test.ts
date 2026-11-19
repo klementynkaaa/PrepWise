@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toRows } from "./contract";
 import { completeHousehold, TEST_TIME } from "./fixtures";
 import {
+  decodePlanCreatedAt,
   decodeRow,
   encodeColumns,
   encodeValue,
@@ -150,5 +151,19 @@ describe("normalizeTimestamp", () => {
     expect(Date.parse(normalizeTimestamp("2026-11-16 12:34:56.123456+02"))).toBe(
       Date.parse("2026-11-16T10:34:56.123Z"),
     );
+  });
+});
+
+describe("decodePlanCreatedAt", () => {
+  it("reads a stored ISO timestamp", () => {
+    expect(decodePlanCreatedAt(TEST_TIME)).toBe(TEST_TIME);
+  });
+
+  it("reads NULL (a row written before the column existed) as not set", () => {
+    expect(decodePlanCreatedAt(null)).toBeNull();
+  });
+
+  it.each([["yesterday"], [42], [{}]])("reads an unreadable value %j as not set", (value) => {
+    expect(decodePlanCreatedAt(value)).toBeNull();
   });
 });

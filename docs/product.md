@@ -47,9 +47,11 @@ After v1, still on the device and still offline:
 
 - **Inventory:** record what you have and how much, so partly stocked items and "enough for X days" become possible.
 - **Storage places:** named places or boxes with their contents, an optional photo, and printable QR labels.
-- **Expiry and rotation:** what expires soon, "used → restock", and upkeep for equipment such as charging a powerbank.
+- **Expiry and rotation:** what expires soon, "used → restock", upkeep for equipment such as charging a powerbank, and a regular check of small children's supplies as they grow.
 - **Readiness per emergency:** how ready the household is for each chosen emergency, with what's still short.
 - **First-hour checklists:** short steps for the first hour of a blackout or flood, from official Polish sources.
+- **Notices on Start:** a short in-app list of what needs attention. No push notifications.
+- **Evacuation points:** the nearest official evacuation and help points for your area, readable offline; your location is never sent anywhere.
 
 ## Later versions (v2 or v3, idea only)
 

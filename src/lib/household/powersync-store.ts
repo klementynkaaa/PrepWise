@@ -10,6 +10,7 @@ import {
 import { DB_NAME, removeV1Backup } from "./indexeddb-store";
 import { importV1, type V1ImportWrite } from "./import-v1";
 import {
+  decodePlanCreatedAt,
   decodeRow,
   DEVICE_ROW_ID,
   DEVICE_TABLE,
@@ -42,20 +43,33 @@ export type PowerSyncHouseholdStore = HouseholdStore & {
 const WATCHED_TABLES = [...TABLES.map((table) => LOCAL_TABLES[table]), DEVICE_TABLE];
 const EMPTY: HouseholdRows = { household: null, needs: [], steps: [] };
 
-type Read = { kind: "none" } | { kind: "found"; rows: HouseholdRows } | { kind: "invalid" };
+type Read =
+  | { kind: "none" }
+  | { kind: "found"; rows: HouseholdRows; planCreatedAt: string | null }
+  | { kind: "invalid" };
+
+type DeviceState = { householdId: string | null; planCreatedAt: string | null };
+
+/** The household this device shows and when it created its plan, each validated. */
+async function deviceState(ctx: LockContext): Promise<DeviceState> {
+  const row = await ctx.getOptional<{ household_id: unknown; plan_created_at: unknown }>(
+    `SELECT household_id, plan_created_at FROM ${DEVICE_TABLE} WHERE id = ?`,
+    [DEVICE_ROW_ID],
+  );
+  return {
+    householdId: typeof row?.household_id === "string" ? row.household_id : null,
+    planCreatedAt: decodePlanCreatedAt(row?.plan_created_at ?? null),
+  };
+}
 
 /** The id of the household this device shows, or null. */
 async function deviceHouseholdId(ctx: LockContext): Promise<string | null> {
-  const row = await ctx.getOptional<{ household_id: unknown }>(
-    `SELECT household_id FROM ${DEVICE_TABLE} WHERE id = ?`,
-    [DEVICE_ROW_ID],
-  );
-  return typeof row?.household_id === "string" ? row.household_id : null;
+  return (await deviceState(ctx)).householdId;
 }
 
 /** The device's household rows, each validated at this boundary. */
 async function readRows(ctx: LockContext): Promise<Read> {
-  const id = await deviceHouseholdId(ctx);
+  const { householdId: id, planCreatedAt } = await deviceState(ctx);
   if (!id) return { kind: "none" };
   // One query at a time: they share the lock's connection.
   const households = await ctx.getAll<SqliteRow>(
@@ -79,6 +93,7 @@ async function readRows(ctx: LockContext): Promise<Read> {
         needs: needs.map((row) => decodeRow("household_needs", row)),
         steps: steps.map((row) => decodeRow("household_steps", row)),
       },
+      planCreatedAt,
     };
   } catch {
     return { kind: "invalid" };
@@ -110,7 +125,10 @@ async function writeChanges(tx: LockContext, changes: readonly RowChange[], next
   }
 }
 
-/** Makes `householdId` the household this device shows. */
+/**
+ * Makes `householdId` the household this device shows. Runs only when a
+ * household is created or imported, so the plan-created flag starts unset.
+ */
 async function setDeviceHousehold(tx: LockContext, householdId: string) {
   await tx.execute(`DELETE FROM ${DEVICE_TABLE}`);
   await tx.execute(`INSERT INTO ${DEVICE_TABLE} (id, household_id) VALUES (?, ?)`, [
@@ -237,7 +255,9 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
       }
       if (read.kind !== "found") return read;
       const household = assemble(read.rows);
-      return household ? { kind: "found", household } : { kind: "invalid" };
+      return household
+        ? { kind: "found", household, planCreatedAt: read.planCreatedAt }
+        : { kind: "invalid" };
     },
 
     async saveStep(step, patch): Promise<Household> {
@@ -259,6 +279,22 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
           const household = assemble(next);
           if (!household) throw new HouseholdStoreError("invalid");
           return household;
+        });
+      } catch (error) {
+        throw toStoreError(error);
+      }
+    },
+
+    async markPlanCreated() {
+      try {
+        const db = await database();
+        await db.writeTransaction(async (tx) => {
+          // Only the flag changes; the device's household stays as it is.
+          if (!(await deviceHouseholdId(tx))) throw new HouseholdStoreError("invalid");
+          await tx.execute(
+            `UPDATE ${DEVICE_TABLE} SET plan_created_at = ? WHERE id = ? AND plan_created_at IS NULL`,
+            [deps.now().toISOString(), DEVICE_ROW_ID],
+          );
         });
       } catch (error) {
         throw toStoreError(error);

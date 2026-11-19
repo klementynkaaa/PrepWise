@@ -40,6 +40,8 @@ browser ── first visit (online) ──▶ static host (Vercel)
 
 - **Locale routes.** Every screen lives under `/pl/...` (`src/app/[locale]/`), so adding a language later moves no URL. Links are built only with the locale helper (`localePath` in `src/i18n/paths.ts`), never typed by hand.
 - **Two root layouts.** `src/app/(root)/` holds `/` and `/offline`, which sit outside the locale; `src/app/[locale]/` holds everything else. `/` is a static page that forwards to `/pl` (a server redirect is not possible in a static export): a meta refresh, a client-side replace and a visible link as the last fallback.
+- **App screens.** After the household profile (`/pl/start/...`, overview at `/pl/household`) come the app screens with the Start · Plan tab bar: Start (`/pl/home`), the hub a returning household lands on, and the plan (`/pl/plan`).
+- **Where the app opens.** `/pl` resumes a saved household on the client (a static export has no server to redirect): an unfinished profile continues at its first unfinished step, a complete profile opens the overview until this device has created a plan, and then Start. With nothing saved, Welcome shows.
 - **One dictionary.** All user-facing text lives in `messages/pl.json`, not in components, routes or features. Screens read it through next-intl, so a second language is a second file.
 
 ## Household data
@@ -57,9 +59,13 @@ Every piece of household data that may be shared follows these rules, so later f
 - **Shared columns.** Every synced row has `household_id`, `updated_at` and `field_ts`, which records when each column last changed. The server fills `created_by` and `updated_by`; the device never sends who it is.
 - **Flat fields, patch saves.** Columns are plain values in `snake_case`, matching Postgres one to one, never nested objects. A save writes only the columns that changed, with a `field_ts` entry for each, so edits from two devices merge column by column (latest timestamp wins). Fields are only ever added, never renamed or removed.
 - **One source for shapes.** Row shapes are Zod schemas in `rows.ts`. A change that adds or alters a table adds the matching migration in `supabase/migrations/` in the same change.
-- **Device-only state** (which household this device shows, filters, hints) lives in local-only tables that never sync.
+- **Device-only state** (which household this device shows, when this device created its plan (`plan_created_at`), filters, hints) lives in the local-only `device_state` table and other local-only tables that never sync.
 - **Bundled item ids** (plan items, emergencies) are kebab-case slugs written by hand. They never change and are never reused, because stored rows refer to them.
 - **Rules that span fields are applied on read.** A merge can combine two valid edits into an odd mix (say, "no pets" with a cat count). Turning rows into the household that screens use (`assemble`) normalises this: without pets, pet counts read as 0. The profile status is computed there too, never stored.
+
+## Plan
+
+- **Derived, not stored.** `src/lib/plan` holds the bundled plan content (typed items with permanent slugs, amounts per member group or pet kind, a source label and a verified flag) and a pure `buildPlan`, which turns the profile summary and the number of days into tiers, categories and member sections. Screens build the plan from the stored profile every time they open, so profile edits flow in without a new "generate". The only stored value is the device-only "plan created" timestamp, which decides where the app opens. All plan words live in `messages/pl.json`; `src/lib/plan` holds no Polish.
 
 ## Offline behaviour
 

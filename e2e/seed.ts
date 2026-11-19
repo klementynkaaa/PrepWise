@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /**
  * Saves a complete household (two adults, a cat, a flat) as an S-01 record:
@@ -66,4 +66,15 @@ export async function readV1Record(page: Page): Promise<unknown> {
         };
       }),
   );
+}
+
+/**
+ * Creates the plan the way a person does: "Stwórz plan" on the overview, then
+ * the generating screen, which stores the device's plan flag before the plan
+ * opens. Needs a complete profile (seedCompleteProfile). Works offline.
+ */
+export async function createPlanThroughUi(page: Page) {
+  await page.goto("/pl/household");
+  await page.getByRole("button", { name: "Stwórz plan" }).click();
+  await expect(page).toHaveURL(/\/pl\/plan$/);
 }

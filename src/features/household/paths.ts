@@ -15,6 +15,13 @@ export function targetHref(target: StepTarget, locale: AppLocale): string {
   return localePath(stepPaths[target], locale);
 }
 
+const appPaths = { home: "/home", plan: "/plan" } as const;
+
+/** The URL of an app screen after the profile: Start (`home`) or the plan. */
+export function appHref(name: keyof typeof appPaths, locale: AppLocale): string {
+  return localePath(appPaths[name], locale);
+}
+
 /**
  * Where the back link of a step leads: the previous step, the intro for the
  * first step, or the overview while editing a finished profile.

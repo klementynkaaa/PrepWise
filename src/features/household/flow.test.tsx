@@ -9,7 +9,7 @@ import { PeopleStep } from "./PeopleStep";
 import { PetsStep } from "./PetsStep";
 import { StartIntro } from "./StartIntro";
 import { WelcomeGate } from "./WelcomeGate";
-import { renderScreen } from "./test-utils";
+import { renderScreen, storeWithPlan } from "./test-utils";
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
@@ -173,6 +173,29 @@ describe("start intro and welcome gate", () => {
     expect(screen.queryByText("Welcome")).not.toBeInTheDocument();
   });
 
+  it("opens Start for a complete profile once this device has created a plan", async () => {
+    renderScreen(
+      <WelcomeGate locale="pl">
+        <p>Welcome</p>
+      </WelcomeGate>,
+      await storeWithPlan(completeHousehold()),
+    );
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/pl/home"));
+    expect(router.replace).not.toHaveBeenCalledWith("/pl/household");
+    expect(screen.queryByText("Welcome")).not.toBeInTheDocument();
+  });
+
+  it("opens the overview, not Start, for a complete profile without a plan", async () => {
+    renderScreen(
+      <WelcomeGate locale="pl">
+        <p>Welcome</p>
+      </WelcomeGate>,
+      createMemoryStore(completeHousehold()),
+    );
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/pl/household"));
+    expect(router.replace).not.toHaveBeenCalledWith("/pl/home");
+  });
+
   it("shows Welcome when nothing is saved", async () => {
     renderScreen(
       <WelcomeGate locale="pl">
@@ -183,7 +206,7 @@ describe("start intro and welcome gate", () => {
     expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it("shows Welcome when a draft is saved", async () => {
+  it("continues a saved draft at its first unfinished step instead of Welcome", async () => {
     renderScreen(
       <WelcomeGate locale="pl">
         <p>Welcome</p>
@@ -192,7 +215,8 @@ describe("start intro and welcome gate", () => {
         completeHousehold({ status: "draft", housingType: null, completedSteps: ["people"] }),
       ),
     );
-    expect(await screen.findByText("Welcome")).toBeInTheDocument();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/pl/start/pets"));
+    expect(screen.queryByText("Welcome")).not.toBeInTheDocument();
   });
 
   it("shows Welcome when storage is unavailable", async () => {

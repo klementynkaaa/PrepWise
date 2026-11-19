@@ -11,7 +11,7 @@ const meta = {
       description: {
         component:
           "Baner: zaokrąglony prostokąt z ilustracją w tle, krótkim tytułem i jednym zdaniem. " +
-          "Użyj go raz na ekranie, do spokojnej wiadomości (plan gotowy, woda, instalacja, dłuższy plan). " +
+          "Użyj go raz na ekranie, do spokojnej wiadomości (plan gotowy, wasz dom, woda, instalacja, dłuższy plan). " +
           "Nie używaj go do błędów (jest do tego `Alert`) ani w wierszach list. " +
           "Przy dużym tekście tekst przechodzi nad ilustrację.",
       },
@@ -51,6 +51,14 @@ export const Extend: Story = {
     title: "Plan na 14 dni?",
     children: "72 godziny to oficjalna podstawa.",
     illustration: "banner-extend",
+  },
+};
+
+export const Household: Story = {
+  args: {
+    title: "Wasz dom",
+    children: "2 dorosłych, 1 dziecko i pies.",
+    illustration: "banner-household",
   },
 };
 

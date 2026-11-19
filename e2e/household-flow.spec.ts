@@ -149,7 +149,7 @@ test("the overview opens after a reload with the network off", async ({ page, co
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Profil domu" })).toBeVisible();
   await expect(page.getByText("2 dorosłych, 1 dziecko · razem 3 osoby")).toBeVisible();
-  await expect(page.getByText("Bez internetu — wszystko działa")).toBeVisible();
+  await expect(page.getByText("Offline", { exact: true })).toBeVisible();
 });
 
 test("a seeded S-01 household is imported once and shows the same summary after a reload", async ({

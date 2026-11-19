@@ -1,9 +1,13 @@
 import type { Household, Step, StepPatches } from "./types";
 
-/** What `load()` found. `invalid` is treated as none by screens. */
+/**
+ * What `load()` found. `invalid` is treated as none by screens.
+ * `planCreatedAt` is device state, not part of the household or the synced
+ * rows: when this device first created a plan (ISO timestamp), or null.
+ */
 export type LoadResult =
   | { kind: "none" }
-  | { kind: "found"; household: Household }
+  | { kind: "found"; household: Household; planCreatedAt: string | null }
   | { kind: "invalid" }
   | { kind: "unavailable" };
 
@@ -28,8 +32,14 @@ export interface HouseholdStore {
   load(): Promise<LoadResult>;
   /** Validates, saves the step and returns the stored record. Rejects with HouseholdStoreError. */
   saveStep<S extends Step>(step: S, patch: StepPatches[S]): Promise<Household>;
-  /** Removes the stored profile. Rejects with HouseholdStoreError when storage is unavailable. */
+  /** Removes the stored profile and the plan-created flag. Rejects with HouseholdStoreError when storage is unavailable. */
   clear(): Promise<void>;
+  /**
+   * Records that this device created a plan for its household. Keeps the first
+   * timestamp when it is already set. Rejects with HouseholdStoreError: `invalid`
+   * when there is no household yet, `unavailable` when storage fails.
+   */
+  markPlanCreated(): Promise<void>;
   /**
    * Calls `listener` after any change to the stored household: a local save now,
    * changes from other devices once sync is on. Returns a function that unsubscribes.

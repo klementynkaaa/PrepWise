@@ -14,29 +14,42 @@ import type { Household, HouseholdStore, LoadResult, Step, StepPatches } from "@
 /** What the stored profile looked like when the page opened. */
 export type HouseholdKind = "none" | "found" | "invalid";
 
+/** `planCreated`: this device has created a plan for the stored household. */
 type State =
-  | { status: "loading"; kind: null; household: null }
-  | { status: "ready"; kind: HouseholdKind; household: Household | null }
-  | { status: "unavailable"; kind: null; household: null };
+  | { status: "loading"; kind: null; household: null; planCreated: false }
+  | { status: "ready"; kind: HouseholdKind; household: Household | null; planCreated: boolean }
+  | { status: "unavailable"; kind: null; household: null; planCreated: false };
 
 export type HouseholdContextValue = State & {
   /** Saves one step. Rejects when storage fails; callers then stay on the step. */
   saveStep: <S extends Step>(step: S, patch: StepPatches[S]) => Promise<void>;
+  /** Records that this device created a plan. Rejects when storage fails. */
+  markPlanCreated: () => Promise<void>;
 };
 
 export const HouseholdContext = createContext<HouseholdContextValue | null>(null);
 
-const LOADING: State = { status: "loading", kind: null, household: null };
-const UNAVAILABLE: State = { status: "unavailable", kind: null, household: null };
+const LOADING: State = { status: "loading", kind: null, household: null, planCreated: false };
+const UNAVAILABLE: State = {
+  status: "unavailable",
+  kind: null,
+  household: null,
+  planCreated: false,
+};
 
 function stateOf(result: LoadResult): State {
   switch (result.kind) {
     case "found":
-      return { status: "ready", kind: "found", household: result.household };
+      return {
+        status: "ready",
+        kind: "found",
+        household: result.household,
+        planCreated: result.planCreatedAt !== null,
+      };
     case "unavailable":
       return UNAVAILABLE;
     default:
-      return { status: "ready", kind: result.kind, household: null };
+      return { status: "ready", kind: result.kind, household: null, planCreated: false };
   }
 }
 
@@ -83,12 +96,30 @@ export function HouseholdProvider({
     async <S extends Step>(step: S, patch: StepPatches[S]) => {
       const saved = await store.saveStep(step, patch);
       latest.current += 1;
-      setState({ status: "ready", kind: "found", household: saved });
+      // A step save never changes the plan flag; keep it, as this cancels the
+      // reload that would have read it.
+      setState((previous) => ({
+        status: "ready",
+        kind: "found",
+        household: saved,
+        planCreated: previous.status === "ready" && previous.planCreated,
+      }));
     },
     [store],
   );
 
-  const value = useMemo<HouseholdContextValue>(() => ({ ...state, saveStep }), [state, saveStep]);
+  const markPlanCreated = useCallback(async () => {
+    await store.markPlanCreated();
+    latest.current += 1;
+    setState((previous) =>
+      previous.status === "ready" ? { ...previous, planCreated: true } : previous,
+    );
+  }, [store]);
+
+  const value = useMemo<HouseholdContextValue>(
+    () => ({ ...state, saveStep, markPlanCreated }),
+    [state, saveStep, markPlanCreated],
+  );
 
   return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>;
 }
