@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { localePath } from "@/i18n/paths";
 import type { AppLocale } from "@/i18n/routing";
-import { firstUnfinishedStep, type Household } from "@/lib/household";
+import { firstUnfinishedStep, type Household, type Tick } from "@/lib/household";
 import { targetHref } from "./paths";
 import { useHousehold } from "./useHousehold";
 
@@ -12,7 +12,13 @@ export type CompleteProfile =
   | { status: "unavailable" }
   /** Storage is being read, or a redirect to an unfinished step is under way. */
   | { status: "held" }
-  | { status: "ready"; household: Household; planCreated: boolean };
+  | {
+      status: "ready";
+      household: Household;
+      ticks: Tick[];
+      planCreated: boolean;
+      listCreated: boolean;
+    };
 
 /**
  * For screens that need a finished profile (overview, plan). An unfinished
@@ -20,7 +26,7 @@ export type CompleteProfile =
  * intro (client side: a static export has no server to redirect).
  */
 export function useCompleteProfile(locale: AppLocale): CompleteProfile {
-  const { status, household, planCreated } = useHousehold();
+  const { status, household, ticks, planCreated, listCreated } = useHousehold();
   const router = useRouter();
 
   const incomplete = status === "ready" && household?.status !== "complete";
@@ -34,5 +40,5 @@ export function useCompleteProfile(locale: AppLocale): CompleteProfile {
 
   if (status === "unavailable") return { status: "unavailable" };
   if (status === "loading" || !household || incomplete) return { status: "held" };
-  return { status: "ready", household, planCreated };
+  return { status: "ready", household, ticks, planCreated, listCreated };
 }

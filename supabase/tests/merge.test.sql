@@ -4,7 +4,7 @@
 -- idempotent.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(34);
 
 -- Test helpers, rolled back with the test.
 create schema t;
@@ -288,6 +288,49 @@ select throws_ok(
       'housing', true, now(), '{}')$$,
   '23514', null,
   'a set row id must be <household_id>:<element>'
+);
+
+-- --- tick rows: selected and quantity merge per field ---------------------------------------
+
+insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+values ('11111111-1111-4111-8111-111111111111:drinking-water', '11111111-1111-4111-8111-111111111111',
+  'drinking-water', true, 4, now(), '{"item": "2026-01-01T00:00:00.000Z",
+  "selected": "2026-01-01T00:00:00.000Z", "quantity": "2026-01-01T00:00:00.000Z"}');
+
+-- One device unticks; another, whose untick-then-tick is older, re-ticks at a
+-- grown quantity. The newer untick wins `selected`; the newer quantity wins too.
+update public.household_ticks
+set selected = false, field_ts = '{"selected": "2026-01-03T00:00:00.000Z"}'
+where id = '11111111-1111-4111-8111-111111111111:drinking-water';
+update public.household_ticks
+set selected = true, quantity = 6.5,
+  field_ts = '{"selected": "2026-01-02T00:00:00.000Z", "quantity": "2026-01-02T00:00:00.000Z"}'
+where id = '11111111-1111-4111-8111-111111111111:drinking-water';
+select results_eq(
+  $$select selected, quantity from public.household_ticks$$,
+  $$values (false, 6.5::double precision)$$,
+  'ticks merge per field: the newer selected and the newer quantity each win'
+);
+select results_eq(
+  $$select field_ts ->> 'selected', field_ts ->> 'quantity', field_ts ->> 'item'
+    from public.household_ticks$$,
+  $$values ('2026-01-03T00:00:00.000Z', '2026-01-02T00:00:00.000Z', '2026-01-01T00:00:00.000Z')$$,
+  'a tick keeps the newest timestamp per column'
+);
+
+select throws_ok(
+  $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:DrinkingWater',
+      '11111111-1111-4111-8111-111111111111', 'DrinkingWater', true, 1, now(), '{}')$$,
+  '23514', null,
+  'a tick item must be a kebab-case slug'
+);
+select throws_ok(
+  $$insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:candles',
+      '11111111-1111-4111-8111-111111111111', 'candles', true, -1, now(), '{}')$$,
+  '23514', null,
+  'a tick quantity is never negative'
 );
 
 -- --- entity rows: delete wins (a test-only table with the shared triggers) ----------------

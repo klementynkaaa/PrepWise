@@ -1,29 +1,59 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  progressAriaLabel,
-  progressCountLabel,
-  progressFractionLabel,
-  progressPercent,
-} from "@/lib/progress";
+import { progressPercent } from "@/lib/progress";
 import { StatusPill } from "../Pills";
+import { cn } from "../_shared/cn";
+import { Icon } from "../Icon";
 
 const RADIUS = 20;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-type ProgressProps = { done: number; total: number };
+type ProgressProps = {
+  done: number;
+  total: number;
+  /** What a screen reader hears, e.g. "Gotowe 3 z 7" (`progress.done`). */
+  label: string;
+};
+
+type ProgressRingProps = ProgressProps & {
+  /** The short count inside the ring, e.g. "3/7" (`progress.fraction`). */
+  fraction: string;
+  /**
+   * `lg` (80px) heads a screen, as on Start, and shows a check mark instead
+   * of the fraction once everything is done; `md` (48px) sits in a row.
+   */
+  size?: "md" | "lg";
+  /**
+   * Hidden from screen readers when visible words beside it already say the
+   * count (e.g. inside a link, where it would join the link's name).
+   */
+  decorative?: boolean;
+};
 
 /**
- * 48px ring. The label is one computed string ("3/7") so it can never render
- * half-filled (the mockups' "/38" bug); screen readers hear "Gotowe 3 z 7".
+ * 48px ring. The fraction is one string ("3/7") so it can never render
+ * half-filled (the mockups' "/38" bug); screen readers hear the label.
  */
-export function ProgressRing({ done, total }: ProgressProps) {
+export function ProgressRing({
+  done,
+  total,
+  label,
+  fraction,
+  size = "md",
+  decorative = false,
+}: ProgressRingProps) {
   const length = (CIRCUMFERENCE * progressPercent(done, total)) / 100;
   return (
-    <div className="relative size-progress-ring shrink-0">
+    <div
+      aria-hidden={decorative || undefined}
+      className={cn(
+        "relative shrink-0",
+        size === "lg" ? "size-progress-ring-lg" : "size-progress-ring",
+      )}
+    >
       <svg
-        role="img"
-        aria-label={progressAriaLabel(done, total)}
+        role={decorative ? undefined : "img"}
+        aria-label={decorative ? undefined : label}
         viewBox="0 0 48 48"
         className="size-full"
       >
@@ -51,20 +81,29 @@ export function ProgressRing({ done, total }: ProgressProps) {
       </svg>
       <span
         aria-hidden="true"
-        className="absolute inset-0 flex items-center justify-center text-label"
+        className={cn(
+          "absolute inset-0 flex items-center justify-center",
+          size === "lg" ? "text-body-strong font-bold" : "text-label",
+        )}
       >
-        {progressFractionLabel(done, total)}
+        {size === "lg" && total > 0 && done >= total ? (
+          <span className="text-accent">
+            <Icon name="check" size="xl" />
+          </span>
+        ) : (
+          fraction
+        )}
       </span>
     </div>
   );
 }
 
-/** 6px bar. Decorative alongside the visible count; read as "Gotowe 4 z 7". */
-export function ProgressBar({ done, total }: ProgressProps) {
+/** 6px bar. Shown alongside a visible count; read as its label ("Gotowe 4 z 7"). */
+export function ProgressBar({ done, total, label }: ProgressProps) {
   return (
     <span
       role="img"
-      aria-label={progressAriaLabel(done, total)}
+      aria-label={label}
       className="block h-bar overflow-hidden rounded-full bg-accent-tint-strong"
     >
       <span
@@ -77,6 +116,8 @@ export function ProgressBar({ done, total }: ProgressProps) {
 
 type ProgressBarRowProps = ProgressProps & {
   name: ReactNode;
+  /** The visible count, e.g. "4 z 7" (`progress.count`). Always shown. */
+  count: ReactNode;
   /** Shown after the count, e.g. "brakuje m.in. wody dla psa". */
   detail?: ReactNode;
   href?: string;
@@ -87,7 +128,15 @@ type ProgressBarRowProps = ProgressProps & {
  * percentage sits beside it, never instead of it. A complete group shows
  * "Gotowe". At large text the percentage moves under the name.
  */
-export function ProgressBarRow({ name, detail, done, total, href }: ProgressBarRowProps) {
+export function ProgressBarRow({
+  name,
+  count,
+  detail,
+  done,
+  total,
+  label,
+  href,
+}: ProgressBarRowProps) {
   const percent = progressPercent(done, total);
   const body = (
     <div className="flex flex-col gap-2 rounded-md p-2.5">
@@ -95,7 +144,7 @@ export function ProgressBarRow({ name, detail, done, total, href }: ProgressBarR
         <span className="flex min-w-0 flex-col gap-1">
           <span className="text-body-strong">{name}</span>
           <span className="text-caption text-ink-muted">
-            {progressCountLabel(done, total)}
+            {count}
             {detail && <> · {detail}</>}
           </span>
         </span>
@@ -107,7 +156,7 @@ export function ProgressBarRow({ name, detail, done, total, href }: ProgressBarR
           )}
         </span>
       </div>
-      <ProgressBar done={done} total={total} />
+      <ProgressBar done={done} total={total} label={label} />
     </div>
   );
 

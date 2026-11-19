@@ -15,9 +15,9 @@ export function targetHref(target: StepTarget, locale: AppLocale): string {
   return localePath(stepPaths[target], locale);
 }
 
-const appPaths = { home: "/home", plan: "/plan" } as const;
+const appPaths = { home: "/home", plan: "/plan", list: "/list" } as const;
 
-/** The URL of an app screen after the profile: Start (`home`) or the plan. */
+/** The URL of an app screen after the profile: Start (`home`), the plan or the shopping list. */
 export function appHref(name: keyof typeof appPaths, locale: AppLocale): string {
   return localePath(appPaths[name], locale);
 }

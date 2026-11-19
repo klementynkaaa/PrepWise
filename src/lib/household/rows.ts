@@ -14,8 +14,13 @@ import { countSchema, housingSchema, nameSchema, needSchema, stepSchema } from "
 /** Version of the row format. Matches `SCHEMA_VERSION` of the assembled `Household`. */
 export const ROW_SCHEMA_VERSION = 2;
 
-/** Synced tables of the household profile. */
-export const TABLES = ["households", "household_needs", "household_steps"] as const;
+/** Synced tables of the household: the profile and the ticked shopping-list items. */
+export const TABLES = [
+  "households",
+  "household_needs",
+  "household_steps",
+  "household_ticks",
+] as const;
 export type TableName = (typeof TABLES)[number];
 
 /** ISO 8601 timestamp; an offset is allowed because the server may send one. */
@@ -104,9 +109,23 @@ export type HouseholdRow = z.infer<typeof householdRowSchema>;
 /** Data columns of a set row: its element and whether it is in the set. */
 export const HOUSEHOLD_NEED_FIELDS = ["need", "selected"] as const;
 export const HOUSEHOLD_STEP_FIELDS = ["step", "selected"] as const;
+export const HOUSEHOLD_TICK_FIELDS = ["item", "selected", "quantity"] as const;
+
+/**
+ * A bundled item id: a kebab-case slug. Not an enum of today's catalogue, so a
+ * device on an older catalogue still reads ticks of items added later.
+ */
+export const itemIdSchema = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 
 const householdNeedShape = { ...sharedColumns, need: needSchema, selected: z.boolean() };
 const householdStepShape = { ...sharedColumns, step: stepSchema, selected: z.boolean() };
+const householdTickShape = {
+  ...sharedColumns,
+  item: itemIdSchema,
+  selected: z.boolean(),
+  // Finite (Zod rejects Infinity and NaN) and never negative; may be fractional.
+  quantity: z.number().min(0),
+};
 
 /** One need of a household. Removing it sets `selected: false`; the row stays. */
 export const householdNeedRowSchema = z
@@ -125,6 +144,19 @@ export const householdStepRowSchema = z
     path: ["id"],
   });
 export type HouseholdStepRow = z.infer<typeof householdStepRowSchema>;
+
+/**
+ * One ticked item of the shopping list: `selected` is whether it is ticked and
+ * `quantity` the plan's quantity when it was last ticked. Unticking sets
+ * `selected: false` and keeps the quantity; the row stays.
+ */
+export const householdTickRowSchema = z
+  .strictObject(householdTickShape)
+  .refine((row) => row.id === setRowId(row.household_id, row.item), {
+    message: "id must be <household_id>:<item>",
+    path: ["id"],
+  });
+export type HouseholdTickRow = z.infer<typeof householdTickRowSchema>;
 
 // --- entity rows (for later slices) -------------------------------------------
 
@@ -152,15 +184,17 @@ export const TABLE_COLUMNS: { [T in TableName]: readonly string[] } = {
   households: Object.keys(householdShape),
   household_needs: Object.keys(householdNeedShape),
   household_steps: Object.keys(householdStepShape),
+  household_ticks: Object.keys(householdTickShape),
 };
 
-export type Row = HouseholdRow | HouseholdNeedRow | HouseholdStepRow;
+export type Row = HouseholdRow | HouseholdNeedRow | HouseholdStepRow | HouseholdTickRow;
 
 /** Row type stored in each table. */
 export type RowOf<T extends TableName> = {
   households: HouseholdRow;
   household_needs: HouseholdNeedRow;
   household_steps: HouseholdStepRow;
+  household_ticks: HouseholdTickRow;
 }[T];
 
 /** Validators per table, for reading rows back at the storage boundary. */
@@ -168,4 +202,5 @@ export const rowSchemas: { [T in TableName]: z.ZodType<RowOf<T>> } = {
   households: householdRowSchema,
   household_needs: householdNeedRowSchema,
   household_steps: householdStepRowSchema,
+  household_ticks: householdTickRowSchema,
 };

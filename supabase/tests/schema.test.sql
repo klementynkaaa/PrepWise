@@ -4,7 +4,7 @@
 -- and the functions run with fixed privileges.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(49);
+select plan(52);
 
 -- --- columns ---------------------------------------------------------------------
 
@@ -23,6 +23,11 @@ select columns_are('public', 'household_steps', array[
   'id', 'household_id', 'created_by', 'created_at', 'updated_by', 'updated_at', 'field_ts',
   'step', 'selected'
 ], 'household_steps has exactly the TABLE_COLUMNS.household_steps columns');
+
+select columns_are('public', 'household_ticks', array[
+  'id', 'household_id', 'created_by', 'created_at', 'updated_by', 'updated_at', 'field_ts',
+  'item', 'selected', 'quantity'
+], 'household_ticks has exactly the TABLE_COLUMNS.household_ticks columns');
 
 select columns_are('public', 'household_members', array[
   'household_id', 'user_id', 'role', 'display_name', 'joined_at'
@@ -86,14 +91,14 @@ select is(
 
 select ok(not has_table_privilege('authenticated', format('public.%I', t), 'DELETE'),
   format('authenticated cannot DELETE from %s', t))
-from unnest(array['households', 'household_needs', 'household_steps', 'household_members',
-  'household_invites', 'invite_redemptions', 'invite_attempts']) t;
+from unnest(array['households', 'household_needs', 'household_steps', 'household_ticks',
+  'household_members', 'household_invites', 'invite_redemptions', 'invite_attempts']) t;
 
 select ok(
   not has_table_privilege('anon', format('public.%I', t), 'SELECT,INSERT,UPDATE,DELETE'),
   format('anon has no access to %s', t))
-from unnest(array['households', 'household_needs', 'household_steps', 'household_members',
-  'household_invites', 'invite_redemptions', 'invite_attempts']) t;
+from unnest(array['households', 'household_needs', 'household_steps', 'household_ticks',
+  'household_members', 'household_invites', 'invite_redemptions', 'invite_attempts']) t;
 
 select ok(not has_table_privilege('authenticated', 'public.households', 'INSERT'),
   'authenticated cannot INSERT households');

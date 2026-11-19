@@ -92,3 +92,13 @@ export type StepPatches = {
 
 export type PetKind = keyof PetCounts;
 export type PeopleGroup = keyof PeopleCounts;
+
+/**
+ * One shopping-list item as stored for the household: whether it is ticked and
+ * the plan quantity it was ticked at. `item` is a bundled item id (kebab-case).
+ */
+export type Tick = {
+  item: string;
+  selected: boolean;
+  quantity: number;
+};

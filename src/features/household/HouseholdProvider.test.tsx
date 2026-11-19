@@ -45,6 +45,50 @@ function PlanFlag() {
   );
 }
 
+/** A `found` load result for the complete household, with nothing ticked and no flags. */
+function found(overrides: Partial<Extract<LoadResult, { kind: "found" }>> = {}): LoadResult {
+  return {
+    kind: "found",
+    household: completeHousehold(),
+    ticks: [],
+    planCreatedAt: null,
+    listCreatedAt: null,
+    ...overrides,
+  };
+}
+
+function ListState() {
+  const { status, ticks, planCreated, listCreated, setTick, markListCreated, saveStep } =
+    useHousehold();
+  const [error, setError] = useState<string | null>(null);
+  const fail = (e: unknown) => setError(e instanceof HouseholdStoreError ? e.code : "other");
+  return (
+    <>
+      <p>
+        {status === "ready"
+          ? `plan: ${planCreated ? "yes" : "no"}, list: ${listCreated ? "yes" : "no"}`
+          : status}
+      </p>
+      <p>
+        ticks: {ticks.map((t) => `${t.item}=${t.selected ? "on" : "off"}@${t.quantity}`).join(",")}
+      </p>
+      <button type="button" onClick={() => void setTick("candles", true, 2).catch(fail)}>
+        tick
+      </button>
+      <button type="button" onClick={() => void setTick("candles", false, 2).catch(fail)}>
+        untick
+      </button>
+      <button type="button" onClick={() => void markListCreated().catch(fail)}>
+        create list
+      </button>
+      <button type="button" onClick={() => void saveStep("housing", { housingType: "house" })}>
+        save
+      </button>
+      {error ? <p>error: {error}</p> : null}
+    </>
+  );
+}
+
 /** A store whose stored household changes from outside the provider (another device, later). */
 function changingStore() {
   let result: LoadResult = { kind: "none" };
@@ -100,17 +144,11 @@ describe("HouseholdProvider", () => {
     );
     expect(await screen.findByText("none")).toBeInTheDocument();
 
-    await act(async () =>
-      change({ kind: "found", household: completeHousehold(), planCreatedAt: null }),
-    );
+    await act(async () => change(found()));
     expect(await screen.findByText("flat")).toBeInTheDocument();
 
     await act(async () =>
-      change({
-        kind: "found",
-        household: completeHousehold({ housingType: "house" }),
-        planCreatedAt: null,
-      }),
+      change(found({ household: completeHousehold({ housingType: "house" }) })),
     );
     expect(await screen.findByText("house")).toBeInTheDocument();
 
@@ -214,6 +252,138 @@ describe("HouseholdProvider", () => {
       await act(async () => screen.getByRole("button", { name: "save" }).click());
       await waitFor(() => expect(loads).toBeGreaterThan(1));
       expect(screen.getByText("plan: yes")).toBeInTheDocument();
+    });
+  });
+
+  describe("ticks and the list created flag", () => {
+    it("reports no list and no ticks for a fresh household", async () => {
+      render(
+        <HouseholdProvider store={createMemoryStore(completeHousehold())}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+      expect(screen.getByText("ticks:")).toBeInTheDocument();
+    });
+
+    it("reports the list from this device's flag, and the plan with it", async () => {
+      const { store, change } = changingStore();
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      await act(async () => change(found({ listCreatedAt: "2026-01-02T03:04:05.000Z" })));
+      expect(await screen.findByText("plan: yes, list: yes")).toBeInTheDocument();
+    });
+
+    it("reports the list and the plan when ticks arrive without either flag (a member, a reinstall)", async () => {
+      const { store, change } = changingStore();
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      await act(async () =>
+        change(found({ ticks: [{ item: "candles", selected: true, quantity: 2 }] })),
+      );
+      expect(await screen.findByText("plan: yes, list: yes")).toBeInTheDocument();
+      expect(screen.getByText("ticks: candles=on@2")).toBeInTheDocument();
+    });
+
+    it("does not count only unticked rows as a list", async () => {
+      const { store, change } = changingStore();
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      await act(async () =>
+        change(found({ ticks: [{ item: "candles", selected: false, quantity: 2 }] })),
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+    });
+
+    it("sets listCreated and planCreated once markListCreated resolves", async () => {
+      render(
+        <HouseholdProvider store={createMemoryStore(completeHousehold())}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "create list" }).click());
+      expect(await screen.findByText("plan: yes, list: yes")).toBeInTheDocument();
+    });
+
+    it("rejects markListCreated on a storage failure and keeps listCreated false", async () => {
+      const store: HouseholdStore = {
+        ...createMemoryStore(completeHousehold()),
+        markListCreated: () => Promise.reject(new HouseholdStoreError("unavailable")),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "create list" }).click());
+      expect(await screen.findByText("error: unavailable")).toBeInTheDocument();
+      expect(screen.getByText("plan: no, list: no")).toBeInTheDocument();
+    });
+
+    it("shows the stored ticks after setTick resolves, even without a store event", async () => {
+      const memory = createMemoryStore(completeHousehold());
+      // No subscribe events: only setTick's own reload can show the new ticks.
+      const store: HouseholdStore = { ...memory, subscribe: () => () => {} };
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("ticks:")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "tick" }).click());
+      expect(await screen.findByText("ticks: candles=on@2")).toBeInTheDocument();
+      expect(screen.getByText("plan: yes, list: yes")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "untick" }).click());
+      expect(await screen.findByText("ticks: candles=off@2")).toBeInTheDocument();
+    });
+
+    it("rejects setTick on a storage failure and changes nothing on screen", async () => {
+      const store: HouseholdStore = {
+        ...createMemoryStore(completeHousehold()),
+        setTick: () => Promise.reject(new HouseholdStoreError("unavailable")),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: no, list: no")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "tick" }).click());
+      expect(await screen.findByText("error: unavailable")).toBeInTheDocument();
+      expect(screen.getByText("ticks:")).toBeInTheDocument();
+      expect(screen.getByText("plan: no, list: no")).toBeInTheDocument();
+    });
+
+    it("keeps the ticks and listCreated after a step save", async () => {
+      // The save's own reload never finishes, so only the provider can keep them.
+      const memory = createMemoryStore(completeHousehold());
+      await memory.setTick("candles", true, 2);
+      let loads = 0;
+      const store: HouseholdStore = {
+        ...memory,
+        load: () => (loads++ === 0 ? memory.load() : new Promise<LoadResult>(() => {})),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <ListState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("plan: yes, list: yes")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "save" }).click());
+      await waitFor(() => expect(loads).toBeGreaterThan(1));
+      expect(screen.getByText("plan: yes, list: yes")).toBeInTheDocument();
+      expect(screen.getByText("ticks: candles=on@2")).toBeInTheDocument();
     });
   });
 });

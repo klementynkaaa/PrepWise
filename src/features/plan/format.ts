@@ -147,16 +147,24 @@ export function householdMembers(summary: HouseholdSummary): [HouseholdMember, n
   return members.filter(([, count]) => count > 0);
 }
 
-/** "2 dorosłych, małego dziecka i psa" style list: who the plan is for, in the genitive. */
+/** "2 dorosłych, 1 małego dziecka i 1 psa": who the plan is for, in the genitive. */
+export function householdWho(
+  t: Translator,
+  summary: HouseholdSummary,
+  list: Intl.ListFormat,
+): string {
+  return list.format(
+    householdMembers(summary).map(([key, count]) => t(`plan.household.${key}`, { count })),
+  );
+}
+
+/** The plan banner's line, "Dla 2 dorosłych, 1 małego dziecka i 1 psa." */
 export function householdLine(
   t: Translator,
   summary: HouseholdSummary,
   list: Intl.ListFormat,
 ): string {
-  const parts = householdMembers(summary).map(([key, count]) =>
-    t(`plan.household.${key}`, { count }),
-  );
-  return t("plan.banner.line", { who: list.format(parts) });
+  return t("plan.banner.line", { who: householdWho(t, summary, list) });
 }
 
 /** The items in a tier: its categories' rows, without pointer rows. */

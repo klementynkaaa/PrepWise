@@ -5,6 +5,8 @@ import {
   migrateV1,
   newHousehold,
   stepChanges,
+  tickChanges,
+  ticksOf,
   toRows,
   type HouseholdRows,
   type RowChange,
@@ -108,7 +110,7 @@ function householdKeys(fieldTs: Record<string, string>) {
 
 describe("assemble", () => {
   it("returns null without a household row", () => {
-    expect(assemble({ household: null, needs: [], steps: [] })).toBeNull();
+    expect(assemble({ household: null, needs: [], steps: [], ticks: [] })).toBeNull();
   });
 
   it("ignores set rows with selected: false", () => {
@@ -174,7 +176,9 @@ describe("newHousehold", () => {
     expect(change).toMatchObject({ table: "households", id: TEST_ID, op: "insert" });
     expectWellFormed(changes, NOW_ISO);
     expect(householdKeys(change.fields.field_ts)).toEqual([...HOUSEHOLD_FIELDS].sort());
-    expect(assemble(applyChanges({ household: null, needs: [], steps: [] }, changes))).toEqual({
+    expect(
+      assemble(applyChanges({ household: null, needs: [], steps: [], ticks: [] }, changes)),
+    ).toEqual({
       id: TEST_ID,
       name: null,
       schemaVersion: 2,
@@ -317,7 +321,7 @@ describe("stepChanges", () => {
 
   it("inserts the step row on a step's first save", () => {
     const rows = applyChanges(
-      { household: null, needs: [], steps: [] },
+      { household: null, needs: [], steps: [], ticks: [] },
       newHousehold(TEST_ID, NOW),
     );
     const later = new Date("2026-03-05T00:00:00.000Z");
@@ -330,7 +334,10 @@ describe("stepChanges", () => {
   });
 
   it("produces the same household as the record-based save, over a whole flow", () => {
-    let rows = applyChanges({ household: null, needs: [], steps: [] }, newHousehold(TEST_ID, NOW));
+    let rows = applyChanges(
+      { household: null, needs: [], steps: [], ticks: [] },
+      newHousehold(TEST_ID, NOW),
+    );
     let record: Household | null = null;
     const deps = { newId: () => TEST_ID, now: () => NOW };
     const saves: { [S in Step]: [S, StepPatches[S]] }[Step][] = [
@@ -363,12 +370,163 @@ describe("stepChanges", () => {
   it("rejects a save when there is no household row", () => {
     expect(() =>
       stepChanges(
-        { household: null, needs: [], steps: [] },
+        { household: null, needs: [], steps: [], ticks: [] },
         "housing",
         { housingType: "flat" },
         NOW,
       ),
     ).toThrow(HouseholdStoreError);
+  });
+});
+
+describe("tickChanges", () => {
+  const item = "drinking-water";
+  const id = `${TEST_ID}:${item}`;
+  const later = new Date("2026-03-05T00:00:00.000Z");
+  const LATER_ISO = later.toISOString();
+
+  it("ticking a new item inserts a valid, selected row with the quantity", () => {
+    const changes = tickChanges(rowsOf(), item, true, 4.5, NOW);
+    expect(changes).toEqual([
+      {
+        table: "household_ticks",
+        id,
+        op: "insert",
+        fields: {
+          id,
+          household_id: TEST_ID,
+          item,
+          selected: true,
+          quantity: 4.5,
+          updated_at: NOW_ISO,
+          field_ts: { item: NOW_ISO, selected: NOW_ISO, quantity: NOW_ISO },
+        },
+      },
+    ]);
+    expectWellFormed(changes, NOW_ISO);
+    expect(ticksOf(applyChanges(rowsOf(), changes))).toEqual([
+      { item, selected: true, quantity: 4.5 },
+    ]);
+  });
+
+  it("unticking an item with no row writes nothing", () => {
+    expect(tickChanges(rowsOf(), item, false, 4.5, NOW)).toEqual([]);
+  });
+
+  it("unticking patches only selected and keeps the quantity", () => {
+    const ticked = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    const changes = tickChanges(ticked, item, false, 6, later);
+    expect(changes).toEqual([
+      {
+        table: "household_ticks",
+        id,
+        op: "patch",
+        fields: { selected: false, updated_at: LATER_ISO, field_ts: { selected: LATER_ISO } },
+      },
+    ]);
+    const after = applyChanges(ticked, changes);
+    expect(ticksOf(after)).toEqual([{ item, selected: false, quantity: 4 }]);
+    expect(after.ticks[0].field_ts).toEqual({
+      item: NOW_ISO,
+      selected: LATER_ISO,
+      quantity: NOW_ISO,
+    });
+  });
+
+  it("ticking again at the same quantity patches only selected", () => {
+    let rows = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    rows = applyChanges(rows, tickChanges(rows, item, false, 4, NOW));
+    const changes = tickChanges(rows, item, true, 4, later);
+    expect(changes).toEqual([
+      {
+        table: "household_ticks",
+        id,
+        op: "patch",
+        fields: { selected: true, updated_at: LATER_ISO, field_ts: { selected: LATER_ISO } },
+      },
+    ]);
+  });
+
+  it("ticking again at another quantity patches selected and quantity", () => {
+    let rows = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    rows = applyChanges(rows, tickChanges(rows, item, false, 4, NOW));
+    const changes = tickChanges(rows, item, true, 6.5, later);
+    expect(changes).toEqual([
+      {
+        table: "household_ticks",
+        id,
+        op: "patch",
+        fields: {
+          selected: true,
+          quantity: 6.5,
+          updated_at: LATER_ISO,
+          field_ts: { selected: LATER_ISO, quantity: LATER_ISO },
+        },
+      },
+    ]);
+    expectWellFormed(changes, LATER_ISO);
+  });
+
+  it("ticking a ticked item at a new quantity patches only the quantity", () => {
+    const rows = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    expect(tickChanges(rows, item, true, 6, later)).toEqual([
+      {
+        table: "household_ticks",
+        id,
+        op: "patch",
+        fields: { quantity: 6, updated_at: LATER_ISO, field_ts: { quantity: LATER_ISO } },
+      },
+    ]);
+  });
+
+  it("gives no change when nothing differs", () => {
+    let rows = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    expect(tickChanges(rows, item, true, 4, later)).toEqual([]);
+    rows = applyChanges(rows, tickChanges(rows, item, false, 4, NOW));
+    expect(tickChanges(rows, item, false, 9, later)).toEqual([]);
+  });
+
+  it("does not touch the profile", () => {
+    const rows = rowsOf();
+    const after = applyChanges(rows, tickChanges(rows, item, true, 1, later));
+    expect(assemble(after)).toEqual(assemble(rows));
+  });
+
+  it.each([
+    ["no household", { household: null, needs: [], steps: [], ticks: [] }, item, 1],
+    ["a camelCase item id", rowsOf(), "drinkingWater", 1],
+    ["an empty item id", rowsOf(), "", 1],
+    ["a negative quantity", rowsOf(), item, -1],
+    ["an infinite quantity", rowsOf(), item, Infinity],
+    ["a NaN quantity", rowsOf(), item, NaN],
+  ] as [string, HouseholdRows, string, number][])(
+    "rejects %s as invalid",
+    (_name, rows, itemId, quantity) => {
+      expect(() => tickChanges(rows, itemId, true, quantity, NOW)).toThrow(HouseholdStoreError);
+    },
+  );
+
+  it("rejects a bad quantity when re-ticking an existing row", () => {
+    const rows = applyChanges(rowsOf(), tickChanges(rowsOf(), item, true, 4, NOW));
+    expect(() => tickChanges(rows, item, true, -1, later)).toThrow(HouseholdStoreError);
+  });
+});
+
+describe("ticksOf", () => {
+  it("leaves out ticks of another household", () => {
+    const rows = rowsOf();
+    const mine = applyChanges(rows, tickChanges(rows, "candles", true, 2, NOW));
+    const foreign = applyChanges(
+      toRows(completeHousehold({ id: OTHER_ID })),
+      tickChanges(toRows(completeHousehold({ id: OTHER_ID })), "candles", true, 3, NOW),
+    ).ticks;
+    expect(ticksOf({ ...mine, ticks: [...mine.ticks, ...foreign] })).toEqual([
+      { item: "candles", selected: true, quantity: 2 },
+    ]);
+  });
+
+  it("is empty without a household", () => {
+    expect(ticksOf({ household: null, needs: [], steps: [], ticks: [] })).toEqual([]);
   });
 });
 
@@ -396,7 +554,7 @@ describe("applyChanges", () => {
       ]),
     ).toThrow();
     expect(() =>
-      applyChanges({ household: null, needs: [], steps: [] }, [
+      applyChanges({ household: null, needs: [], steps: [], ticks: [] }, [
         {
           table: "households",
           id: TEST_ID,
@@ -409,6 +567,10 @@ describe("applyChanges", () => {
 });
 
 describe("toRows", () => {
+  it("has no ticks", () => {
+    expect(toRows(completeHousehold()).ticks).toEqual([]);
+  });
+
   it("gives rows only to selected set elements", () => {
     const rows = toRows(
       completeHousehold({ needs: [], completedSteps: ["people"], status: "draft" }),

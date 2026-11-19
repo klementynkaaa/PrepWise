@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Alert, Notice, Tip } from "./Notices";
+import { Alert, LiveStatus, Notice, Tip } from "./Notices";
 
 const meta = {
   title: "Komunikaty/Notice",
   component: Notice,
   tags: ["autodocs"],
   args: { children: "Plan się zmienił: doszło zwierzę, więc dodaliśmy wodę i karmę." },
-  argTypes: { icon: { control: "inline-radio", options: ["info", "offline"] } },
+  argTypes: { icon: { control: "inline-radio", options: ["info", "offline", "check"] } },
 } satisfies Meta<typeof Notice>;
 
 export default meta;
@@ -14,11 +14,38 @@ type Story = StoryObj<typeof meta>;
 
 export const Info: Story = {};
 
+/** Something finished, e.g. every supply on the list ticked (Start). */
+export const Done: Story = {
+  args: {
+    icon: "check",
+    children: "Zapasy na 72 godziny gotowe. Raz na pół roku warto sprawdzić daty ważności.",
+  },
+};
+
 export const Offline: Story = {
   args: {
     icon: "offline",
     children: "Jesteś offline. Wszystko działa — zmiany zapisują się w telefonie.",
   },
+};
+
+/**
+ * Pojawia się dopiero po zdarzeniu (np. nieudany zapis). Sama nie jest
+ * komunikatem na żywo: te same słowa trafiają do `LiveStatus`, który jest
+ * na ekranie od początku, więc czytnik ekranu na pewno je odczyta.
+ */
+export const AfterAnEvent: Story = {
+  args: {
+    live: false,
+    children:
+      "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+  },
+  render: (args) => (
+    <>
+      <Notice {...args} />
+      <LiveStatus>{args.children}</LiveStatus>
+    </>
+  ),
 };
 
 export const Hint: Story = {

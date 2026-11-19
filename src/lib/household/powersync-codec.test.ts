@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toRows } from "./contract";
 import { completeHousehold, TEST_TIME } from "./fixtures";
 import {
+  decodeListCreatedAt,
   decodePlanCreatedAt,
   decodeRow,
   encodeColumns,
@@ -11,10 +12,19 @@ import {
   SQLITE_COLUMNS,
   type SqliteRow,
 } from "./powersync-codec";
-import { TABLE_COLUMNS, TABLES } from "./rows";
+import { TABLE_COLUMNS, TABLES, type HouseholdTickRow } from "./rows";
 
 const USER_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const rows = toRows(completeHousehold());
+const tick: HouseholdTickRow = {
+  id: `${completeHousehold().id}:pet-water`,
+  household_id: completeHousehold().id,
+  item: "pet-water",
+  selected: true,
+  quantity: 1.5,
+  updated_at: TEST_TIME,
+  field_ts: { item: TEST_TIME, selected: TEST_TIME, quantity: TEST_TIME },
+};
 
 /** A row as SQLite returns it: every column, encoded, NULL where empty. */
 function stored(fields: Record<string, unknown>, table: keyof typeof TABLE_COLUMNS): SqliteRow {
@@ -45,6 +55,14 @@ describe("client schema columns", () => {
     });
     expect(SQLITE_COLUMNS.household_needs.selected).toBe("integer");
     expect(SQLITE_COLUMNS.household_steps.step).toBe("text");
+  });
+
+  it("store a tick's quantity as a real number, so a fractional amount fits", () => {
+    expect(SQLITE_COLUMNS.household_ticks).toMatchObject({
+      item: "text",
+      selected: "integer",
+      quantity: "real",
+    });
   });
 });
 
@@ -79,6 +97,16 @@ describe("decoding", () => {
     }
     for (const step of rows.steps) {
       expect(decodeRow("household_steps", stored(step, "household_steps"))).toEqual(step);
+    }
+    expect(decodeRow("household_ticks", stored(tick, "household_ticks"))).toEqual(tick);
+    const unticked = { ...tick, selected: false, quantity: 0 };
+    expect(decodeRow("household_ticks", stored(unticked, "household_ticks"))).toEqual(unticked);
+  });
+
+  it("rejects a tick with an unreadable quantity", () => {
+    for (const quantity of [null, "1.5", -2]) {
+      const bad = { ...stored(tick, "household_ticks"), quantity };
+      expect(() => decodeRow("household_ticks", bad), String(quantity)).toThrow(RowDecodeError);
     }
   });
 
@@ -154,16 +182,23 @@ describe("normalizeTimestamp", () => {
   });
 });
 
-describe("decodePlanCreatedAt", () => {
+describe.each([
+  ["decodePlanCreatedAt", decodePlanCreatedAt],
+  ["decodeListCreatedAt", decodeListCreatedAt],
+])("%s", (_name, decode) => {
   it("reads a stored ISO timestamp", () => {
-    expect(decodePlanCreatedAt(TEST_TIME)).toBe(TEST_TIME);
+    expect(decode(TEST_TIME)).toBe(TEST_TIME);
+  });
+
+  it("reads the server's text form as ISO", () => {
+    expect(decode("2026-11-16 12:34:56.123456+00")).toBe("2026-11-16T12:34:56.123456+00:00");
   });
 
   it("reads NULL (a row written before the column existed) as not set", () => {
-    expect(decodePlanCreatedAt(null)).toBeNull();
+    expect(decode(null)).toBeNull();
   });
 
   it.each([["yesterday"], [42], [{}]])("reads an unreadable value %j as not set", (value) => {
-    expect(decodePlanCreatedAt(value)).toBeNull();
+    expect(decode(value)).toBeNull();
   });
 });

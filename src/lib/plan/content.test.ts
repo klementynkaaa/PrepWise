@@ -10,7 +10,8 @@ const PEOPLE: readonly MemberGroup[] = ["adults", "seniors", "children", "smallC
 const t = createTranslator({ locale: "pl", messages, namespace: "plan" });
 /** Item keys are built from slugs at runtime, so look them up untyped. */
 const tItem = t as unknown as (key: string, values: Record<string, string>) => string;
-const itemMessages: Record<string, { name?: string; note?: string }> = messages.plan.items;
+const itemMessages: Record<string, { name?: string; note?: string; listName?: string }> =
+  messages.plan.items;
 
 /** Arguments every item message may use: the pet section kind and the children for the kit note. */
 const itemArgs = { kind: "dog", kids: "none" } as const;
@@ -28,6 +29,15 @@ describe("plan content", () => {
       expect(tItem(`items.${item.id}.name`, itemArgs)).not.toBe("");
       if (itemMessages[item.id]?.note !== undefined) {
         expect(tItem(`items.${item.id}.note`, itemArgs)).not.toBe("");
+      }
+    }
+  });
+
+  it("gives every slug a short list name that renders for every pet kind", () => {
+    for (const item of PLAN_ITEMS) {
+      expect(itemMessages[item.id]?.listName, item.id).toBeTruthy();
+      for (const kind of ["dog", "animals"]) {
+        expect(tItem(`items.${item.id}.listName`, { ...itemArgs, kind })).not.toBe("");
       }
     }
   });

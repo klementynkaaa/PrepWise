@@ -419,7 +419,13 @@ describe("buildPlan — rules", () => {
     expect(buildPlan(summary, 3, [item({ when })]).itemCount).toBe(included ? 1 : 0);
   });
 
-  it("is in the 'ready' stage", () => {
-    expect(planStage(buildPlan(minimalSummary(), 3))).toBe("ready");
+  it("is in the 'ready' stage until the list exists, then 'collecting'", () => {
+    const plan = buildPlan(minimalSummary(), 3);
+    expect(planStage(plan, false)).toBe("ready");
+    expect(planStage(plan, true)).toBe("collecting");
+    expect(planStage(plan, true, false)).toBe("collecting");
+    expect(planStage(plan, true, true)).toBe("complete");
+    // Without a list nothing can be complete.
+    expect(planStage(plan, false, true)).toBe("ready");
   });
 });

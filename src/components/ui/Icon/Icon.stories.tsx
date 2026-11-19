@@ -22,7 +22,7 @@ const meta = {
   args: { name: "home", size: "md" },
   argTypes: {
     name: { control: "select", options: names },
-    size: { control: "inline-radio", options: ["md", "lg"] },
+    size: { control: "inline-radio", options: ["md", "lg", "xl"] },
   },
 } satisfies Meta<typeof Icon>;
 

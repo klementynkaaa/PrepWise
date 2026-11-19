@@ -1,11 +1,19 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { cn } from "../_shared/cn";
+import { Icon } from "../Icon";
 
 type PriorityHeaderProps = {
   children: ReactNode;
-  /** A count on the right, e.g. "4 rzeczy". */
+  /** A count on the right, e.g. "4 rzeczy" or, for a finished group, "5 z 5". */
   meta?: ReactNode;
   level?: 2 | 3;
+  /**
+   * A finished group that folds: the heading wraps a disclosure button with
+   * a check, the count and a chevron. `controls` is the id of the group's rows.
+   */
+  collapse?: { expanded: boolean; onToggle: () => void; controls: string };
+  /** The disclosure button, so a screen can move focus to it after folding. */
+  ref?: Ref<HTMLButtonElement>;
 } & (
   | {
       tier: number;
@@ -16,9 +24,15 @@ type PriorityHeaderProps = {
   | { tier?: undefined; tierLabel?: undefined }
 );
 
+const metaText = "text-caption font-semibold whitespace-nowrap text-ink-muted";
+/** A finished group's "✓ x z y": accent, so done reads at a glance. */
+const doneMetaText = "text-caption font-semibold whitespace-nowrap text-accent";
+
 /**
- * Heading of a plan panel: the priority number in a circle (when there is
- * one), the name, and an optional count on the right.
+ * Heading of a plan or list panel: the priority number in a circle (when
+ * there is one), the name, and an optional count on the right. With
+ * `collapse` the whole header is a disclosure button inside the heading, so
+ * the heading level still works for navigation.
  */
 export function PriorityHeader({
   tier,
@@ -26,10 +40,12 @@ export function PriorityHeader({
   meta,
   children,
   level = 2,
+  collapse,
+  ref,
 }: PriorityHeaderProps) {
   const Heading = level === 2 ? "h2" : "h3";
-  const heading = (
-    <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
+  const title = (
+    <>
       {tier !== undefined && (
         <>
           <PriorityBadge tier={tier} />
@@ -37,13 +53,49 @@ export function PriorityHeader({
         </>
       )}
       {children}
+    </>
+  );
+
+  if (collapse) {
+    return (
+      <Heading className="text-control font-bold">
+        <button
+          ref={ref}
+          type="button"
+          aria-expanded={collapse.expanded}
+          aria-controls={collapse.controls}
+          onClick={collapse.onToggle}
+          className="flex min-h-touch w-full items-center gap-2 rounded-md px-2.5 py-2 text-left active:bg-surface-sunken"
+        >
+          {title}{" "}
+          <span className={cn("ml-auto inline-flex items-center gap-1 pl-2", doneMetaText)}>
+            <Icon name="check" />
+            {meta}
+          </span>
+          <span
+            className={cn(
+              "motion-safe:transition-transform",
+              // The "back" chevron turned: points right while folded, down when open.
+              collapse.expanded ? "-rotate-90" : "rotate-180",
+            )}
+          >
+            <Icon name="back" />
+          </span>
+        </button>
+      </Heading>
+    );
+  }
+
+  const heading = (
+    <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
+      {title}
     </Heading>
   );
   if (meta === undefined) return heading;
   return (
     <div className="flex items-center justify-between gap-2 pr-2.5">
       {heading}
-      <span className="text-caption font-semibold whitespace-nowrap text-ink-muted">{meta}</span>
+      <span className={metaText}>{meta}</span>
     </div>
   );
 }

@@ -31,7 +31,13 @@ describe("memory store", () => {
     await store.saveStep("housing", { housingType: "house" });
     const done = await store.saveStep("needs", { needs: [] });
     expect(done.status).toBe("complete");
-    expect(await store.load()).toEqual({ kind: "found", household: done, planCreatedAt: null });
+    expect(await store.load()).toEqual({
+      kind: "found",
+      household: done,
+      ticks: [],
+      planCreatedAt: null,
+      listCreatedAt: null,
+    });
   });
 
   it("rejects invalid patches with a typed error and stores nothing", async () => {
@@ -93,7 +99,9 @@ describe("memory store", () => {
     expect(await createMemoryStore(completeHousehold()).load()).toEqual({
       kind: "found",
       household: completeHousehold(),
+      ticks: [],
       planCreatedAt: null,
+      listCreatedAt: null,
     });
   });
 
@@ -145,6 +153,123 @@ describe("memory store", () => {
       store.subscribe(listener);
       await store.markPlanCreated();
       await store.markPlanCreated();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("list created flag", () => {
+    const listCreatedAt = async (store: ReturnType<typeof createMemoryStore>) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.listCreatedAt : undefined;
+    };
+
+    it("is not set by default", async () => {
+      expect(await listCreatedAt(createMemoryStore(completeHousehold()))).toBeNull();
+    });
+
+    it("is set by markListCreated, keeps the first timestamp and leaves the plan flag", async () => {
+      let tick = 0;
+      const store = createMemoryStore(completeHousehold(), {
+        now: () => new Date(Date.parse(TEST_TIME) + 1000 * tick++),
+      });
+      await store.markListCreated();
+      await store.markListCreated();
+      expect(await listCreatedAt(store)).toBe(TEST_TIME);
+      const loaded = await store.load();
+      expect(loaded.kind === "found" && loaded.planCreatedAt).toBeNull();
+    });
+
+    it("is removed by clear and unset for the next new household", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.markListCreated();
+      await store.clear();
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await listCreatedAt(store)).toBeNull();
+    });
+
+    it("is rejected without a household", async () => {
+      const store = createMemoryStore(null, deps());
+      await expect(store.markListCreated()).rejects.toMatchObject({ code: "invalid" });
+      expect(await store.load()).toEqual({ kind: "none" });
+    });
+
+    it("notifies subscribers once when it is set", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      const listener = vi.fn();
+      store.subscribe(listener);
+      await store.markListCreated();
+      await store.markListCreated();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("ticks", () => {
+    const ticks = async (store: ReturnType<typeof createMemoryStore>) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.ticks : undefined;
+    };
+
+    it("starts with none", async () => {
+      expect(await ticks(createMemoryStore(completeHousehold()))).toEqual([]);
+    });
+
+    it("ticks and unticks an item, keeping its quantity", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setTick("drinking-water", true, 4.5);
+      expect(await ticks(store)).toEqual([
+        { item: "drinking-water", selected: true, quantity: 4.5 },
+      ]);
+      await store.setTick("drinking-water", false, 6);
+      expect(await ticks(store)).toEqual([
+        { item: "drinking-water", selected: false, quantity: 4.5 },
+      ]);
+      await store.setTick("drinking-water", true, 6);
+      expect(await ticks(store)).toEqual([{ item: "drinking-water", selected: true, quantity: 6 }]);
+    });
+
+    it("keeps ticks across a step save, and leaves the profile as it was", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setTick("candles", true, 2);
+      const saved = await store.saveStep("housing", { housingType: "house" });
+      expect(saved.housingType).toBe("house");
+      expect(await ticks(store)).toEqual([{ item: "candles", selected: true, quantity: 2 }]);
+      const loaded = await store.load();
+      expect(loaded.kind === "found" && loaded.household).toEqual(saved);
+    });
+
+    it("are removed by clear", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setTick("candles", true, 2);
+      await store.clear();
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await ticks(store)).toEqual([]);
+    });
+
+    it("rejects a tick without a household, or with a bad item or quantity", async () => {
+      await expect(
+        createMemoryStore(null, deps()).setTick("candles", true, 1),
+      ).rejects.toMatchObject({ code: "invalid" });
+      const store = createMemoryStore(completeHousehold(), deps());
+      await expect(store.setTick("Candles", true, 1)).rejects.toBeInstanceOf(HouseholdStoreError);
+      await expect(store.setTick("candles", true, -1)).rejects.toMatchObject({ code: "invalid" });
+      expect(await ticks(store)).toEqual([]);
+    });
+
+    it("returns copies, so callers cannot change stored ticks", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setTick("candles", true, 2);
+      const first = await ticks(store);
+      if (first) first[0].selected = false;
+      expect(await ticks(store)).toEqual([{ item: "candles", selected: true, quantity: 2 }]);
+    });
+
+    it("notifies subscribers on a change, not on a tick that changes nothing", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      const listener = vi.fn();
+      store.subscribe(listener);
+      await store.setTick("candles", true, 2);
+      await store.setTick("candles", true, 2);
+      await store.setTick("matches", false, 1);
       expect(listener).toHaveBeenCalledTimes(1);
     });
   });

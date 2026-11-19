@@ -5,8 +5,8 @@ type EmptyStateProps = {
   /** Only the state scenes, so every empty state has the same art size. */
   illustration: StateIllustrationName;
   title: ReactNode;
-  /** One calm sentence: what happened and what to do. */
-  children: ReactNode;
+  /** One calm sentence: what happened and what to do. Left out when the title says it all. */
+  children?: ReactNode;
   /** Optional button, e.g. <ButtonLink href="/">Wróć</ButtonLink>. */
   action?: ReactNode;
   /**
@@ -32,7 +32,7 @@ export function EmptyState({
     <div className="flex flex-col items-center gap-3 px-5 py-6 text-center">
       <Illustration name={illustration} />
       <Heading className="text-title text-balance">{title}</Heading>
-      <p className="max-w-prose text-body">{children}</p>
+      {children != null && children !== "" && <p className="max-w-prose text-body">{children}</p>}
       {action && <div className="flex w-full flex-col pt-2">{action}</div>}
     </div>
   );

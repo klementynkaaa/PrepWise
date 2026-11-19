@@ -5,8 +5,9 @@ import type { AppLocale } from "@/i18n/routing";
 import { AppFrame } from "./AppFrame";
 
 /**
- * The app screens' (Start, Plan) storage error: storage can't be opened, so
- * the screen offers a reload. Each screen passes its own words.
+ * The app screens' (Start, Plan, list) storage error: storage can't be opened, so
+ * the screen offers a reload. Each screen passes its own words; the body
+ * line is optional (Plan's and the list's errors have only a title and the button).
  */
 export function AppUnavailable({
   locale,
@@ -16,7 +17,7 @@ export function AppUnavailable({
 }: {
   locale: AppLocale;
   title: string;
-  body: string;
+  body?: string;
   retry: string;
 }) {
   return (

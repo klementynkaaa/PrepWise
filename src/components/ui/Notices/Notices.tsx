@@ -3,19 +3,41 @@ import { Icon } from "../Icon";
 
 type NoticeProps = {
   children: ReactNode;
-  icon?: "info" | "offline";
+  /** `check` marks something finished (e.g. every supply ticked on Start). */
+  icon?: "info" | "offline" | "check";
+  /**
+   * `false` when the notice appears only after something happened (a failed
+   * save): a live region added already filled is often not read, so the
+   * screen puts the same words in an always-present `LiveStatus` instead.
+   */
+  live?: boolean;
 };
 
 /** A calm notice: offline, install hint, plan changed. Never alarming. */
-export function Notice({ children, icon = "info" }: NoticeProps) {
+export function Notice({ children, icon = "info", live = true }: NoticeProps) {
   return (
     <div
-      role="status"
+      role={live ? "status" : undefined}
       className="flex items-start gap-2.5 rounded-md bg-notice-bg px-4 py-3 text-body-sm"
     >
-      <Icon name={icon} />
+      <span className={icon === "check" ? "text-accent" : undefined}>
+        <Icon name={icon} />
+      </span>
       <span>{children}</span>
     </div>
+  );
+}
+
+/**
+ * A polite status heard only by screen readers. Render it from the first
+ * paint, empty, and fill it when something happens; a region that appears
+ * already filled is often not announced.
+ */
+export function LiveStatus({ children }: { children?: ReactNode }) {
+  return (
+    <p role="status" className="sr-only">
+      {children}
+    </p>
   );
 }
 

@@ -1,6 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMemoryStore, type HouseholdStore } from "@/lib/household";
+import { createMemoryStore, summarise, type HouseholdStore } from "@/lib/household";
+import { buildList } from "@/lib/list";
+import { buildPlan } from "@/lib/plan";
+import { PLAN_DAYS } from "@/features/plan/format";
 import { completeHousehold } from "@/lib/household/fixtures";
 import { renderScreen, storeWithPlan } from "@/features/household/test-utils";
 import { StartScreen } from "./StartScreen";
@@ -73,6 +76,60 @@ describe("start screen", () => {
     expect(within(tile(/^Dla dziecka/)).getByText(/^\d+ rzecz/).textContent).toMatch(/^[1-9]/);
   });
 
+  it("names the collecting stage and shows the list's readiness once the list exists", async () => {
+    const store = await storeWithPlan(defaultHousehold());
+    await store.markListCreated();
+    // Water counts; food ticked at less than it needs now does not.
+    await store.setTick("drinking-water", true, 27);
+    await store.setTick("shelf-stable-food", true, 0);
+    renderStart(store);
+
+    expect(await screen.findByText("Teraz: kompletowanie zapasów")).toBeInTheDocument();
+    expect(screen.getByText("Lista zakupów jest gotowa do odhaczania.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Otwórz listę" })).toHaveAttribute("href", "/pl/list");
+    expect(screen.queryByText("Plan gotowy — czas na kompletowanie")).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" }),
+    ).toBeInTheDocument();
+    // The section's header link "Plan", besides the tab of the same name.
+    const planLinks = screen.getAllByRole("link", { name: "Plan" });
+    expect(planLinks.filter((link) => !link.closest("nav"))).toHaveLength(1);
+    for (const link of planLinks) expect(link).toHaveAttribute("href", "/pl/plan");
+    const panel = screen.getByRole("link", { name: /^Gotowe 1 z 22/ });
+    expect(panel).toHaveAttribute("href", "/pl/list");
+    expect(within(panel).getByText("Zostało 21 rzeczy do odhaczenia.")).toBeInTheDocument();
+    // A ring with the short count, at the top: right after the banner, before "Do zrobienia".
+    expect(within(panel).getByText("1/22")).toBeInTheDocument();
+    const readiness = screen.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" });
+    const todo = screen.getByRole("heading", { level: 2, name: "Do zrobienia" });
+    expect(readiness.compareDocumentPosition(todo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The tiles give way to the one panel.
+    expect(screen.queryByRole("heading", { name: "Plan na 72 godziny" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Priorytet \d:/ })).not.toBeInTheDocument();
+  });
+
+  it("marks the stage as done once every supply on the list is ticked", async () => {
+    const household = defaultHousehold();
+    const store = await storeWithPlan(household);
+    await store.markListCreated();
+    const list = buildList(buildPlan(summarise(household), PLAN_DAYS), []);
+    for (const row of list.groups.flatMap((group) => group.rows)) {
+      await store.setTick(row.itemId, true, row.quantity);
+    }
+    renderStart(store);
+
+    expect(await screen.findByText("Zapasy na 72 godziny gotowe")).toBeInTheDocument();
+    expect(
+      screen.getByText("Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Teraz: kompletowanie zapasów")).not.toBeInTheDocument();
+    const panel = screen.getByRole("link", { name: /^Gotowe 22 z 22/ });
+    // The full ring shows a check mark instead of "22/22".
+    expect(within(panel).queryByText("22/22")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Wszystko odhaczone.")).toBeInTheDocument();
+  });
+
   it("leaves the section tiles out when the plan has no sections", async () => {
     renderStart(
       await storeWithPlan(
@@ -90,7 +147,7 @@ describe("start screen", () => {
     expect(screen.queryByRole("link", { name: /^Dla / })).not.toBeInTheDocument();
   });
 
-  it("shows the Online chip and the Start · Plan tabs", async () => {
+  it("shows the Online chip and the Start · Plan · Lista tabs", async () => {
     renderStart(await storeWithPlan(defaultHousehold()));
     await screen.findByText("Wasz dom");
     expect(screen.getByText("Online")).toBeInTheDocument();
@@ -99,6 +156,8 @@ describe("start screen", () => {
       "aria-current",
       "page",
     );
+    expect(within(nav).getByRole("link", { name: "Plan" })).toHaveAttribute("href", "/pl/plan");
+    expect(within(nav).getByRole("link", { name: "Lista" })).toHaveAttribute("href", "/pl/list");
   });
 
   it("opens the overview when this device has not created a plan", async () => {

@@ -15,12 +15,13 @@ export {
   type StateIllustrationName,
 } from "./Illustration";
 export { Banner } from "./Banner";
-export { Alert, Notice, Tip } from "./Notices";
+export { Alert, LiveStatus, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
 export { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } from "./Panel";
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";
 export { PlanRow } from "./PlanRow";
 export { ProgressBar, ProgressBarRow, ProgressRing } from "./Progress";
+export { ProgressPanel } from "./ProgressPanel";
 export { SectionHeader } from "./SectionHeader";
 export { FactChip, PriorityBadge, PriorityHeader, SaveStatus, type SaveState } from "./Status";
 export { BackLink, TextButton, TextLink, type TextLinkSize } from "./TextLink";

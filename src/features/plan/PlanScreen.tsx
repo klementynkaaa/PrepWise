@@ -7,9 +7,11 @@ import { useCompleteProfile } from "@/features/household/useCompleteProfile";
 import { AppFrame } from "@/features/shell/AppFrame";
 import { AppUnavailable } from "@/features/shell/AppUnavailable";
 import type { AppLocale } from "@/i18n/routing";
-import { summarise, type Household } from "@/lib/household";
+import { summarise, type Household, type Tick } from "@/lib/household";
+import { buildList } from "@/lib/list";
 import { buildPlan } from "@/lib/plan";
 import { householdLine, itemArgs, PLAN_DAYS, usePlanTranslator } from "./format";
+import { CreateListPanel, ListProgressPanel } from "./ListPanel";
 import { SectionPanel, TierPanel, type RowContext } from "./PlanTiers";
 import { SourcesSheet } from "./SourcesSheet";
 
@@ -23,7 +25,14 @@ export function PlanScreen({ locale }: { locale: AppLocale }) {
 
   if (profile.status === "unavailable") return <PlanUnavailable locale={locale} />;
   if (profile.status === "held") return <PlanLoading locale={locale} />;
-  return <PlanReady household={profile.household} locale={locale} />;
+  return (
+    <PlanReady
+      household={profile.household}
+      ticks={profile.ticks}
+      listCreated={profile.listCreated}
+      locale={locale}
+    />
+  );
 }
 
 function PlanLoading({ locale }: { locale: AppLocale }) {
@@ -48,10 +57,20 @@ function PlanLoading({ locale }: { locale: AppLocale }) {
 
 function PlanUnavailable({ locale }: { locale: AppLocale }) {
   const t = useTranslations("plan.unavailable");
-  return <AppUnavailable locale={locale} title={t("title")} body={t("body")} retry={t("retry")} />;
+  return <AppUnavailable locale={locale} title={t("title")} retry={t("retry")} />;
 }
 
-function PlanReady({ household, locale }: { household: Household; locale: AppLocale }) {
+function PlanReady({
+  household,
+  ticks,
+  listCreated,
+  locale,
+}: {
+  household: Household;
+  ticks: Tick[];
+  listCreated: boolean;
+  locale: AppLocale;
+}) {
   const t = usePlanTranslator();
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const sourcesOpener = useRef<HTMLButtonElement>(null);
@@ -64,6 +83,8 @@ function PlanReady({ household, locale }: { household: Household; locale: AppLoc
 
   const summary = useMemo(() => summarise(household), [household]);
   const plan = useMemo(() => buildPlan(summary, PLAN_DAYS), [summary]);
+  // The panel's count comes from the list itself, so Plan, the list and Start agree.
+  const progress = useMemo(() => buildList(plan, ticks).progress, [plan, ticks]);
   const list = useMemo(
     () => new Intl.ListFormat(locale, { style: "long", type: "conjunction" }),
     [locale],
@@ -108,6 +129,11 @@ function PlanReady({ household, locale }: { household: Household; locale: AppLoc
           {plan.sections.map((section) => (
             <SectionPanel key={section.id} section={section} ctx={ctx} />
           ))}
+          {listCreated ? (
+            <ListProgressPanel t={t} locale={locale} progress={progress} />
+          ) : (
+            <CreateListPanel t={t} locale={locale} itemCount={plan.itemCount} />
+          )}
         </div>
       </main>
       <SourcesSheet open={sourcesOpen} onClose={closeSources} />

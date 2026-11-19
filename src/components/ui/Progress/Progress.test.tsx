@@ -3,26 +3,48 @@ import { describe, expect, it } from "vitest";
 import { ProgressBarRow, ProgressRing } from "./Progress";
 
 describe("ProgressRing", () => {
-  it("renders its label as one text node and is read in words", () => {
-    render(<ProgressRing done={12} total={38} />);
-    const label = screen.getByText("12/38");
-    expect(label.childNodes).toHaveLength(1);
+  it("renders its fraction as one text node and is read as its label", () => {
+    render(<ProgressRing done={12} total={38} label="Gotowe 12 z 38" fraction="12/38" />);
+    const fraction = screen.getByText("12/38");
+    expect(fraction.childNodes).toHaveLength(1);
     expect(screen.getByRole("img", { name: "Gotowe 12 z 38" })).toBeInTheDocument();
   });
 });
 
 describe("ProgressBarRow", () => {
   it("always shows the count, with the percentage beside it", () => {
-    render(<ProgressBarRow name="Woda i jedzenie" detail="brakuje wody" done={4} total={7} />);
+    render(
+      <ProgressBarRow
+        name="Woda i jedzenie"
+        detail="brakuje wody"
+        count="4 z 7"
+        label="Gotowe 4 z 7"
+        done={4}
+        total={7}
+      />,
+    );
     expect(screen.getByText(/4 z 7/)).toHaveTextContent("4 z 7 · brakuje wody");
     expect(screen.getByText("57%")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Gotowe 4 z 7" })).toBeInTheDocument();
   });
 
   it("shows Gotowe instead of 100%", () => {
-    render(<ProgressBarRow name="Ciepło" done={3} total={3} />);
+    render(<ProgressBarRow name="Ciepło" count="3 z 3" label="Gotowe 3 z 3" done={3} total={3} />);
     expect(screen.getByText("Gotowe")).toBeInTheDocument();
     expect(screen.queryByText("100%")).not.toBeInTheDocument();
     expect(screen.getByText("3 z 3")).toBeInTheDocument();
+  });
+
+  it("shows a check mark instead of the fraction in a full large ring", () => {
+    const { container, rerender } = render(
+      <ProgressRing done={19} total={20} label="Gotowe 19 z 20" fraction="19/20" size="lg" />,
+    );
+    expect(screen.getByText("19/20")).toBeInTheDocument();
+    rerender(
+      <ProgressRing done={20} total={20} label="Gotowe 20 z 20" fraction="20/20" size="lg" />,
+    );
+    expect(screen.queryByText("20/20")).not.toBeInTheDocument();
+    expect(container.querySelector("[aria-hidden] svg")).not.toBeNull();
+    expect(screen.getByRole("img", { name: "Gotowe 20 z 20" })).toBeInTheDocument();
   });
 });
