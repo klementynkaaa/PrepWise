@@ -1,9 +1,17 @@
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
-import messages from "../../../messages/pl.json";
+import { messages } from "@/i18n/messages";
 import { effectiveSource } from "./build";
-import { PLAN_ITEMS } from "./content";
-import { CATEGORIES, SECTIONS, TIERS, UNITS, type MemberGroup, type PlanItem } from "./types";
+import { PLAN_ITEMS, SOURCES } from "./content";
+import {
+  CATEGORIES,
+  SECTIONS,
+  TIERS,
+  UNITS,
+  type MemberGroup,
+  type PlanItem,
+  type RegisterSource,
+} from "./types";
 
 const PEOPLE: readonly MemberGroup[] = ["adults", "seniors", "children", "smallChildren"];
 
@@ -58,14 +66,6 @@ describe("plan content", () => {
     expect(PLAN_ITEMS.filter((item) => item.verified)).toEqual([]);
   });
 
-  it("never marks an official figure verified without a source reference", () => {
-    const dishonest = PLAN_ITEMS.filter(
-      (item) =>
-        item.intendedSource === "official" && item.verified && (item.sourceRef ?? "").trim() === "",
-    );
-    expect(dishonest).toEqual([]);
-  });
-
   it("shows every unverified item as a PREPWISE recommendation", () => {
     for (const item of PLAN_ITEMS.filter((i) => !i.verified)) {
       expect(effectiveSource(item), item.id).toBe("prepwise");
@@ -112,6 +112,10 @@ describe("plan content", () => {
 });
 
 describe("effectiveSource", () => {
+  const sources: readonly RegisterSource[] = [
+    { id: "gov", kind: "official", url: "https://www.gov.pl/x" },
+    { id: "blog", kind: "other", url: "https://example.com/x" },
+  ];
   const base: PlanItem = {
     id: "x",
     placement: { kind: "tier", tier: 1, category: "waterFood" },
@@ -120,21 +124,29 @@ describe("effectiveSource", () => {
     roundStep: 1,
     intendedSource: "official",
     verified: true,
-    sourceRef: "Poradnik, s. 4",
+    sourceId: "gov" as PlanItem["sourceId"],
   };
 
-  it("is official only for a verified official figure with a source", () => {
-    expect(effectiveSource(base)).toBe("official");
+  it("is official only for a verified official figure citing an official register source", () => {
+    expect(effectiveSource(base, sources)).toBe("official");
   });
 
   it.each<[string, Partial<PlanItem>]>([
     ["unverified", { verified: false }],
-    ["no source reference", { sourceRef: undefined }],
-    ["an empty source reference", { sourceRef: "" }],
-    ["a blank source reference", { sourceRef: "   " }],
+    ["no source id", { sourceId: undefined }],
+    ["an unknown source id", { sourceId: "missing" as PlanItem["sourceId"] }],
+    ["a non-official register source", { sourceId: "blog" as PlanItem["sourceId"] }],
     ["a PREPWISE figure", { intendedSource: "prepwise" }],
   ])("is prepwise for %s", (_, change) => {
-    expect(effectiveSource({ ...base, ...change })).toBe("prepwise");
+    expect(effectiveSource({ ...base, ...change }, sources)).toBe("prepwise");
+  });
+
+  it("resolves against the bundled register by default", () => {
+    const id = SOURCES.find((source) => source.kind === "official")?.id;
+    expect(effectiveSource({ ...base, sourceId: id as PlanItem["sourceId"] })).toBe("official");
+    expect(effectiveSource({ ...base, sourceId: "missing" as PlanItem["sourceId"] })).toBe(
+      "prepwise",
+    );
   });
 });
 

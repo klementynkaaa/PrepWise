@@ -40,7 +40,7 @@ export function generate(kb) {
     const { evidence, ...app } = item;
     delete app.copy;
     const verified = isVerified(item, sourcesById);
-    // `sourceId` joins the item once PlanItem has it (Phase 2); no draft carries one before then.
+    // A verified item carries the source its evidence cites.
     return verified ? { ...app, verified, sourceId: evidence.sourceId } : { ...app, verified };
   });
 

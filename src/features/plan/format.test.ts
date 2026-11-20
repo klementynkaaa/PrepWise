@@ -1,6 +1,6 @@
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
-import messages from "../../../messages/pl.json";
+import { messages } from "@/i18n/messages";
 import { PEOPLE_GROUPS, PET_KINDS } from "@/features/household/groups";
 import type { HouseholdSummary } from "@/lib/household";
 import { UNITS, type FormulaParts, type FormulaWho } from "@/lib/plan";

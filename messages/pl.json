@@ -276,117 +276,6 @@
       "title": "Nie da się otworzyć planu",
       "retry": "Spróbuj jeszcze raz"
     },
-    "items": {
-      "drinking-water": {
-        "name": "Woda pitna",
-        "listName": "Woda"
-      },
-      "shelf-stable-food": {
-        "name": "Jedzenie, które nie wymaga gotowania",
-        "listName": "Jedzenie"
-      },
-      "regular-medicines": {
-        "name": "Leki przyjmowane na stałe",
-        "listName": "Leki na stałe"
-      },
-      "medical-equipment-power": {
-        "name": "Zasilanie zapasowe do sprzętu medycznego",
-        "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem",
-        "listName": "Zasilanie do sprzętu medycznego"
-      },
-      "first-aid-kit": {
-        "name": "Apteczka pierwszej pomocy",
-        "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}",
-        "listName": "Apteczka"
-      },
-      "flashlight": {
-        "name": "Latarka",
-        "listName": "Latarki"
-      },
-      "flashlight-batteries": {
-        "name": "Baterie do latarek",
-        "note": "jeden komplet na latarkę",
-        "listName": "Baterie do latarek"
-      },
-      "battery-radio": {
-        "name": "Radio na baterie lub na korbkę",
-        "listName": "Radio"
-      },
-      "power-bank": {
-        "name": "Powerbank",
-        "note": "naładowany, do telefonu",
-        "listName": "Powerbank"
-      },
-      "toilet-paper": {
-        "name": "Papier toaletowy",
-        "listName": "Papier toaletowy"
-      },
-      "hand-hygiene": {
-        "name": "Mydło i płyn do dezynfekcji rąk",
-        "listName": "Mydło i płyn do rąk"
-      },
-      "wet-wipes": {
-        "name": "Mokre chusteczki",
-        "listName": "Mokre chusteczki"
-      },
-      "flushing-water": {
-        "name": "Woda do spłukiwania toalety",
-        "note": "w bloku pompy nie działają bez prądu",
-        "listName": "Woda do spłukiwania"
-      },
-      "blanket": {
-        "name": "Koc",
-        "listName": "Koce"
-      },
-      "heating-fuel": {
-        "name": "Zapasowe ogrzewanie",
-        "note": "opał lub grzejnik niezależny od prądu",
-        "listName": "Zapasowe ogrzewanie"
-      },
-      "mobility-aid-power": {
-        "name": "Zasilanie do sprzętu ułatwiającego poruszanie się",
-        "note": "zapasowe baterie lub ładowarka, do tego gwizdek",
-        "listName": "Zasilanie do sprzętu do poruszania się"
-      },
-      "document-copies": {
-        "name": "Kopie dokumentów",
-        "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce",
-        "listName": "Kopie dokumentów"
-      },
-      "cash": {
-        "name": "Gotówka w drobnych",
-        "listName": "Gotówka"
-      },
-      "multitool": {
-        "name": "Nóż wielofunkcyjny",
-        "listName": "Nóż wielofunkcyjny"
-      },
-      "duct-tape": {
-        "name": "Taśma klejąca",
-        "listName": "Taśma klejąca"
-      },
-      "small-child-food": {
-        "name": "Jedzenie dla małego dziecka",
-        "note": "mleko, kaszki, słoiczki",
-        "listName": "Pokarm dla dziecka"
-      },
-      "diapers": {
-        "name": "Pieluchy",
-        "listName": "Pieluchy"
-      },
-      "pet-water": {
-        "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}",
-        "listName": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
-      },
-      "pet-food": {
-        "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}",
-        "listName": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
-      },
-      "pet-kit": {
-        "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
-        "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
-      }
-    },
     "units": {
       "l": "{count, plural, other {# l}}",
       "portion": "{count, plural, one {# porcja} few {# porcje} many {# porcji} other {# porcji}}",
@@ -489,8 +378,8 @@
       "title": "Plan na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
       "all": "Cały plan",
       "tiers": {
-        "1": "Najważniej\u00adsze",
-        "2": "Codzien\u00adność",
+        "1": "Najważniej­sze",
+        "2": "Codzien­ność",
         "3": "Dodatkowo"
       },
       "sections": {

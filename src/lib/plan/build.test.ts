@@ -298,7 +298,13 @@ describe("buildPlan — rules", () => {
   });
 
   it("shows a verified official item with a source as official", () => {
-    const items = [item({ intendedSource: "official", verified: true, sourceRef: "Poradnik" })];
+    const items = [
+      item({
+        intendedSource: "official",
+        verified: true,
+        sourceId: "poradnik-bezpieczenstwa-portal",
+      }),
+    ];
     expect(rowsOf(buildPlan(minimalSummary(), 3, items))[0].source).toBe("official");
   });
 

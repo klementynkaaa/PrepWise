@@ -1,7 +1,7 @@
 import type { HouseholdSummary } from "@/lib/household/summary";
 import type { PeopleGroup, PetKind } from "@/lib/household/types";
 import { recommendedQuantity, roundUpToStep } from "@/lib/quantity";
-import { PLAN_ITEMS } from "./content";
+import { PLAN_ITEMS, SOURCES } from "./content";
 import {
   CATEGORIES,
   SECTIONS,
@@ -18,6 +18,7 @@ import {
   type PlanSection,
   type PlanStage,
   type PlanTier,
+  type RegisterSource,
   type SectionId,
   type Source,
   type TierLevel,
@@ -28,15 +29,17 @@ const DOGS: readonly PetKind[] = ["smallDog", "mediumDog", "largeDog"];
 
 /**
  * The source a row shows. "official" only when the item is meant to be
- * official, has been verified and names its source; every draft is "prepwise".
- * Screens use this, never `intendedSource`.
+ * official, has been verified and its `sourceId` resolves to an official entry
+ * in the register; every other item is "prepwise". Screens use this, never
+ * `intendedSource`.
  */
-export function effectiveSource(item: PlanItem): Source {
-  return item.intendedSource === "official" &&
-    item.verified === true &&
-    (item.sourceRef ?? "").trim() !== ""
-    ? "official"
-    : "prepwise";
+export function effectiveSource(
+  item: PlanItem,
+  sources: readonly RegisterSource[] = SOURCES,
+): Source {
+  if (item.intendedSource !== "official" || item.verified !== true) return "prepwise";
+  const source = sources.find((entry) => entry.id === item.sourceId);
+  return source?.kind === "official" ? "official" : "prepwise";
 }
 
 /**

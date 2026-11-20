@@ -186,20 +186,3 @@ describe("run", () => {
     ]);
   });
 });
-
-// TEMPORARY parity test. Phase 2 deletes this block together with the old
-// `src/lib/plan/content.ts` and `plan.items` in `messages/pl.json`.
-describe("parity with the old content (temporary)", () => {
-  it("generates today's PLAN_ITEMS and plan.items exactly", async () => {
-    const root = process.cwd();
-    const [{ PLAN_ITEMS: old }, { PLAN_ITEMS: generated }] = await Promise.all([
-      import(join(root, "src/lib/plan/content.ts")),
-      import(join(root, "src/lib/plan/content.generated.ts")),
-    ]);
-    const oldMessages = JSON.parse(readFileSync(join(root, "messages/pl.json"), "utf8"));
-    const newMessages = JSON.parse(readFileSync(join(root, "messages/pl.knowledge.json"), "utf8"));
-    expect(generated).toStrictEqual(old);
-    expect(newMessages.plan.items).toStrictEqual(oldMessages.plan.items);
-    expect(Object.keys(newMessages.plan.items)).toStrictEqual(Object.keys(oldMessages.plan.items));
-  });
-});

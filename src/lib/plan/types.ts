@@ -1,7 +1,8 @@
 /**
  * Plan content and plan shape. Plain data only: every word a screen shows is
- * looked up in `messages/pl.json` (`plan.*`) by the ids and slugs below.
+ * looked up in the messages (`plan.*`, merged from `messages/pl.json` and the generated `messages/pl.knowledge.json`) by the ids and slugs below.
  */
+import type { SourceId } from "./content.generated";
 import type { HousingType, Need, PeopleGroup, PetKind } from "@/lib/household/types";
 
 export const TIERS = [1, 2, 3] as const;
@@ -84,10 +85,13 @@ export type PlanItem = {
   when?: Trigger;
   /** What the figure is meant to be once verified. Screens never read it: see `effectiveSource`. */
   intendedSource: Source;
-  /** True only once the figure has been checked against `sourceRef`. */
+  /**
+   * True only when the figure's evidence is complete and owner-verified in
+   * `knowledge/` (derived by the generator, never written by hand).
+   */
   verified: boolean;
-  /** The named official source the figure was verified against. */
-  sourceRef?: string;
+  /** The register source the figure was verified against (set with `verified`). */
+  sourceId?: SourceId;
   /** The "Najpierw" row (water only). */
   first?: true;
   /** Small-child food: also shows a pointer row in tier 1. */

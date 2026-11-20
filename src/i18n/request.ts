@@ -1,5 +1,6 @@
 import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
+import { messages } from "./messages";
 import { routing } from "./routing";
 
 // Runs at build time for every prerendered page; there is no server at
@@ -9,6 +10,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
   return {
     locale,
-    messages: (await import("../../messages/pl.json")).default,
+    messages,
   };
 });
