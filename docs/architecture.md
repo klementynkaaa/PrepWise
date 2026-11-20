@@ -20,7 +20,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Framework | Next.js 16 (App Router), React 19, TypeScript (strict)                                                                                                                         |
 | Styling   | Tailwind CSS 4 with the PREPWISE design system tokens; Plus Jakarta Sans, self-hosted                                                                                          |
-| Text      | next-intl with one Polish dictionary, `messages/pl.json`                                                                                                                       |
+| Text      | next-intl with one Polish dictionary, `messages/pl.json` plus the generated `messages/pl.knowledge.json`                                                                       |
 | Offline   | Serwist service worker, built after the static export                                                                                                                          |
 | Storage   | PowerSync's local SQLite database on the device, behind one typed storage interface (`src/lib/household`); an S-01 household in IndexedDB is imported once                     |
 | Backend   | Supabase in Frankfurt (Postgres, anonymous and email-code sign-in, row-level security) and PowerSync Cloud in the EU; schema in `supabase/migrations/`; sync off in production |
@@ -42,7 +42,7 @@ browser ── first visit (online) ──▶ static host (Vercel)
 - **Two root layouts.** `src/app/(root)/` holds `/` and `/offline`, which sit outside the locale; `src/app/[locale]/` holds everything else. `/` is a static page that forwards to `/pl` (a server redirect is not possible in a static export): a meta refresh, a client-side replace and a visible link as the last fallback.
 - **App screens.** After the household profile (`/pl/start/...`, overview at `/pl/household`) come the app screens with the Start · Plan · Lista tab bar: Start (`/pl/home`), the hub a returning household lands on, the plan (`/pl/plan`) and the shopping list (`/pl/list`).
 - **Where the app opens.** `/pl` resumes a saved household on the client (a static export has no server to redirect): an unfinished profile continues at its first unfinished step, a complete profile opens the overview until this device has created a plan, and then Start. With nothing saved, Welcome shows.
-- **One dictionary.** All user-facing text lives in `messages/pl.json`, not in components, routes or features. Screens read it through next-intl, so a second language is a second file.
+- **One dictionary.** All user-facing text lives in `messages/`, not in components, routes or features: the hand-owned `messages/pl.json`, merged at load time with the generated `messages/pl.knowledge.json` (the plan items, emergencies and source titles; see Knowledge base). Screens read the merged dictionary through next-intl, so a second language is a second pair of files.
 
 ## Household data
 
@@ -64,9 +64,21 @@ Every piece of household data that may be shared follows these rules, so later f
 - **Bundled item ids** (plan items, emergencies) are kebab-case slugs written by hand. They never change and are never reused, because stored rows refer to them.
 - **Rules that span fields are applied on read.** A merge can combine two valid edits into an odd mix (say, "no pets" with a cat count). Turning rows into the household that screens use (`assemble`) normalises this: without pets, pet counts read as 0. The profile status is computed there too, never stored.
 
+## Knowledge base
+
+All plan content lives in `knowledge/`, committed to the repo and edited by hand. See `knowledge/README.md` for how to author it.
+
+- **Files.** `sources.json` (the register of sources), `items.json` (supply items with their Polish copy and optional evidence) and `emergencies.json` (scenarios with their explanation and the items they add). The files are JSON, validated with Zod.
+- **Generator.** `scripts/build-knowledge.mjs` (schemas and cross-file rules in `scripts/lib/knowledge.mjs`) checks the files and writes the outputs. `npm run knowledge` regenerates them; `npm run knowledge:check` only compares.
+- **Generated outputs, committed.** `src/lib/plan/content.generated.ts` holds ids, numbers, URLs and flags, with no Polish; `tsc` checks it against the app's types. `messages/pl.knowledge.json` holds every Polish word of that content and is merged with `messages/pl.json` at load time. Neither file is edited by hand.
+- **Evidence is not bundled.** Quotes, pages and verifier details are checked at build time and then dropped. The app gets only whether a figure is verified and which register source it cites.
+- **"Official" is earned.** A figure counts as official only with owner-verified evidence that cites an official (gov.pl) register source; the rule is in `docs/business-rules.md`.
+- **CI gate.** The `Lint, type check, build` job runs `npm run knowledge:check`. It fails on a broken rule or a stale generated file.
+- **Still static.** The content is bundled at build time, never fetched at runtime and never stored in Supabase.
+
 ## Plan
 
-- **Derived, not stored.** `src/lib/plan` holds the bundled plan content (typed items with permanent slugs, amounts per member group or pet kind, a source label and a verified flag) and a pure `buildPlan`, which turns the profile summary and the number of days into tiers, categories and member sections. Screens build the plan from the stored profile every time they open, so profile edits flow in without a new "generate". The only stored value is the device-only "plan created" timestamp, which decides where the app opens. All plan words live in `messages/pl.json`; `src/lib/plan` holds no Polish.
+- **Derived, not stored.** `src/lib/plan` holds the bundled plan content, generated from `knowledge/` (typed items with permanent slugs, amounts per member group or pet kind, a source label and a verified flag) and a pure `buildPlan`, which turns the profile summary and the number of days into tiers, categories and member sections. Screens build the plan from the stored profile every time they open, so profile edits flow in without a new "generate". The only stored value is the device-only "plan created" timestamp, which decides where the app opens. The plan's words come from the knowledge base through `messages/pl.knowledge.json`; `src/lib/plan` holds no Polish.
 - **The shopping list is derived too.** `src/lib/list` has a pure `buildList`, which turns the plan and the stored ticks into groups by priority (pets last), the "Najpierw" item and the progress count. The list, Plan's list panel and Start all take their count from it. Only the ticks and the device-only "list created" timestamp are stored; a tick on any device also counts as the list existing.
 
 ## Offline behaviour

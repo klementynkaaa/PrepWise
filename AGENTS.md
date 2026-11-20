@@ -77,6 +77,7 @@ At the end of a task, name the skills you used in one line.
 - Every recommended quantity on the plan carries a source label: "Official guidance" or "PREPWISE recommendation". The shopping list repeats quantities without the label and links to the sources. Never present an estimate as official.
 - All user-facing text is in Polish (`<html lang="pl">`). Avoid jargon or explain it. Keep layouts usable with a screen reader.
 - User-facing text lives in `messages/`, never in components, routes or features.
+- Plan content (items, scenarios, sources, their Polish copy) is edited in `knowledge/`; never edit `content.generated.ts` or `messages/pl.knowledge.json`.
 - Build every href with the locale helper (`localePath` in `src/i18n/paths.ts`); never type `/pl/...` by hand.
 
 ## Design system (UI rules)

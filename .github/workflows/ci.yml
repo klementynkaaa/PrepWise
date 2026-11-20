@@ -43,6 +43,9 @@ jobs:
       - name: Format
         run: npm run format:check
 
+      - name: Knowledge base
+        run: npm run knowledge:check
+
       - name: Lint
         run: npm run lint
 
