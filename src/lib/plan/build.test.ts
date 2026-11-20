@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPlan, planStage } from "./build";
+import { PLAN_ITEMS } from "./content";
 import { defaultSummary, largeSummary, minimalSummary, summaryOf } from "./fixtures";
 import type { Plan, PlanItem, PlanRowData } from "./types";
 
@@ -291,6 +292,15 @@ describe("buildPlan — large household (9 people, 2 dogs, a cat, every need, ho
 });
 
 describe("buildPlan — rules", () => {
+  it("never shows an emergency item: the household cannot pick an emergency yet", () => {
+    const emergencyIds = PLAN_ITEMS.filter((i) => i.when && "emergency" in i.when).map((i) => i.id);
+    expect(emergencyIds).toContain("candles-and-lighter");
+    for (const summary of [defaultSummary(), minimalSummary(), largeSummary()]) {
+      const plan = buildPlan(summary, 3);
+      for (const id of emergencyIds) expect(has(plan, id), id).toBe(false);
+    }
+  });
+
   it("shows every row of every fixture as a PREPWISE recommendation", () => {
     for (const summary of [defaultSummary(), minimalSummary(), largeSummary()]) {
       expect(rowsOf(buildPlan(summary, 3)).every((r) => r.source === "prepwise")).toBe(true);

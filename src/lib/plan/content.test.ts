@@ -141,6 +141,16 @@ describe("effectiveSource", () => {
     expect(effectiveSource({ ...base, ...change }, sources)).toBe("prepwise");
   });
 
+  it("decides for a scenario the same way: draft is prepwise, verified official is official", () => {
+    const scenario = {
+      intendedSource: "official" as const,
+      verified: false,
+      sourceId: base.sourceId,
+    };
+    expect(effectiveSource(scenario, sources)).toBe("prepwise");
+    expect(effectiveSource({ ...scenario, verified: true }, sources)).toBe("official");
+  });
+
   it("resolves against the bundled register by default", () => {
     const id = SOURCES.find((source) => source.kind === "official")?.id;
     expect(effectiveSource({ ...base, sourceId: id as PlanItem["sourceId"] })).toBe("official");

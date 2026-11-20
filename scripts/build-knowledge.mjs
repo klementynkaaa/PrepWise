@@ -15,7 +15,7 @@ const HEADER =
   "// GENERATED from knowledge/ by scripts/build-knowledge.mjs. Do not edit: change `knowledge/`\n" +
   "// and run `npm run knowledge`.\n";
 
-/** Whether the item's evidence is complete, owner-verified and cites an official source. */
+/** Whether the item's or scenario's evidence is complete, owner-verified and cites an official source. */
 function isVerified(item, sourcesById) {
   return (
     Boolean(item.evidence) &&
@@ -44,16 +44,31 @@ export function generate(kb) {
     return verified ? { ...app, verified, sourceId: evidence.sourceId } : { ...app, verified };
   });
 
+  const emergencies = kb.emergencies.map((scenario) => {
+    const verified = isVerified(scenario, sourcesById);
+    const base = {
+      id: scenario.id,
+      items: scenario.items,
+      intendedSource: scenario.intendedSource,
+    };
+    return verified
+      ? { ...base, verified, sourceId: scenario.evidence.sourceId }
+      : { ...base, verified };
+  });
+
   const ts =
     `${HEADER}\n` +
-    `import type { PlanItem, RegisterSource } from "./types";\n\n` +
+    `import type { PlanItem, RegisterSource, Scenario } from "./types";\n\n` +
     `export const SOURCES = ${JSON.stringify(sources)} as const satisfies readonly RegisterSource[];\n\n` +
     `export type SourceId = (typeof SOURCES)[number]["id"];\n\n` +
+    `export const EMERGENCIES = ${JSON.stringify(emergencies)} as const satisfies readonly Scenario[];\n\n` +
+    `export type EmergencyId = (typeof EMERGENCIES)[number]["id"];\n\n` +
     `export const PLAN_ITEMS = ${JSON.stringify(items)} satisfies readonly PlanItem[];\n`;
 
   const messages = {
     plan: {
       items: Object.fromEntries(kb.items.map((item) => [item.id, item.copy])),
+      emergencies: Object.fromEntries(kb.emergencies.map((s) => [s.id, s.copy])),
       sourceRegister: Object.fromEntries(kb.sources.map((source) => [source.id, source.copy])),
     },
   };

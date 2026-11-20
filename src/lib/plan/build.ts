@@ -21,6 +21,7 @@ import {
   type RegisterSource,
   type SectionId,
   type Source,
+  type SourceClaim,
   type TierLevel,
   type Trigger,
 } from "./types";
@@ -34,7 +35,7 @@ const DOGS: readonly PetKind[] = ["smallDog", "mediumDog", "largeDog"];
  * `intendedSource`.
  */
 export function effectiveSource(
-  item: PlanItem,
+  item: SourceClaim,
   sources: readonly RegisterSource[] = SOURCES,
 ): Source {
   if (item.intendedSource !== "official" || item.verified !== true) return "prepwise";
@@ -71,6 +72,8 @@ function triggerHolds(summary: HouseholdSummary, when: Trigger | undefined): boo
     return summary.pets[when.hasPet] > 0;
   }
   if ("need" in when) return summary.needs.includes(when.need);
+  // The household cannot pick an emergency until S-03.
+  if ("emergency" in when) return false;
   return summary.housingType === when.housing;
 }
 

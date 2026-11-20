@@ -20,7 +20,8 @@
     "first": true,
     "copy": {
       "name": "Woda pitna",
-      "listName": "Woda"
+      "listName": "Woda",
+      "why": "Woda jest potrzebna najszybciej, a w razie przerw w dostawach trudno ją zastąpić czymkolwiek innym."
     }
   },
   {
@@ -151,6 +152,28 @@
       "name": "Baterie do latarek",
       "listName": "Baterie do latarek",
       "note": "jeden komplet na latarkę"
+    }
+  },
+  {
+    "id": "candles-and-lighter",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "light"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": "blackout"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Świeczki i zapalniczka",
+      "listName": "Świeczki i zapalniczka",
+      "note": "światło zapasowe na dłuższy brak prądu, z dala od łatwopalnych rzeczy"
     }
   },
   {

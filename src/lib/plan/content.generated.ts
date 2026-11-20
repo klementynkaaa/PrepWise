@@ -1,7 +1,7 @@
 // GENERATED from knowledge/ by scripts/build-knowledge.mjs. Do not edit: change `knowledge/`
 // and run `npm run knowledge`.
 
-import type { PlanItem, RegisterSource } from "./types";
+import type { PlanItem, RegisterSource, Scenario } from "./types";
 
 export const SOURCES = [
   {
@@ -23,6 +23,12 @@ export const SOURCES = [
 ] as const satisfies readonly RegisterSource[];
 
 export type SourceId = (typeof SOURCES)[number]["id"];
+
+export const EMERGENCIES = [
+  { id: "blackout", items: ["candles-and-lighter"], intendedSource: "official", verified: false },
+] as const satisfies readonly Scenario[];
+
+export type EmergencyId = (typeof EMERGENCIES)[number]["id"];
 
 export const PLAN_ITEMS = [
   {
@@ -89,6 +95,16 @@ export const PLAN_ITEMS = [
     unit: "set",
     amount: { perMember: { adults: 1, seniors: 1, children: 1 } },
     roundStep: 1,
+    intendedSource: "prepwise",
+    verified: false,
+  },
+  {
+    id: "candles-and-lighter",
+    placement: { kind: "tier", tier: 2, category: "light" },
+    unit: "set",
+    amount: { fixed: 1 },
+    roundStep: 1,
+    when: { emergency: "blackout" },
     intendedSource: "prepwise",
     verified: false,
   },

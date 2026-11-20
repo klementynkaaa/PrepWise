@@ -35,6 +35,22 @@ function item(overrides = {}) {
   };
 }
 
+const scenario = (overrides = {}) => ({
+  id: "blackout",
+  copy: { name: "Brak prądu", explanation: "Opis" },
+  intendedSource: "official",
+  items: ["candle"],
+  ...overrides,
+});
+const candle = (overrides = {}) =>
+  item({
+    id: "candle",
+    intendedSource: "prepwise",
+    when: { emergency: "blackout" },
+    copy: { name: "Świeczka", listName: "Świeczka" },
+    ...overrides,
+  });
+
 const kb = (overrides = {}) => ({
   sources: [official, other],
   items: [item({ evidence })],
@@ -123,6 +139,75 @@ describe("checkRules", () => {
   });
 });
 
+describe("checkRules: scenarios", () => {
+  const withScenario = (overrides = {}, items = [item(), candle()]) =>
+    kb({ items, emergencies: [scenario(overrides)] });
+
+  it("accepts a scenario and the item it adds", () => {
+    expect(checkRules(withScenario(), { today })).toEqual([]);
+  });
+
+  it("rejects a listed item that does not exist", () => {
+    const problems = checkRules(withScenario({ items: ["candle", "ghost"] }), { today });
+    expect(problems).toEqual([
+      'knowledge/emergencies.json [blackout] field "items": unknown item "ghost"',
+    ]);
+  });
+
+  it("rejects an item triggered by another scenario", () => {
+    const problems = checkRules(
+      withScenario({}, [item(), candle({ when: { emergency: "flood" } })]),
+      { today },
+    );
+    expect(problems.join("\n")).toContain('triggered by emergency "flood", not this one');
+  });
+
+  it("rejects an orphaned emergency item", () => {
+    const problems = checkRules(withScenario({ items: [] }), { today });
+    expect(problems).toEqual([
+      'knowledge/items.json [candle]: triggered by emergency "blackout" but that scenario does not list it',
+    ]);
+  });
+
+  it("rejects an emergency trigger with no scenario", () => {
+    const problems = checkRules(kb({ items: [candle()], emergencies: [] }), { today });
+    expect(problems.join("\n")).toContain('unknown emergency "blackout"');
+  });
+
+  it("rejects a scenario that lists a baseline item", () => {
+    const problems = checkRules(withScenario({ items: ["candle", "water"] }), { today });
+    expect(problems).toEqual([
+      'knowledge/emergencies.json [blackout] field "items": item "water" is a baseline item (no emergency trigger)',
+    ]);
+  });
+
+  it("applies the evidence rules to a scenario", () => {
+    const draft = { sourceId: "guide", quote: "x" };
+    expect(checkRules(withScenario({ evidence: draft }), { today })).toEqual([]);
+    expect(
+      checkRules(withScenario({ evidence: { ...draft, sourceId: "nope" } }), { today }).join("\n"),
+    ).toContain('[blackout] field "evidence.sourceId": unknown source "nope"');
+    expect(
+      checkRules(withScenario({ evidence: { ...evidence, sourceId: "blog" } }), { today }).join(
+        "\n",
+      ),
+    ).toContain('[blackout]: intendedSource is "official"');
+    expect(
+      checkRules(withScenario({ evidence: { ...evidence, verifiedAt: "2027-01-01" } }), {
+        today,
+      }).join("\n"),
+    ).toContain("must not be in the future");
+  });
+
+  it("rejects a scenario listing a slug twice (schema)", () => {
+    const dir = temp();
+    writeKnowledge(dir, withScenario({ items: ["candle", "candle"] }));
+    expect(() => loadKnowledge(join(dir, "knowledge"))).toThrow(
+      /emergencies\.json #0 \[blackout\] field "items"/,
+    );
+  });
+});
+
 describe("generate", () => {
   it("marks only complete owner-verified official evidence as verified", () => {
     const out = generate(kb({ items: [item({ evidence }), item({ id: "draft" })] }));
@@ -133,7 +218,29 @@ describe("generate", () => {
     expect(ts).not.toContain("Woda");
     const messages = JSON.parse(out["messages/pl.knowledge.json"]);
     expect(messages.plan.items.water).toEqual({ name: "Woda", listName: "Woda" });
+    expect(messages.plan.emergencies).toEqual({});
     expect(messages.plan.sourceRegister.guide).toEqual({ title: "T", publisher: "P" });
+  });
+});
+
+describe("generate: scenarios", () => {
+  it("emits scenario copy to messages and ids, items and verified state to the TS", () => {
+    const draft = generate(kb({ items: [item(), candle()], emergencies: [scenario()] }));
+    const ts = draft["src/lib/plan/content.generated.ts"];
+    expect(ts).toContain(
+      'export const EMERGENCIES = [{"id":"blackout","items":["candle"],"intendedSource":"official","verified":false}]',
+    );
+    expect(ts).toContain('export type EmergencyId = (typeof EMERGENCIES)[number]["id"]');
+    expect(ts).not.toContain("Opis");
+    const messages = JSON.parse(draft["messages/pl.knowledge.json"]);
+    expect(messages.plan.emergencies.blackout).toEqual({ name: "Brak prądu", explanation: "Opis" });
+
+    const verified = generate(
+      kb({ items: [item(), candle()], emergencies: [scenario({ evidence })] }),
+    );
+    expect(verified["src/lib/plan/content.generated.ts"]).toContain(
+      '"verified":true,"sourceId":"guide"',
+    );
   });
 });
 

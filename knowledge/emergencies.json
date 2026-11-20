@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "blackout",
+    "copy": {
+      "name": "Długotrwały brak prądu",
+      "explanation": "Brak prądu może potrwać nawet kilka dni i odciąć od wody, ogrzewania, internetu, telefonu oraz płatności kartą. Na ten czas przydaje się zapasowe światło."
+    },
+    "intendedSource": "official",
+    "evidence": {
+      "sourceId": "poradnik-bezpieczenstwa-portal",
+      "quote": "Brak prądu – spowodowany katastrofą naturalną lub celowym działaniem – może potrwać nawet kilka dni.",
+      "section": "Długotrwały brak prądu (blackout)"
+    },
+    "items": ["candles-and-lighter"]
+  }
+]

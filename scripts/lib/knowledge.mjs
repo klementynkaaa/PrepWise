@@ -58,13 +58,24 @@ const itemSchema = z
     }
   });
 
-// Phase 3 adds the scenario schema. Until then the file must be an empty array.
-const emergenciesSchema = z.array(z.never());
+const scenarioSchema = z
+  .strictObject({
+    id,
+    copy: z.strictObject({ name: text, explanation: text }),
+    intendedSource: z.enum(["official", "prepwise"]),
+    evidence: evidenceSchema.optional(),
+    items: z.array(id),
+  })
+  .superRefine((scenario, ctx) => {
+    if (new Set(scenario.items).size !== scenario.items.length) {
+      ctx.addIssue({ code: "custom", path: ["items"], message: "lists a slug twice" });
+    }
+  });
 
 const FILES = {
   sources: ["sources.json", z.array(sourceSchema)],
   items: ["items.json", z.array(itemSchema)],
-  emergencies: ["emergencies.json", emergenciesSchema],
+  emergencies: ["emergencies.json", z.array(scenarioSchema)],
 };
 
 function formatIssue(file, data, issue) {
@@ -145,6 +156,47 @@ function checkEvidence(file, entry, sourcesById, today, problems) {
   }
 }
 
+/**
+ * Scenarios and the items they add must agree: a listed item exists and is triggered by exactly
+ * that scenario, and every emergency-triggered item is listed by it. A scenario never lists a
+ * baseline item (one with no emergency trigger): it adds only what the baseline lacks.
+ */
+function checkScenarioItems(kb, problems) {
+  const itemsById = new Map(kb.items.map((item) => [item.id, item]));
+  const scenarioIds = new Set(kb.emergencies.map((scenario) => scenario.id));
+  const listedBy = new Map();
+  for (const scenario of kb.emergencies) {
+    for (const slug of scenario.items) {
+      const item = itemsById.get(slug);
+      const at = `knowledge/emergencies.json [${scenario.id}] field "items"`;
+      if (!item) {
+        problems.push(`${at}: unknown item "${slug}"`);
+        continue;
+      }
+      listedBy.set(slug, [...(listedBy.get(slug) ?? []), scenario.id]);
+      const trigger = item.when?.emergency;
+      if (trigger === undefined) {
+        problems.push(`${at}: item "${slug}" is a baseline item (no emergency trigger)`);
+      } else if (trigger !== scenario.id) {
+        problems.push(`${at}: item "${slug}" is triggered by emergency "${trigger}", not this one`);
+      }
+    }
+  }
+  for (const item of kb.items) {
+    const trigger = item.when?.emergency;
+    if (trigger === undefined) continue;
+    if (!scenarioIds.has(trigger)) {
+      problems.push(
+        `knowledge/items.json [${item.id}] field "when.emergency": unknown emergency "${trigger}"`,
+      );
+    } else if (!listedBy.get(item.id)?.includes(trigger)) {
+      problems.push(
+        `knowledge/items.json [${item.id}]: triggered by emergency "${trigger}" but that scenario does not list it`,
+      );
+    }
+  }
+}
+
 /** Cross-file rules. Returns readable problems; an empty array means the knowledge base is valid. */
 export function checkRules(kb, { today = new Date().toISOString().slice(0, 10) } = {}) {
   const problems = [];
@@ -160,5 +212,9 @@ export function checkRules(kb, { today = new Date().toISOString().slice(0, 10) }
     }
   }
   for (const item of kb.items) checkEvidence("items.json", item, sourcesById, today, problems);
+  for (const scenario of kb.emergencies) {
+    checkEvidence("emergencies.json", scenario, sourcesById, today, problems);
+  }
+  checkScenarioItems(kb, problems);
   return problems;
 }

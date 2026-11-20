@@ -1,7 +1,11 @@
 {
   "plan": {
     "items": {
-      "drinking-water": { "name": "Woda pitna", "listName": "Woda" },
+      "drinking-water": {
+        "name": "Woda pitna",
+        "listName": "Woda",
+        "why": "Woda jest potrzebna najszybciej, a w razie przerw w dostawach trudno ją zastąpić czymkolwiek innym."
+      },
       "shelf-stable-food": {
         "name": "Jedzenie, które nie wymaga gotowania",
         "listName": "Jedzenie"
@@ -22,6 +26,11 @@
         "name": "Baterie do latarek",
         "listName": "Baterie do latarek",
         "note": "jeden komplet na latarkę"
+      },
+      "candles-and-lighter": {
+        "name": "Świeczki i zapalniczka",
+        "listName": "Świeczki i zapalniczka",
+        "note": "światło zapasowe na dłuższy brak prądu, z dala od łatwopalnych rzeczy"
       },
       "battery-radio": { "name": "Radio na baterie lub na korbkę", "listName": "Radio" },
       "power-bank": {
@@ -76,6 +85,12 @@
       "pet-kit": {
         "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
         "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
+      }
+    },
+    "emergencies": {
+      "blackout": {
+        "name": "Długotrwały brak prądu",
+        "explanation": "Brak prądu może potrwać nawet kilka dni i odciąć od wody, ogrzewania, internetu, telefonu oraz płatności kartą. Na ten czas przydaje się zapasowe światło."
       }
     },
     "sourceRegister": {
