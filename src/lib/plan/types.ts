@@ -96,6 +96,17 @@ export type PlanItem = {
   dietAware?: true;
 };
 
+/** A source in the bundled register (`knowledge/sources.json`). Its Polish title and publisher are messages. */
+export type RegisterSource = {
+  id: string;
+  kind: "official" | "other";
+  url: string;
+  /** Wayback copy of the page; required once an owner-verified figure cites the source. */
+  archivedUrl?: string;
+  /** Free text, e.g. the edition of a publication. */
+  edition?: string;
+};
+
 /** Who a formula term counts: one group, or several groups sharing the same amount. */
 export type FormulaWho = MemberGroup | "people" | "animals";
 

@@ -1,0 +1,96 @@
+{
+  "plan": {
+    "items": {
+      "drinking-water": { "name": "Woda pitna", "listName": "Woda" },
+      "shelf-stable-food": {
+        "name": "Jedzenie, które nie wymaga gotowania",
+        "listName": "Jedzenie"
+      },
+      "regular-medicines": { "name": "Leki przyjmowane na stałe", "listName": "Leki na stałe" },
+      "medical-equipment-power": {
+        "name": "Zasilanie zapasowe do sprzętu medycznego",
+        "listName": "Zasilanie do sprzętu medycznego",
+        "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem"
+      },
+      "first-aid-kit": {
+        "name": "Apteczka pierwszej pomocy",
+        "listName": "Apteczka",
+        "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}"
+      },
+      "flashlight": { "name": "Latarka", "listName": "Latarki" },
+      "flashlight-batteries": {
+        "name": "Baterie do latarek",
+        "listName": "Baterie do latarek",
+        "note": "jeden komplet na latarkę"
+      },
+      "battery-radio": { "name": "Radio na baterie lub na korbkę", "listName": "Radio" },
+      "power-bank": {
+        "name": "Powerbank",
+        "listName": "Powerbank",
+        "note": "naładowany, do telefonu"
+      },
+      "toilet-paper": { "name": "Papier toaletowy", "listName": "Papier toaletowy" },
+      "hand-hygiene": {
+        "name": "Mydło i płyn do dezynfekcji rąk",
+        "listName": "Mydło i płyn do rąk"
+      },
+      "wet-wipes": { "name": "Mokre chusteczki", "listName": "Mokre chusteczki" },
+      "flushing-water": {
+        "name": "Woda do spłukiwania toalety",
+        "listName": "Woda do spłukiwania",
+        "note": "w bloku pompy nie działają bez prądu"
+      },
+      "blanket": { "name": "Koc", "listName": "Koce" },
+      "heating-fuel": {
+        "name": "Zapasowe ogrzewanie",
+        "listName": "Zapasowe ogrzewanie",
+        "note": "opał lub grzejnik niezależny od prądu"
+      },
+      "mobility-aid-power": {
+        "name": "Zasilanie do sprzętu ułatwiającego poruszanie się",
+        "listName": "Zasilanie do sprzętu do poruszania się",
+        "note": "zapasowe baterie lub ładowarka, do tego gwizdek"
+      },
+      "document-copies": {
+        "name": "Kopie dokumentów",
+        "listName": "Kopie dokumentów",
+        "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce"
+      },
+      "cash": { "name": "Gotówka w drobnych", "listName": "Gotówka" },
+      "multitool": { "name": "Nóż wielofunkcyjny", "listName": "Nóż wielofunkcyjny" },
+      "duct-tape": { "name": "Taśma klejąca", "listName": "Taśma klejąca" },
+      "small-child-food": {
+        "name": "Jedzenie dla małego dziecka",
+        "listName": "Pokarm dla dziecka",
+        "note": "mleko, kaszki, słoiczki"
+      },
+      "diapers": { "name": "Pieluchy", "listName": "Pieluchy" },
+      "pet-water": {
+        "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}",
+        "listName": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
+      },
+      "pet-food": {
+        "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}",
+        "listName": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
+      },
+      "pet-kit": {
+        "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
+        "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
+      }
+    },
+    "sourceRegister": {
+      "poradnik-bezpieczenstwa-portal": {
+        "title": "Poradnik bezpieczeństwa (portal)",
+        "publisher": "Ministerstwo Spraw Wewnętrznych i Administracji"
+      },
+      "poradnik-bezpieczenstwa-pdf": {
+        "title": "Poradnik bezpieczeństwa (wydanie PDF)",
+        "publisher": "Ministerstwo Spraw Wewnętrznych i Administracji"
+      },
+      "psp-poznan-plecak-ewakuacyjny": {
+        "title": "Plecak ewakuacyjny",
+        "publisher": "Komenda Wojewódzka Państwowej Straży Pożarnej w Poznaniu"
+      }
+    }
+  }
+}

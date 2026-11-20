@@ -33,7 +33,9 @@
     "roadmap:sync": "node scripts/sync-roadmap-issues.mjs",
     "roadmap:sync:dry": "node scripts/sync-roadmap-issues.mjs --dry-run --show-body",
     "audit": "node scripts/audit.mjs",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "knowledge": "node scripts/build-knowledge.mjs",
+    "knowledge:check": "node scripts/build-knowledge.mjs --check"
   },
   "dependencies": {
     "@journeyapps/wa-sqlite": "2.0.10",

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "poradnik-bezpieczenstwa-portal",
+    "kind": "official",
+    "url": "https://www.gov.pl/web/poradnikbezpieczenstwa",
+    "accessedAt": "2026-11-20",
+    "copy": {
+      "title": "Poradnik bezpieczeństwa (portal)",
+      "publisher": "Ministerstwo Spraw Wewnętrznych i Administracji"
+    }
+  },
+  {
+    "id": "poradnik-bezpieczenstwa-pdf",
+    "kind": "official",
+    "url": "https://www.gov.pl/attachment/fa491036-8872-457c-95e4-d1292e4a8203",
+    "edition": "PDF edition, print files dated 18.09.2025 (date unconfirmed)",
+    "accessedAt": "2026-11-20",
+    "copy": {
+      "title": "Poradnik bezpieczeństwa (wydanie PDF)",
+      "publisher": "Ministerstwo Spraw Wewnętrznych i Administracji"
+    }
+  },
+  {
+    "id": "psp-poznan-plecak-ewakuacyjny",
+    "kind": "official",
+    "url": "https://www.gov.pl/web/kwpsp-poznan/plecak-ewakuacyjny--bezpieczenstwa",
+    "accessedAt": "2026-11-20",
+    "copy": {
+      "title": "Plecak ewakuacyjny",
+      "publisher": "Komenda Wojewódzka Państwowej Straży Pożarnej w Poznaniu"
+    }
+  }
+]
