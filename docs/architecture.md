@@ -79,7 +79,7 @@ All plan content lives in `knowledge/`, committed to the repo and edited by hand
 ## Plan
 
 - **Derived, not stored.** `src/lib/plan` holds the bundled plan content, generated from `knowledge/` (typed items with permanent slugs, amounts per member group or pet kind, a source label and a verified flag) and a pure `buildPlan`, which turns the profile summary and the number of days into tiers, categories and member sections. Screens build the plan from the stored profile every time they open, so profile edits flow in without a new "generate". The only stored value is the device-only "plan created" timestamp, which decides where the app opens. The plan's words come from the knowledge base through `messages/pl.knowledge.json`; `src/lib/plan` holds no Polish.
-- **The shopping list is derived too.** `src/lib/list` has a pure `buildList`, which turns the plan and the stored ticks into groups by priority (pets last), the "Najpierw" item and the progress count. The list, Plan's list panel and Start all take their count from it. Only the ticks and the device-only "list created" timestamp are stored; a tick on any device also counts as the list existing.
+- **The shopping list is derived too.** `src/lib/list` has a pure `buildList`, which turns the plan and the stored ticks into groups by priority (pets, then the evacuation backpack, last), the "Najpierw" item and the progress count. Progress is split into home supplies and the backpack (none without a backpack); the total of both decides whether the household is complete. The list, Plan's list panel and Start all take their counts from it. Only the ticks and the device-only "list created" timestamp are stored; a tick on any device also counts as the list existing.
 
 ## Offline behaviour
 

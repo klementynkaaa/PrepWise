@@ -6,9 +6,16 @@ import { formatAmount, formatCaption } from "@/features/plan/format";
 import type { RowContext } from "@/features/plan/PlanTiers";
 import type { ListGroup, ListRow } from "@/lib/list";
 
-/** A stable key per group: "tier-1" … "tier-3", "pets". */
+/** A stable key per group: "tier-1" … "tier-3", "pets", "backpack". */
 export function groupKey(group: ListGroup): string {
-  return group.kind === "tier" ? `tier-${group.tier}` : "pets";
+  switch (group.kind) {
+    case "tier":
+      return `tier-${group.tier}`;
+    case "pets":
+      return "pets";
+    case "backpack":
+      return "backpack";
+  }
 }
 
 /** The id of a group's rows, which its disclosure header controls. */
@@ -58,7 +65,9 @@ export function ListGroupPanel({ group, ctx, collapse, headerRef, onTick }: List
         meta={meta}
         collapse={collapse && { ...collapse, controls: rowsId }}
       >
-        {t("plan.sections.pets", { kind: group.petKind })}
+        {group.kind === "pets"
+          ? t("plan.sections.pets", { kind: group.petKind })
+          : t("plan.sections.backpack")}
       </PriorityHeader>
     );
 

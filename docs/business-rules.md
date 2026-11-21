@@ -51,6 +51,8 @@ Within a tier, items that are completely missing come before partly available on
 
 **Member-specific sections.** Supplies that exist only for pets or only for small children (0–3) are shown in their own sections after the three tiers. Pet supplies have no tier there. Small-child supplies keep their tier and show it, and a small child's essential food also appears in tier 1 as a pointer to its section, so it never looks less urgent than water.
 
+**Evacuation backpack.** When the household picks flood or evacuation, the plan gains one "Plecak ewakuacyjny" section, shown last, after the other sections. It is added once even when both are picked. Its items have no tier. Pets keep their own section and are not part of the backpack.
+
 ## Ticks
 
 An item on the shopping list is ticked when the household has it. A tick saves the quantity it was ticked at, and it counts as done only while that quantity covers what the plan needs now:
@@ -59,8 +61,8 @@ An item on the shopping list is ticked when the household has it. A tick saves t
 - A profile edit that keeps or shrinks the quantity keeps the tick.
 - An item that leaves the plan keeps its tick hidden; if it comes back at the same or a smaller quantity, it is done again.
 
-Progress ("Gotowe x z y") counts the plan's items only and is the same on the list, on Plan and on Start.
+Progress ("Gotowe x z y") counts the plan's items only and is the same on the list, on Plan and on Start. Home supplies and the evacuation backpack are counted separately wherever progress shows, each with its own figure. The household is complete only when both are fully ticked. Without a backpack there is one figure, as before.
 
 ## Scenarios
 
-Every plan includes the 72-hour baseline. Each optional emergency adds the items specific to it. If the user picks none, the plan is a general household plan covering water, food, first aid, lighting and hygiene.
+Every plan includes the 72-hour baseline. Each optional emergency adds the items specific to it, each placed in its tier and marked with a tag naming the emergency. A scenario adds only items the baseline does not already have; it does not change a baseline quantity (merging a repeated item is deferred until content needs it). An item shared by several emergencies appears once. If the user picks none, the plan is a general household plan covering water, food, first aid, lighting and hygiene. Removing an emergency removes its items from the plan; their ticks are kept hidden, so adding it again brings them back.
