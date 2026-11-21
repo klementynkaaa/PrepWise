@@ -14,12 +14,13 @@ import { countSchema, housingSchema, nameSchema, needSchema, stepSchema } from "
 /** Version of the row format. Matches `SCHEMA_VERSION` of the assembled `Household`. */
 export const ROW_SCHEMA_VERSION = 2;
 
-/** Synced tables of the household: the profile and the ticked shopping-list items. */
+/** Synced tables of the household: the profile, the ticked shopping-list items and the chosen emergencies. */
 export const TABLES = [
   "households",
   "household_needs",
   "household_steps",
   "household_ticks",
+  "household_emergencies",
 ] as const;
 export type TableName = (typeof TABLES)[number];
 
@@ -110,6 +111,7 @@ export type HouseholdRow = z.infer<typeof householdRowSchema>;
 export const HOUSEHOLD_NEED_FIELDS = ["need", "selected"] as const;
 export const HOUSEHOLD_STEP_FIELDS = ["step", "selected"] as const;
 export const HOUSEHOLD_TICK_FIELDS = ["item", "selected", "quantity"] as const;
+export const HOUSEHOLD_EMERGENCY_FIELDS = ["emergency", "selected"] as const;
 
 /**
  * A bundled item id: a kebab-case slug. Not an enum of today's catalogue, so a
@@ -117,6 +119,16 @@ export const HOUSEHOLD_TICK_FIELDS = ["item", "selected", "quantity"] as const;
  * at 64 characters, as in the database.
  */
 export const itemIdSchema = z
+  .string()
+  .max(64)
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+
+/**
+ * A bundled emergency id: a kebab-case slug, checked by format like an item id
+ * so a device on an older catalogue still reads emergencies added later.
+ * Capped at 64 characters, as in the database.
+ */
+export const emergencyIdSchema = z
   .string()
   .max(64)
   .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
@@ -129,6 +141,12 @@ const householdTickShape = {
   selected: z.boolean(),
   // Finite (Zod rejects Infinity and NaN) and never negative; may be fractional.
   quantity: z.number().min(0),
+};
+
+const householdEmergencyShape = {
+  ...sharedColumns,
+  emergency: emergencyIdSchema,
+  selected: z.boolean(),
 };
 
 /** One need of a household. Removing it sets `selected: false`; the row stays. */
@@ -162,6 +180,18 @@ export const householdTickRowSchema = z
   });
 export type HouseholdTickRow = z.infer<typeof householdTickRowSchema>;
 
+/**
+ * One emergency the household added to its plan. Removing it sets
+ * `selected: false`; the row stays.
+ */
+export const householdEmergencyRowSchema = z
+  .strictObject(householdEmergencyShape)
+  .refine((row) => row.id === setRowId(row.household_id, row.emergency), {
+    message: "id must be <household_id>:<emergency>",
+    path: ["id"],
+  });
+export type HouseholdEmergencyRow = z.infer<typeof householdEmergencyRowSchema>;
+
 // --- entity rows (for later slices) -------------------------------------------
 
 /**
@@ -189,9 +219,11 @@ export const TABLE_COLUMNS: { [T in TableName]: readonly string[] } = {
   household_needs: Object.keys(householdNeedShape),
   household_steps: Object.keys(householdStepShape),
   household_ticks: Object.keys(householdTickShape),
+  household_emergencies: Object.keys(householdEmergencyShape),
 };
 
-export type Row = HouseholdRow | HouseholdNeedRow | HouseholdStepRow | HouseholdTickRow;
+export type Row =
+  HouseholdRow | HouseholdNeedRow | HouseholdStepRow | HouseholdTickRow | HouseholdEmergencyRow;
 
 /** Row type stored in each table. */
 export type RowOf<T extends TableName> = {
@@ -199,6 +231,7 @@ export type RowOf<T extends TableName> = {
   household_needs: HouseholdNeedRow;
   household_steps: HouseholdStepRow;
   household_ticks: HouseholdTickRow;
+  household_emergencies: HouseholdEmergencyRow;
 }[T];
 
 /** Validators per table, for reading rows back at the storage boundary. */
@@ -207,4 +240,5 @@ export const rowSchemas: { [T in TableName]: z.ZodType<RowOf<T>> } = {
   household_needs: householdNeedRowSchema,
   household_steps: householdStepRowSchema,
   household_ticks: householdTickRowSchema,
+  household_emergencies: householdEmergencyRowSchema,
 };

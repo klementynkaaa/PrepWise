@@ -23,12 +23,20 @@ export type HouseholdKind = "none" | "found" | "invalid";
 
 /**
  * - `ticks`: the household's stored shopping-list ticks.
+ * - `emergencies`: ids of the emergencies the household added to its plan.
  * - `listCreated`: the shopping list exists, created on this device or ticked
  *   on any device (a member or a reinstalled device receives the ticks).
  * - `planCreated`: this device has created a plan for the stored household, or
  *   the list exists (a list implies a plan).
  */
-type Empty = { kind: null; household: null; ticks: Tick[]; planCreated: false; listCreated: false };
+type Empty = {
+  kind: null;
+  household: null;
+  ticks: Tick[];
+  emergencies: string[];
+  planCreated: false;
+  listCreated: false;
+};
 type State =
   | ({ status: "loading" } & Empty)
   | {
@@ -36,6 +44,7 @@ type State =
       kind: HouseholdKind;
       household: Household | null;
       ticks: Tick[];
+      emergencies: string[];
       planCreated: boolean;
       listCreated: boolean;
     }
@@ -53,6 +62,11 @@ export type HouseholdContextValue = State & {
    * storage fails; nothing on screen changes then.
    */
   setTick: (itemId: string, ticked: boolean, quantity: number) => Promise<void>;
+  /**
+   * Makes the household's chosen emergencies exactly `ids`, then shows the
+   * stored selection. Rejects when storage fails; nothing on screen changes then.
+   */
+  setEmergencies: (ids: readonly string[]) => Promise<void>;
 };
 
 export const HouseholdContext = createContext<HouseholdContextValue | null>(null);
@@ -61,6 +75,7 @@ const EMPTY: Empty = {
   kind: null,
   household: null,
   ticks: [],
+  emergencies: [],
   planCreated: false,
   listCreated: false,
 };
@@ -76,6 +91,7 @@ function stateOf(result: LoadResult): State {
         kind: "found",
         household: result.household,
         ticks: result.ticks,
+        emergencies: result.emergencies,
         planCreated: result.planCreatedAt !== null || listCreated,
         listCreated,
       };
@@ -88,6 +104,7 @@ function stateOf(result: LoadResult): State {
         kind: result.kind,
         household: null,
         ticks: [],
+        emergencies: [],
         planCreated: false,
         listCreated: false,
       };
@@ -137,7 +154,7 @@ export function HouseholdProvider({
     async <S extends Step>(step: S, patch: StepPatches[S]) => {
       const saved = await store.saveStep(step, patch);
       latest.current += 1;
-      // A step save never changes the ticks or the plan and list flags; keep
+      // A step save never changes the ticks, the emergencies or the plan and list flags; keep
       // them, as this cancels the reload that would have read them.
       setState((previous) => {
         const ready = previous.status === "ready";
@@ -146,6 +163,7 @@ export function HouseholdProvider({
           kind: "found",
           household: saved,
           ticks: ready ? previous.ticks : [],
+          emergencies: ready ? previous.emergencies : [],
           planCreated: ready && previous.planCreated,
           listCreated: ready && previous.listCreated,
         };
@@ -186,9 +204,27 @@ export function HouseholdProvider({
     [store],
   );
 
+  const setEmergencies = useCallback(
+    async (ids: readonly string[]) => {
+      await store.setEmergencies(ids);
+      // Same as setTick: show what the store now holds, and let a newer read win.
+      const ticket = ++latest.current;
+      const next = await store.load().then(stateOf, () => null);
+      if (next && ticket === latest.current) setState(next);
+    },
+    [store],
+  );
+
   const value = useMemo<HouseholdContextValue>(
-    () => ({ ...state, saveStep, markPlanCreated, markListCreated, setTick }),
-    [state, saveStep, markPlanCreated, markListCreated, setTick],
+    () => ({
+      ...state,
+      saveStep,
+      markPlanCreated,
+      markListCreated,
+      setTick,
+      setEmergencies,
+    }),
+    [state, saveStep, markPlanCreated, markListCreated, setTick, setEmergencies],
   );
 
   return <HouseholdContext.Provider value={value}>{children}</HouseholdContext.Provider>;

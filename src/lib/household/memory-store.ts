@@ -1,6 +1,8 @@
 import {
   applyChanges,
   assemble,
+  emergenciesOf,
+  emergencyChanges,
   newHousehold,
   stepChanges,
   tickChanges,
@@ -12,7 +14,7 @@ import { defaultDeps, type SaveDeps } from "./save-step";
 import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
 import type { Household } from "./types";
 
-const EMPTY: HouseholdRows = { household: null, needs: [], steps: [], ticks: [] };
+const EMPTY: HouseholdRows = { household: null, needs: [], steps: [], ticks: [], emergencies: [] };
 
 /**
  * In-memory store for tests and Storybook, on the same rows and contract
@@ -34,7 +36,14 @@ export function createMemoryStore(
     async load(): Promise<LoadResult> {
       const household = assemble(rows);
       return household
-        ? { kind: "found", household, ticks: ticksOf(rows), planCreatedAt, listCreatedAt }
+        ? {
+            kind: "found",
+            household,
+            ticks: ticksOf(rows),
+            emergencies: emergenciesOf(rows),
+            planCreatedAt,
+            listCreatedAt,
+          }
         : { kind: "none" };
     },
     async saveStep(step, patch) {
@@ -69,6 +78,14 @@ export function createMemoryStore(
     async setTick(itemId, ticked, quantity) {
       // Throws before anything is stored without a household or on bad input.
       const changes = tickChanges(rows, itemId, ticked, quantity, resolved.now());
+      if (changes.length === 0) return;
+      rows = applyChanges(rows, changes);
+      notify();
+    },
+    async setEmergencies(ids) {
+      // Throws before anything is stored without a household or on a bad id.
+      if (!rows.household) throw new HouseholdStoreError("invalid");
+      const changes = emergencyChanges(rows, rows.household.id, ids, resolved.now());
       if (changes.length === 0) return;
       rows = applyChanges(rows, changes);
       notify();

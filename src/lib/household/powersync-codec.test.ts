@@ -12,7 +12,7 @@ import {
   SQLITE_COLUMNS,
   type SqliteRow,
 } from "./powersync-codec";
-import { TABLE_COLUMNS, TABLES, type HouseholdTickRow } from "./rows";
+import { TABLE_COLUMNS, TABLES, type HouseholdEmergencyRow, type HouseholdTickRow } from "./rows";
 
 const USER_ID = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
 const rows = toRows(completeHousehold());
@@ -24,6 +24,15 @@ const tick: HouseholdTickRow = {
   quantity: 1.5,
   updated_at: TEST_TIME,
   field_ts: { item: TEST_TIME, selected: TEST_TIME, quantity: TEST_TIME },
+};
+
+const emergency: HouseholdEmergencyRow = {
+  id: `${completeHousehold().id}:flood`,
+  household_id: completeHousehold().id,
+  emergency: "flood",
+  selected: true,
+  updated_at: TEST_TIME,
+  field_ts: { emergency: TEST_TIME, selected: TEST_TIME },
 };
 
 /** A row as SQLite returns it: every column, encoded, NULL where empty. */
@@ -101,6 +110,22 @@ describe("decoding", () => {
     expect(decodeRow("household_ticks", stored(tick, "household_ticks"))).toEqual(tick);
     const unticked = { ...tick, selected: false, quantity: 0 };
     expect(decodeRow("household_ticks", stored(unticked, "household_ticks"))).toEqual(unticked);
+  });
+
+  it("round-trips an emergency row, selected or not", () => {
+    const table = "household_emergencies";
+    expect(decodeRow(table, stored(emergency, table))).toEqual(emergency);
+    const removed = { ...emergency, selected: false };
+    expect(decodeRow(table, stored(removed, table))).toEqual(removed);
+  });
+
+  it("rejects an emergency row with an unreadable emergency or selected", () => {
+    const table = "household_emergencies";
+    for (const bad of [{ emergency: "Flood" }, { emergency: null }, { selected: 2 }]) {
+      expect(() => decodeRow(table, { ...stored(emergency, table), ...bad })).toThrow(
+        RowDecodeError,
+      );
+    }
   });
 
   it("rejects a tick with an unreadable quantity", () => {

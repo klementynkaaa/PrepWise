@@ -4,6 +4,8 @@ import type { Household, Step, StepPatches, Tick } from "./types";
  * What `load()` found. `invalid` is treated as none by screens.
  * - `ticks`: the household's shopping-list ticks (synced rows, validated; an
  *   unreadable tick row is left out and never makes the household unreadable).
+ * - `emergencies`: the ids of the emergencies the household added to its plan
+ *   (selected rows only, validated; an unreadable row is left out).
  * - `planCreatedAt` and `listCreatedAt` are device state, not part of the
  *   household or the synced rows: when this device first created its plan or
  *   its shopping list (ISO timestamp), or null.
@@ -14,6 +16,7 @@ export type LoadResult =
       kind: "found";
       household: Household;
       ticks: Tick[];
+      emergencies: string[];
       planCreatedAt: string | null;
       listCreatedAt: string | null;
     }
@@ -41,7 +44,7 @@ export interface HouseholdStore {
   load(): Promise<LoadResult>;
   /** Validates, saves the step and returns the stored record. Rejects with HouseholdStoreError. */
   saveStep<S extends Step>(step: S, patch: StepPatches[S]): Promise<Household>;
-  /** Removes the stored profile, its ticks and the plan- and list-created flags. Rejects with HouseholdStoreError when storage is unavailable. */
+  /** Removes the stored profile, its ticks, its emergencies and the plan- and list-created flags. Rejects with HouseholdStoreError when storage is unavailable. */
   clear(): Promise<void>;
   /**
    * Records that this device created a plan for its household. Keeps the first
@@ -63,6 +66,14 @@ export interface HouseholdStore {
    * `unavailable` when storage fails.
    */
   setTick(itemId: string, ticked: boolean, quantity: number): Promise<void>;
+  /**
+   * Makes the household's chosen emergencies exactly `ids`: new ones are added,
+   * the others removed (their rows stay, deselected). Reads and writes in one
+   * write transaction. Rejects with HouseholdStoreError: `invalid` when there
+   * is no household or an id is not a valid emergency id, `unavailable` when
+   * storage fails.
+   */
+  setEmergencies(ids: readonly string[]): Promise<void>;
   /**
    * Calls `listener` after any change to the stored household: a local save now,
    * changes from other devices once sync is on. Returns a function that unsubscribes.

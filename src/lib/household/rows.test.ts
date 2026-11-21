@@ -3,10 +3,12 @@ import { toRows } from "./contract";
 import { completeHousehold, TEST_ID, TEST_TIME } from "./fixtures";
 import {
   entityRowSchema,
+  householdEmergencyRowSchema,
   householdNeedRowSchema,
   householdRowSchema,
   householdStepRowSchema,
   householdTickRowSchema,
+  HOUSEHOLD_EMERGENCY_FIELDS,
   HOUSEHOLD_FIELDS,
   HOUSEHOLD_TICK_FIELDS,
   ROW_SCHEMA_VERSION,
@@ -14,6 +16,7 @@ import {
   setRowId,
   TABLE_COLUMNS,
   TABLES,
+  type HouseholdEmergencyRow,
   type HouseholdNeedRow,
   type HouseholdRow,
   type HouseholdStepRow,
@@ -67,10 +70,23 @@ function tickRow(overrides: Record<string, unknown> = {}): HouseholdTickRow {
   } as HouseholdTickRow;
 }
 
+function emergencyRow(overrides: Record<string, unknown> = {}): HouseholdEmergencyRow {
+  return {
+    id: `${TEST_ID}:blackout`,
+    household_id: TEST_ID,
+    emergency: "blackout",
+    selected: true,
+    updated_at: TEST_TIME,
+    field_ts: { emergency: TEST_TIME, selected: TEST_TIME },
+    ...overrides,
+  } as HouseholdEmergencyRow;
+}
+
 const okHousehold = (value: unknown) => householdRowSchema.safeParse(value).success;
 const okNeed = (value: unknown) => householdNeedRowSchema.safeParse(value).success;
 const okStep = (value: unknown) => householdStepRowSchema.safeParse(value).success;
 const okTick = (value: unknown) => householdTickRowSchema.safeParse(value).success;
+const okEmergency = (value: unknown) => householdEmergencyRowSchema.safeParse(value).success;
 
 describe("column lists (mirrored by the database tests' columns_are)", () => {
   const shared = [
@@ -125,8 +141,23 @@ describe("column lists (mirrored by the database tests' columns_are)", () => {
     }
   });
 
+  it("household_emergencies", () => {
+    expect([...TABLE_COLUMNS.household_emergencies].sort()).toEqual(
+      [...shared, "emergency", "selected"].sort(),
+    );
+    for (const field of HOUSEHOLD_EMERGENCY_FIELDS) {
+      expect(TABLE_COLUMNS.household_emergencies).toContain(field);
+    }
+  });
+
   it("lists a validator and columns for every table", () => {
-    expect(TABLES).toEqual(["households", "household_needs", "household_steps", "household_ticks"]);
+    expect(TABLES).toEqual([
+      "households",
+      "household_needs",
+      "household_steps",
+      "household_ticks",
+      "household_emergencies",
+    ]);
     expect(Object.keys(rowSchemas)).toEqual([...TABLES]);
     expect(Object.keys(TABLE_COLUMNS)).toEqual([...TABLES]);
   });
@@ -256,6 +287,35 @@ describe("householdTickRowSchema", () => {
     ["an unknown column", { unit: "l" }],
   ])("rejects %s", (_name, override) => {
     expect(okTick(tickRow(override))).toBe(false);
+  });
+});
+
+describe("householdEmergencyRowSchema", () => {
+  it("accepts a selected and a deselected row", () => {
+    expect(okEmergency(emergencyRow())).toBe(true);
+    expect(okEmergency(emergencyRow({ selected: false }))).toBe(true);
+  });
+
+  it("accepts an emergency id the catalogue does not know yet", () => {
+    expect(okEmergency(emergencyRow({ emergency: "heat-wave", id: `${TEST_ID}:heat-wave` }))).toBe(
+      true,
+    );
+  });
+
+  it.each([
+    ["a camelCase emergency", { emergency: "heatWave", id: `${TEST_ID}:heatWave` }],
+    ["an emergency with a trailing dash", { emergency: "flood-", id: `${TEST_ID}:flood-` }],
+    ["an empty emergency", { emergency: "", id: `${TEST_ID}:` }],
+    [
+      "an emergency over 64 characters",
+      { emergency: "a".repeat(65), id: `${TEST_ID}:${"a".repeat(65)}` },
+    ],
+    ["an id for another emergency", { id: `${TEST_ID}:flood` }],
+    ["an id for another household", { id: `${OTHER_ID}:blackout` }],
+    ["a selected stored as a number", { selected: 1 }],
+    ["an unknown column", { note: "x" }],
+  ])("rejects %s", (_name, override) => {
+    expect(okEmergency(emergencyRow(override))).toBe(false);
   });
 });
 

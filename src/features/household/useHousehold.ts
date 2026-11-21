@@ -4,8 +4,9 @@ import { useContext } from "react";
 import { HouseholdContext, type HouseholdContextValue } from "./HouseholdProvider";
 
 /**
- * The stored household, its ticks, the plan and list flags and the `saveStep`,
- * `markPlanCreated`, `markListCreated` and `setTick` actions. Needs a
+ * The stored household, its ticks and emergencies, the plan and list flags
+ * and the `saveStep`, `markPlanCreated`, `markListCreated`, `setTick` and
+ * `setEmergencies` actions. Needs a
  * HouseholdProvider above.
  */
 export function useHousehold(): HouseholdContextValue {

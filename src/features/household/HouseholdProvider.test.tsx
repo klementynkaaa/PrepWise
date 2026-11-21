@@ -51,6 +51,7 @@ function found(overrides: Partial<Extract<LoadResult, { kind: "found" }>> = {}):
     kind: "found",
     household: completeHousehold(),
     ticks: [],
+    emergencies: [],
     planCreatedAt: null,
     listCreatedAt: null,
     ...overrides,
@@ -80,6 +81,24 @@ function ListState() {
       </button>
       <button type="button" onClick={() => void markListCreated().catch(fail)}>
         create list
+      </button>
+      <button type="button" onClick={() => void saveStep("housing", { housingType: "house" })}>
+        save
+      </button>
+      {error ? <p>error: {error}</p> : null}
+    </>
+  );
+}
+
+function EmergencyState() {
+  const { status, emergencies, setEmergencies, saveStep } = useHousehold();
+  const [error, setError] = useState<string | null>(null);
+  const fail = (e: unknown) => setError(e instanceof HouseholdStoreError ? e.code : "other");
+  return (
+    <>
+      <p>{status === "ready" ? `emergencies: ${emergencies.join(",")}` : status}</p>
+      <button type="button" onClick={() => void setEmergencies(["blackout", "flood"]).catch(fail)}>
+        choose
       </button>
       <button type="button" onClick={() => void saveStep("housing", { housingType: "house" })}>
         save
@@ -408,6 +427,70 @@ describe("HouseholdProvider", () => {
       await waitFor(() => expect(loads).toBeGreaterThan(1));
       expect(screen.getByText("plan: yes, list: yes")).toBeInTheDocument();
       expect(screen.getByText("ticks: candles=on@2")).toBeInTheDocument();
+    });
+  });
+
+  describe("emergencies", () => {
+    it("reports the stored emergencies, none for a fresh household", async () => {
+      const { store, change } = changingStore();
+      render(
+        <HouseholdProvider store={store}>
+          <EmergencyState />
+        </HouseholdProvider>,
+      );
+      await act(async () => change(found()));
+      expect(await screen.findByText("emergencies:")).toBeInTheDocument();
+      await act(async () => change(found({ emergencies: ["flood"] })));
+      expect(await screen.findByText("emergencies: flood")).toBeInTheDocument();
+    });
+
+    it("shows the stored selection after setEmergencies resolves, even without a store event", async () => {
+      const memory = createMemoryStore(completeHousehold());
+      const store: HouseholdStore = { ...memory, subscribe: () => () => {} };
+      render(
+        <HouseholdProvider store={store}>
+          <EmergencyState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("emergencies:")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "choose" }).click());
+      expect(await screen.findByText("emergencies: blackout,flood")).toBeInTheDocument();
+    });
+
+    it("rejects setEmergencies on a storage failure and changes nothing on screen", async () => {
+      const store: HouseholdStore = {
+        ...createMemoryStore(completeHousehold()),
+        setEmergencies: () => Promise.reject(new HouseholdStoreError("unavailable")),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <EmergencyState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("emergencies:")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "choose" }).click());
+      expect(await screen.findByText("error: unavailable")).toBeInTheDocument();
+      expect(screen.getByText("emergencies:")).toBeInTheDocument();
+    });
+
+    it("keeps the emergencies after a step save", async () => {
+      // The save's own reload never finishes, so only the provider can keep them.
+      const memory = createMemoryStore(completeHousehold());
+      await memory.setEmergencies(["flood"]);
+      let loads = 0;
+      const store: HouseholdStore = {
+        ...memory,
+        load: () => (loads++ === 0 ? memory.load() : new Promise<LoadResult>(() => {})),
+      };
+      render(
+        <HouseholdProvider store={store}>
+          <EmergencyState />
+        </HouseholdProvider>,
+      );
+      expect(await screen.findByText("emergencies: flood")).toBeInTheDocument();
+      await act(async () => screen.getByRole("button", { name: "save" }).click());
+      await waitFor(() => expect(loads).toBeGreaterThan(1));
+      expect(screen.getByText("emergencies: flood")).toBeInTheDocument();
     });
   });
 });

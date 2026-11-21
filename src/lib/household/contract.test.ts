@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   applyChanges,
   assemble,
+  emergenciesOf,
+  emergencyChanges,
   migrateV1,
   newHousehold,
   stepChanges,
@@ -73,6 +75,12 @@ describe("migrateV1", () => {
     });
   });
 
+  it("has no emergencies", () => {
+    const rows = migrateV1(completeHouseholdV1());
+    expect(rows.emergencies).toEqual([]);
+    expect(emergenciesOf(rows)).toEqual([]);
+  });
+
   it("makes valid rows whose field_ts are all the v1 updatedAt", () => {
     const rows = migrateV1(completeHouseholdV1());
     expect(rows.household && householdKeys(rows.household.field_ts)).toEqual(
@@ -110,7 +118,9 @@ function householdKeys(fieldTs: Record<string, string>) {
 
 describe("assemble", () => {
   it("returns null without a household row", () => {
-    expect(assemble({ household: null, needs: [], steps: [], ticks: [] })).toBeNull();
+    expect(
+      assemble({ household: null, needs: [], steps: [], ticks: [], emergencies: [] }),
+    ).toBeNull();
   });
 
   it("ignores set rows with selected: false", () => {
@@ -177,7 +187,12 @@ describe("newHousehold", () => {
     expectWellFormed(changes, NOW_ISO);
     expect(householdKeys(change.fields.field_ts)).toEqual([...HOUSEHOLD_FIELDS].sort());
     expect(
-      assemble(applyChanges({ household: null, needs: [], steps: [], ticks: [] }, changes)),
+      assemble(
+        applyChanges(
+          { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
+          changes,
+        ),
+      ),
     ).toEqual({
       id: TEST_ID,
       name: null,
@@ -321,7 +336,7 @@ describe("stepChanges", () => {
 
   it("inserts the step row on a step's first save", () => {
     const rows = applyChanges(
-      { household: null, needs: [], steps: [], ticks: [] },
+      { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
       newHousehold(TEST_ID, NOW),
     );
     const later = new Date("2026-03-05T00:00:00.000Z");
@@ -335,7 +350,7 @@ describe("stepChanges", () => {
 
   it("produces the same household as the record-based save, over a whole flow", () => {
     let rows = applyChanges(
-      { household: null, needs: [], steps: [], ticks: [] },
+      { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
       newHousehold(TEST_ID, NOW),
     );
     let record: Household | null = null;
@@ -370,7 +385,7 @@ describe("stepChanges", () => {
   it("rejects a save when there is no household row", () => {
     expect(() =>
       stepChanges(
-        { household: null, needs: [], steps: [], ticks: [] },
+        { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
         "housing",
         { housingType: "flat" },
         NOW,
@@ -493,7 +508,12 @@ describe("tickChanges", () => {
   });
 
   it.each([
-    ["no household", { household: null, needs: [], steps: [], ticks: [] }, item, 1],
+    [
+      "no household",
+      { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
+      item,
+      1,
+    ],
     ["a camelCase item id", rowsOf(), "drinkingWater", 1],
     ["an empty item id", rowsOf(), "", 1],
     ["a negative quantity", rowsOf(), item, -1],
@@ -526,7 +546,9 @@ describe("ticksOf", () => {
   });
 
   it("is empty without a household", () => {
-    expect(ticksOf({ household: null, needs: [], steps: [], ticks: [] })).toEqual([]);
+    expect(ticksOf({ household: null, needs: [], steps: [], ticks: [], emergencies: [] })).toEqual(
+      [],
+    );
   });
 });
 
@@ -554,7 +576,7 @@ describe("applyChanges", () => {
       ]),
     ).toThrow();
     expect(() =>
-      applyChanges({ household: null, needs: [], steps: [], ticks: [] }, [
+      applyChanges({ household: null, needs: [], steps: [], ticks: [], emergencies: [] }, [
         {
           table: "households",
           id: TEST_ID,
@@ -566,9 +588,126 @@ describe("applyChanges", () => {
   });
 });
 
+describe("emergencyChanges", () => {
+  const id = `${TEST_ID}:flood`;
+  const later = new Date("2026-03-05T00:00:00.000Z");
+  const LATER_ISO = later.toISOString();
+
+  it("inserts a valid, selected row for each new id, once", () => {
+    const changes = emergencyChanges(rowsOf(), TEST_ID, ["flood", "blackout", "flood"], NOW);
+    expect(changes).toEqual([
+      {
+        table: "household_emergencies",
+        id,
+        op: "insert",
+        fields: {
+          id,
+          household_id: TEST_ID,
+          emergency: "flood",
+          selected: true,
+          updated_at: NOW_ISO,
+          field_ts: { emergency: NOW_ISO, selected: NOW_ISO },
+        },
+      },
+      expect.objectContaining({ id: `${TEST_ID}:blackout`, op: "insert" }),
+    ]);
+    expectWellFormed(changes, NOW_ISO);
+  });
+
+  it("deselects a row that is no longer wanted and keeps the row", () => {
+    const rows = applyChanges(rowsOf(), emergencyChanges(rowsOf(), TEST_ID, ["flood"], NOW));
+    const changes = emergencyChanges(rows, TEST_ID, [], later);
+    expect(changes).toEqual([
+      {
+        table: "household_emergencies",
+        id,
+        op: "patch",
+        fields: { selected: false, updated_at: LATER_ISO, field_ts: { selected: LATER_ISO } },
+      },
+    ]);
+    const after = applyChanges(rows, changes);
+    expect(after.emergencies).toHaveLength(1);
+    expect(emergenciesOf(after)).toEqual([]);
+  });
+
+  it("re-selects a deselected row with a patch, not a new row", () => {
+    let rows = applyChanges(rowsOf(), emergencyChanges(rowsOf(), TEST_ID, ["flood"], NOW));
+    rows = applyChanges(rows, emergencyChanges(rows, TEST_ID, [], NOW));
+    const changes = emergencyChanges(rows, TEST_ID, ["flood"], later);
+    expect(changes).toEqual([
+      {
+        table: "household_emergencies",
+        id,
+        op: "patch",
+        fields: { selected: true, updated_at: LATER_ISO, field_ts: { selected: LATER_ISO } },
+      },
+    ]);
+    expect(emergenciesOf(applyChanges(rows, changes))).toEqual(["flood"]);
+  });
+
+  it("gives no change when the set already matches", () => {
+    expect(emergencyChanges(rowsOf(), TEST_ID, [], NOW)).toEqual([]);
+    const rows = applyChanges(rowsOf(), emergencyChanges(rowsOf(), TEST_ID, ["flood"], NOW));
+    expect(emergencyChanges(rows, TEST_ID, ["flood"], later)).toEqual([]);
+  });
+
+  it("does not touch the profile", () => {
+    const rows = rowsOf();
+    const after = applyChanges(rows, emergencyChanges(rows, TEST_ID, ["flood"], later));
+    expect(assemble(after)).toEqual(assemble(rows));
+  });
+
+  it.each([
+    [
+      "no household",
+      { household: null, needs: [], steps: [], ticks: [], emergencies: [] },
+      ["flood"],
+    ],
+    ["a camelCase id", rowsOf(), ["heatWave"]],
+    ["an empty id", rowsOf(), [""]],
+    ["an id over 64 characters", rowsOf(), ["a".repeat(65)]],
+  ] as [string, HouseholdRows, string[]][])("rejects %s as invalid", (_name, rows, ids) => {
+    expect(() => emergencyChanges(rows, TEST_ID, ids, NOW)).toThrow(HouseholdStoreError);
+  });
+
+  it("rejects another household's id", () => {
+    expect(() => emergencyChanges(rowsOf(), OTHER_ID, ["flood"], NOW)).toThrow(HouseholdStoreError);
+  });
+});
+
+describe("emergenciesOf", () => {
+  it("lists the selected emergencies in row order", () => {
+    const rows = applyChanges(
+      rowsOf(),
+      emergencyChanges(rowsOf(), TEST_ID, ["flood", "blackout", "evacuation"], NOW),
+    );
+    const after = applyChanges(rows, emergencyChanges(rows, TEST_ID, ["flood", "evacuation"], NOW));
+    expect(emergenciesOf(after)).toEqual(["flood", "evacuation"]);
+  });
+
+  it("leaves out emergencies of another household", () => {
+    const mine = applyChanges(rowsOf(), emergencyChanges(rowsOf(), TEST_ID, ["flood"], NOW));
+    const other = toRows(completeHousehold({ id: OTHER_ID }));
+    const foreign = applyChanges(
+      other,
+      emergencyChanges(other, OTHER_ID, ["blackout"], NOW),
+    ).emergencies;
+    expect(emergenciesOf({ ...mine, emergencies: [...mine.emergencies, ...foreign] })).toEqual([
+      "flood",
+    ]);
+  });
+
+  it("is empty without a household", () => {
+    expect(
+      emergenciesOf({ household: null, needs: [], steps: [], ticks: [], emergencies: [] }),
+    ).toEqual([]);
+  });
+});
+
 describe("toRows", () => {
-  it("has no ticks", () => {
+  it("has no ticks and no emergencies", () => {
     expect(toRows(completeHousehold()).ticks).toEqual([]);
+    expect(toRows(completeHousehold()).emergencies).toEqual([]);
   });
 
   it("gives rows only to selected set elements", () => {

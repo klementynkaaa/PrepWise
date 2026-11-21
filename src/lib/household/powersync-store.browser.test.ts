@@ -87,6 +87,7 @@ describe("PowerSync household store", () => {
       kind: "found",
       household: done,
       ticks: [],
+      emergencies: [],
       planCreatedAt: null,
       listCreatedAt: null,
     });
@@ -97,6 +98,7 @@ describe("PowerSync household store", () => {
     await store.saveStep("people", { people: one, hasPets: false });
     await store.saveStep("needs", { needs: ["specialDiet", "limitedMobility"] });
     await store.setTick("drinking-water", true, 4);
+    await store.setEmergencies(["flood"]);
     await store.close();
     const counts = await inspect(dbFilename, async (db) => ({
       crud: await count(db, "ps_crud"),
@@ -106,6 +108,8 @@ describe("PowerSync household store", () => {
       localSteps: await count(db, "local_household_steps"),
       ticks: await count(db, "household_ticks"),
       localTicks: await count(db, "local_household_ticks"),
+      emergencies: await count(db, "household_emergencies"),
+      localEmergencies: await count(db, "local_household_emergencies"),
     }));
     expect(counts).toEqual({
       crud: 0,
@@ -115,6 +119,8 @@ describe("PowerSync household store", () => {
       localSteps: 2,
       ticks: 0,
       localTicks: 1,
+      emergencies: 0,
+      localEmergencies: 1,
     });
   });
 
@@ -178,6 +184,7 @@ describe("PowerSync household store", () => {
       kind: "found",
       household: back,
       ticks: [],
+      emergencies: [],
       planCreatedAt: null,
       listCreatedAt: null,
     });
@@ -224,6 +231,7 @@ describe("PowerSync household store", () => {
         kind: "found",
         household: completeHousehold(),
         ticks: [],
+        emergencies: [],
         planCreatedAt: null,
         listCreatedAt: null,
       });
@@ -240,6 +248,7 @@ describe("PowerSync household store", () => {
         kind: "found",
         household: saved,
         ticks: [],
+        emergencies: [],
         planCreatedAt: null,
         listCreatedAt: null,
       });
@@ -261,6 +270,7 @@ describe("PowerSync household store", () => {
         kind: "found",
         household: saved,
         ticks: [],
+        emergencies: [],
         planCreatedAt: null,
         listCreatedAt: null,
       });
@@ -317,6 +327,7 @@ describe("PowerSync household store", () => {
         kind: "found",
         household: next,
         ticks: [],
+        emergencies: [],
         planCreatedAt: TEST_TIME,
         listCreatedAt: null,
       });
@@ -533,6 +544,7 @@ describe("PowerSync household store", () => {
           kind: "found",
           household: saved,
           ticks: [{ item: "candles", selected: true, quantity: 2 }],
+          emergencies: [],
           planCreatedAt: null,
           listCreatedAt: null,
         });
@@ -551,6 +563,118 @@ describe("PowerSync household store", () => {
         expect(await ticks(store)).toEqual(
           expect.arrayContaining([{ item: "drinking-water", selected: true, quantity: 4 }]),
         );
+      });
+    });
+  });
+
+  describe("emergencies", () => {
+    const emergencies = async (store: PowerSyncHouseholdStore) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.emergencies : undefined;
+    };
+
+    it("sets the selection exactly, across a reopen", async () => {
+      const { store, dbFilename, v1DbName } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setEmergencies(["flood", "blackout"]);
+      expect(await emergencies(store)).toEqual(expect.arrayContaining(["flood", "blackout"]));
+      await store.setEmergencies(["blackout"]);
+      expect(await emergencies(store)).toEqual(["blackout"]);
+      await store.setEmergencies(["blackout", "flood"]);
+      await store.close();
+
+      const again = createPowerSyncStore({ dbFilename, v1DbName });
+      opened.push(again);
+      expect(await emergencies(again)).toHaveLength(2);
+      expect(await emergencies(again)).toEqual(expect.arrayContaining(["flood", "blackout"]));
+    });
+
+    it("keeps the selection across a step save", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setEmergencies(["flood"]);
+      await store.saveStep("housing", { housingType: "house" });
+      expect(await emergencies(store)).toEqual(["flood"]);
+    });
+
+    it("rejects without a household, and writes nothing", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await expect(store.setEmergencies(["flood"])).rejects.toMatchObject({ code: "invalid" });
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "local_household_emergencies"))).toBe(0);
+    });
+
+    it("rejects a bad id, and writes nothing", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await expect(store.setEmergencies(["flood", "Flood"])).rejects.toMatchObject({
+        code: "invalid",
+      });
+      expect(await emergencies(store)).toEqual([]);
+    });
+
+    it("is removed by clear", async () => {
+      const { store, dbFilename } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await store.setEmergencies(["flood"]);
+      await store.clear();
+      await store.close();
+      expect(await inspect(dbFilename, (db) => count(db, "local_household_emergencies"))).toBe(0);
+    });
+
+    it("calls subscribers after a change", async () => {
+      const { store } = fresh(deps);
+      await store.saveStep("housing", { housingType: "flat" });
+      await new Promise((resolve) => setTimeout(resolve, 200)); // let the save's event pass
+      let calls = 0;
+      store.subscribe(() => {
+        calls += 1;
+      });
+      await store.setEmergencies(["flood"]);
+      await expect.poll(() => calls).toBeGreaterThan(0);
+    });
+
+    describe("with an unreadable emergency row", () => {
+      /** A store whose household has one malformed emergency row for `emergency`. */
+      async function withBadEmergency(emergency: string) {
+        const { store, dbFilename, v1DbName } = fresh(deps);
+        const saved = await store.saveStep("housing", { housingType: "flat" });
+        await store.setEmergencies(["blackout"]);
+        await store.close();
+        await inspect(dbFilename, (db) =>
+          db.execute(
+            `INSERT INTO local_household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+             VALUES (?, ?, ?, 7, ?, '{}')`,
+            [`${TEST_ID}:${emergency}`, TEST_ID, emergency, TEST_TIME],
+          ),
+        );
+        const again = createPowerSyncStore({ dbFilename, v1DbName, ...deps });
+        opened.push(again);
+        return { store: again, saved };
+      }
+
+      it("still loads the profile and the readable emergencies", async () => {
+        const { store, saved } = await withBadEmergency("flood");
+        expect(await store.load()).toEqual({
+          kind: "found",
+          household: saved,
+          ticks: [],
+          emergencies: ["blackout"],
+          planCreatedAt: null,
+          listCreatedAt: null,
+        });
+      });
+
+      it("keeps the same household on the next step save", async () => {
+        const { store, saved } = await withBadEmergency("flood");
+        const next = await store.saveStep("housing", { housingType: "house" });
+        expect(next.id).toBe(saved.id);
+      });
+
+      it("does not block choosing that emergency", async () => {
+        const { store } = await withBadEmergency("flood");
+        await store.setEmergencies(["blackout", "flood"]);
+        expect(await emergencies(store)).toEqual(expect.arrayContaining(["blackout", "flood"]));
       });
     });
   });
