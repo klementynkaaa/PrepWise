@@ -14,6 +14,10 @@ describe("mergeMessages", () => {
     expect(() => mergeMessages({ a: "1" }, { a: { b: "2" } })).toThrow(/"a"/);
   });
 
+  it("does not mistake inherited object keys for overlaps", () => {
+    expect(mergeMessages({ a: "1" }, { constructor: "2" })).toHaveProperty("constructor", "2");
+  });
+
   it("merges the real files without overlap", () => {
     expect(messages.plan.items["drinking-water"].name).toBeTruthy();
     expect(messages.plan.units).toBeTruthy();

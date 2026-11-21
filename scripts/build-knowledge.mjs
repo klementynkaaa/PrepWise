@@ -96,17 +96,24 @@ export async function run({ check = false, rootDir = process.cwd() } = {}) {
   const problems = checkRules(kb);
   if (problems.length) return { ok: false, problems };
 
-  const outputs = generate(kb);
-  for (const [relPath, text] of Object.entries(outputs)) {
-    const formatted = await format(rootDir, relPath, text);
-    const path = join(rootDir, relPath);
-    if (check) {
-      const onDisk = existsSync(path) ? readFileSync(path, "utf8") : null;
-      if (onDisk !== formatted) problems.push(`${relPath} is stale; run \`npm run knowledge\``);
-    } else {
-      mkdirSync(dirname(path), { recursive: true });
-      writeFileSync(path, formatted);
+  try {
+    const outputs = generate(kb);
+    // Format both outputs before touching the disk, so a failure never leaves one updated.
+    const formatted = [];
+    for (const [relPath, text] of Object.entries(outputs)) {
+      formatted.push([relPath, join(rootDir, relPath), await format(rootDir, relPath, text)]);
     }
+    for (const [relPath, path, text] of formatted) {
+      if (check) {
+        const onDisk = existsSync(path) ? readFileSync(path, "utf8") : null;
+        if (onDisk !== text) problems.push(`${relPath} is stale; run \`npm run knowledge\``);
+      } else {
+        mkdirSync(dirname(path), { recursive: true });
+        writeFileSync(path, text);
+      }
+    }
+  } catch (error) {
+    problems.push(`Could not generate the knowledge files: ${error?.message ?? String(error)}`);
   }
   return { ok: problems.length === 0, problems };
 }

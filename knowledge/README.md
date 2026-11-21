@@ -45,7 +45,7 @@ Add the source to `sources.json` once, then cite it by `id` from any evidence:
 
 - `kind`: `"official"` or `"other"`.
 - `url`: an https link to the page. `accessedAt`: the date you read it (`YYYY-MM-DD`). `edition`: optional, for versioned documents.
-- `archivedUrl`: a Wayback Machine link to a snapshot. Required once an owner-verified figure cites the source.
+- `archivedUrl`: a snapshot link on `web.archive.org` or `archive.ph`; the check rejects other hosts. Required once an owner-verified figure cites the source.
 - `copy`: Polish `title` and `publisher`.
 
 Link plus Wayback only: **do not copy PDFs or pages into the repo.**
@@ -59,6 +59,6 @@ A source with `kind: "official"` must be an https page on `gov.pl` or one of its
 ## What verified means
 
 - Only the owner sets `verifiedBy: "owner"`. Agents and other contributors may draft evidence (a source and a quote) **without** `verifiedBy`; a draft is valid and the app shows it as "PREPWISE recommendation".
-- When `verifiedBy` is present it must be `"owner"`, and then a non-blank `quote`, a `verifiedAt` date (not in the future) and a resolvable `sourceId` are required, and the cited source needs an `archivedUrl`.
+- When `verifiedBy` is present it must be `"owner"`, and then a non-blank `quote`, a `verifiedAt` date (not in the future) and a resolvable `sourceId` are required, and the cited source needs an `archivedUrl`. Owner-verified evidence that cites an official source needs `intendedSource: "official"`.
 - A figure becomes "Official guidance" only when its evidence is owner-verified **and** cites a `kind: "official"` source. An item or scenario with `intendedSource: "official"` whose verified evidence cites a `kind: "other"` source fails the check, so it never ships as PREPWISE by accident.
 - Reasons and the full rule: `docs/business-rules.md`.

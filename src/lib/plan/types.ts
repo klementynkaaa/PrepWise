@@ -1,6 +1,7 @@
 /**
  * Plan content and plan shape. Plain data only: every word a screen shows is
- * looked up in the messages (`plan.*`, merged from `messages/pl.json` and the generated `messages/pl.knowledge.json`) by the ids and slugs below.
+ * looked up in the messages (`plan.*`, merged from `messages/pl.json` and the generated
+ * `messages/pl.knowledge.json`) by the ids and slugs below.
  */
 import type { EmergencyId, SourceId } from "./content.generated";
 import type { HousingType, Need, PeopleGroup, PetKind } from "@/lib/household/types";

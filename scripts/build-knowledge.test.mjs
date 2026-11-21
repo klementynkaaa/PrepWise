@@ -92,6 +92,23 @@ describe("checkRules", () => {
     );
   });
 
+  it("rejects a date that is not on the calendar", () => {
+    const dir = temp();
+    writeKnowledge(
+      dir,
+      kb({ items: [item({ evidence: { ...evidence, verifiedAt: "2026-02-31" } })] }),
+    );
+    expect(() => loadKnowledge(join(dir, "knowledge"))).toThrow(/must be a real calendar date/);
+  });
+
+  it("rejects an unknown top-level item key so it cannot ship in the bundle", () => {
+    const dir = temp();
+    writeKnowledge(dir, kb({ items: [item({ internalComment: "do not ship" })] }));
+    expect(() => loadKnowledge(join(dir, "knowledge"))).toThrow(
+      /items\.json #0 \[water\]: Unrecognized key: "internalComment"/,
+    );
+  });
+
   it("rejects owner-verified evidence without a quote or a date", () => {
     const noQuote = checkRules(kb({ items: [item({ evidence: { ...evidence, quote: "  " } })] }), {
       today,
@@ -136,6 +153,22 @@ describe("checkRules", () => {
       evidence: { ...evidence, sourceId: "blog" },
     });
     expect(checkRules(kb({ items: [prepwise] }), { today })).toEqual([]);
+  });
+
+  it("rejects prepwise intent verified against an official source", () => {
+    const problems = checkRules(kb({ items: [item({ intendedSource: "prepwise", evidence })] }), {
+      today,
+    });
+    expect(problems.join("\n")).toContain("[water]: owner-verified against official source");
+  });
+
+  it("rejects an archivedUrl that is not a web archive snapshot", () => {
+    const dir = temp();
+    writeKnowledge(
+      dir,
+      kb({ sources: [{ ...official, archivedUrl: "https://www.gov.pl/web/guide" }, other] }),
+    );
+    expect(() => loadKnowledge(join(dir, "knowledge"))).toThrow(/web\.archive\.org or archive\.ph/);
   });
 });
 

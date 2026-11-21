@@ -12,14 +12,31 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const id = z.string().regex(KEBAB, "must be kebab-case");
 const text = z.string().min(1, "must not be empty");
-const isoDate = z.string().regex(ISO_DATE, "must be an ISO date (YYYY-MM-DD)");
+const isoDate = z
+  .string()
+  .regex(ISO_DATE, "must be an ISO date (YYYY-MM-DD)")
+  .refine(
+    (d) => new Date(`${d}T00:00:00Z`).toISOString().slice(0, 10) === d,
+    "must be a real calendar date",
+  );
+
+/** Today's date in Poland (YYYY-MM-DD), so the owner's local day is never "in the future". */
+function todayInWarsaw() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(new Date());
+}
 const httpsUrl = z.url().refine((u) => u.startsWith("https://"), "must be an https URL");
+
+const ARCHIVE_HOSTS = new Set(["web.archive.org", "archive.ph"]);
+const archiveUrl = httpsUrl.refine(
+  (u) => ARCHIVE_HOSTS.has(new URL(u).hostname),
+  "must be a snapshot on web.archive.org or archive.ph",
+);
 
 const sourceSchema = z.strictObject({
   id,
   kind: z.enum(["official", "other"]),
   url: httpsUrl,
-  archivedUrl: httpsUrl.optional(),
+  archivedUrl: archiveUrl.optional(),
   edition: text.optional(),
   accessedAt: isoDate,
   copy: z.strictObject({ title: text, publisher: text }),
@@ -34,8 +51,10 @@ const evidenceSchema = z.strictObject({
   verifiedAt: isoDate.optional(),
 });
 
+// Strict on top-level keys: everything outside `copy` and `evidence` is bundled into the app, so an
+// unknown key must fail here instead of shipping. Only the nested app fields stay loose.
 const itemSchema = z
-  .looseObject({
+  .strictObject({
     id,
     placement: z.looseObject({}),
     unit: z.string(),
@@ -50,10 +69,16 @@ const itemSchema = z
       why: text.optional(),
     }),
     evidence: evidenceSchema.optional(),
+    first: z.literal(true).optional(),
+    pointerInTier1: z.literal(true).optional(),
+    dietAware: z.literal(true).optional(),
+    // Derived fields: accepted here only so the rule below can report a clear message.
+    verified: z.unknown().optional(),
+    sourceRef: z.unknown().optional(),
   })
   .superRefine((item, ctx) => {
     for (const key of ["verified", "sourceRef"]) {
-      if (key in item)
+      if (item[key] !== undefined)
         ctx.addIssue({ code: "custom", path: [key], message: "is derived; remove it" });
     }
   });
@@ -149,7 +174,11 @@ function checkEvidence(file, entry, sourcesById, today, problems) {
   if (!source.archivedUrl) {
     at("sourceId", `owner-verified, so source "${source.id}" needs an archivedUrl`);
   }
-  if (entry.intendedSource === "official" && source.kind !== "official") {
+  if (entry.intendedSource !== "official" && source.kind === "official") {
+    problems.push(
+      `knowledge/${file} [${entry.id}]: owner-verified against official source "${source.id}", so intendedSource must be "official"`,
+    );
+  } else if (entry.intendedSource === "official" && source.kind !== "official") {
     problems.push(
       `knowledge/${file} [${entry.id}]: intendedSource is "official" but source "${source.id}" is kind "other"`,
     );
@@ -198,7 +227,7 @@ function checkScenarioItems(kb, problems) {
 }
 
 /** Cross-file rules. Returns readable problems; an empty array means the knowledge base is valid. */
-export function checkRules(kb, { today = new Date().toISOString().slice(0, 10) } = {}) {
+export function checkRules(kb, { today = todayInWarsaw() } = {}) {
   const problems = [];
   duplicates("sources.json", kb.sources, problems);
   duplicates("items.json", kb.items, problems);

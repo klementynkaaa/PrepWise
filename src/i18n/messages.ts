@@ -15,7 +15,7 @@ export function mergeMessages(a: Tree, b: Tree, path = ""): Tree {
   const merged: Tree = { ...a };
   for (const [key, value] of Object.entries(b)) {
     const here = path ? `${path}.${key}` : key;
-    if (!(key in a)) {
+    if (!Object.hasOwn(a, key)) {
       merged[key] = value;
     } else if (isTree(a[key]) && isTree(value)) {
       merged[key] = mergeMessages(a[key], value, here);
