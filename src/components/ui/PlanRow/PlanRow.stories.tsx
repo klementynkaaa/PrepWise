@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { EmergencyTags } from "../EmergencyTag";
 import { Divider, PanelList } from "../Panel";
 import { PlanRow } from "./PlanRow";
 import { PriorityHeader } from "../Status";
@@ -39,6 +40,31 @@ export const PrepwiseEstimate: Story = {
     formula: "0,5 l × 1 zwierzę × 3 dni · na 10 kg wagi",
     source: "prepwise",
     sourceLabels: { short: "PREPWISE", spoken: "źródło: rekomendacja PREPWISE" },
+  },
+};
+
+/** With a tag under the caption (left); the source pill stays on the right. */
+export const WithTags: Story = {
+  args: {
+    name: "Latarka z bateriami",
+    quantity: "3 szt.",
+    formula: "1 na osobę",
+    tags: <EmergencyTags lead="dodane na sytuację:" names={["Brak prądu"]} />,
+  },
+};
+
+/** A long name and two tags: the tags wrap, the source pill is not pushed off. */
+export const WithLongTags: Story = {
+  args: {
+    name: "Powerbank do ładowania telefonów",
+    quantity: "2 szt.",
+    formula: "1 na dwie osoby · pojemność minimum 10 000 mAh",
+    tags: (
+      <EmergencyTags
+        lead="dodane na sytuację:"
+        names={["Brak prądu", "Brak wody w kranie przez kilka dni z rzędu"]}
+      />
+    ),
   },
 };
 

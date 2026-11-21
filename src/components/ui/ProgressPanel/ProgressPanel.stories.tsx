@@ -13,7 +13,8 @@ const meta = {
           "odhaczenia.”. Użyj go na górze listy zakupów i na ekranie Start (z tytułem i linkiem do listy). " +
           "Nie dziel go na grupy — każda grupa ma własne „x z y” w nagłówku — i nie używaj go do wczytywania. " +
           "Jako link czytnik ekranu słyszy tylko jego słowa; pasek jest wtedy ukryty przed czytnikiem. " +
-          "Wariant z pierścieniem (`ring`) stoi na górze ekranu Start; lista i Plan zostają przy pasku.",
+          "Wariant z pierścieniem (`ring`) stoi na górze ekranu Start; lista i Plan zostają przy pasku. " +
+          "Gdy plan ma plecak ewakuacyjny, użyj `parts`: jeden nazwany pasek na część (zapasy w domu, plecak), każdy z własnym „Gotowe x z y”.",
       },
     },
   },
@@ -84,4 +85,62 @@ export const RingDone: Story = {
     ring: { fraction: "20/20" },
     href: "/",
   },
+};
+
+const homePart = {
+  label: "Zapasy w domu",
+  count: "Gotowe 7 z 27",
+  done: 7,
+  total: 27,
+  barLabel: "Postęp zapasów w domu",
+};
+const backpackPart = {
+  label: "Plecak ewakuacyjny",
+  count: "Gotowe 1 z 10",
+  done: 1,
+  total: 10,
+  barLabel: "Postęp plecaka ewakuacyjnego",
+};
+
+/** Plan z plecakiem: dwa nazwane paski zamiast jednego. */
+export const TwoBars: Story = {
+  render: () => <ProgressPanel parts={[homePart, backpackPart]} />,
+};
+
+/** Jeden pasek pełny: drugi zostaje niepełny. */
+export const OneBarFull: Story = {
+  render: () => (
+    <ProgressPanel
+      parts={[
+        { ...homePart, count: "Gotowe 27 z 27", done: 27 },
+        { ...backpackPart, count: "Gotowe 0 z 10", done: 0 },
+      ]}
+    />
+  ),
+};
+
+/** Długie nazwy zawijają się, a liczba spada pod nazwę przy dużym tekście. */
+export const LongLabels: Story = {
+  render: () => (
+    <ProgressPanel
+      title="Gotowość na 72 godziny"
+      parts={[
+        {
+          ...homePart,
+          label: "Zapasy w domu na wypadek braku prądu, wody i ogrzewania jednocześnie",
+        },
+        {
+          ...backpackPart,
+          label: "Plecak ewakuacyjny dla całej rodziny, razem z dokumentami i lekami",
+        },
+      ]}
+    />
+  ),
+};
+
+/** Na Start: cały panel jest linkiem, paski są ukryte przed czytnikiem. */
+export const TwoBarsAsLink: Story = {
+  render: () => (
+    <ProgressPanel title="Gotowość na 72 godziny" href="/" parts={[homePart, backpackPart]} />
+  ),
 };

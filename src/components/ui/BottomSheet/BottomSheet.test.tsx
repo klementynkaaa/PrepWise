@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { BottomSheet } from "./BottomSheet";
 
-function SheetHarness({ onClose }: { onClose: () => void }) {
+function SheetHarness({ onClose, footer }: { onClose: () => void; footer?: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -19,6 +19,7 @@ function SheetHarness({ onClose }: { onClose: () => void }) {
         }}
         title="Na 7 dni"
         closeLabel="Zamknij"
+        footer={footer}
       >
         <p>Ilości wzrosną.</p>
       </BottomSheet>
@@ -49,5 +50,21 @@ describe("BottomSheet", () => {
     await userEvent.click(screen.getByRole("button", { name: "Otwórz" }));
     await userEvent.click(screen.getByRole("button", { name: "Zamknij" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a footer outside the scrolling body", async () => {
+    render(<SheetHarness onClose={vi.fn()} footer={<button type="button">Gotowe</button>} />);
+    await userEvent.click(screen.getByRole("button", { name: "Otwórz" }));
+    const dialog = screen.getByRole("dialog", { name: "Na 7 dni" });
+    const done = screen.getByRole("button", { name: "Gotowe" });
+    expect(dialog).toContainElement(done);
+    expect(done.parentElement).toHaveClass("border-t");
+    expect(screen.getByText("Ilości wzrosną.").parentElement).not.toContainElement(done);
+  });
+
+  it("renders no footer area without one", async () => {
+    render(<SheetHarness onClose={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Otwórz" }));
+    expect(screen.getByRole("dialog").querySelector(".border-t")).toBeNull();
   });
 });

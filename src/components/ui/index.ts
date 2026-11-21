@@ -19,6 +19,7 @@ export { Alert, LiveStatus, Notice, Tip } from "./Notices";
 export { PageBody, PageFooter, PageHeader, PageShell, TopBar } from "./Page";
 export { Divider, KeyValueRow, LinkPanel, ListSectionLabel, Panel, PanelList } from "./Panel";
 export { MemberChip, SourcePill, StatusPill, type Source, type Status } from "./Pills";
+export { EmergencyTags } from "./EmergencyTag";
 export { PlanRow } from "./PlanRow";
 export { ProgressBar, ProgressBarRow, ProgressRing } from "./Progress";
 export { ProgressPanel } from "./ProgressPanel";

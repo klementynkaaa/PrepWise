@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { cn } from "../_shared/cn";
 
 type OptionCheckboxProps = {
@@ -11,6 +11,11 @@ type OptionCheckboxProps = {
   checkedNote?: ReactNode;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  /**
+   * An optional explanation under the card, opened by a link-style button
+   * outside the label ("Co dodaje?" / "Zwiń"). Opening it never changes `checked`.
+   */
+  details?: { openLabel: string; closeLabel: string; content: ReactNode };
 };
 
 /** A selectable option card with a native checkbox (e.g. an emergency). */
@@ -20,14 +25,17 @@ export function OptionCheckbox({
   checkedNote,
   checked,
   onChange,
+  details,
 }: OptionCheckboxProps) {
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
   const descriptionId = useId();
   const noteId = useId();
   const showNote = checked && checkedNote;
   const describedBy =
     [description && descriptionId, showNote && noteId].filter(Boolean).join(" ") || undefined;
 
-  return (
+  const card = (
     <label
       className={cn(
         "flex items-start gap-3 rounded-md p-3",
@@ -57,5 +65,29 @@ export function OptionCheckbox({
         )}
       </span>
     </label>
+  );
+
+  if (!details) return card;
+
+  return (
+    <div className="flex flex-col">
+      {card}
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((value) => !value)}
+        className="inline-flex min-h-touch items-center self-start px-3 text-body-strong text-accent"
+      >
+        {expanded ? details.closeLabel : details.openLabel}
+      </button>
+      <div
+        id={detailsId}
+        hidden={!expanded}
+        className="rounded-md bg-surface p-3 text-body-sm inset-ring inset-ring-line"
+      >
+        {details.content}
+      </div>
+    </div>
   );
 }

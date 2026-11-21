@@ -55,4 +55,33 @@ describe("ProgressPanel", () => {
     );
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
+
+  describe("with parts", () => {
+    const parts = [
+      { label: "Zapasy w domu", count: "Gotowe 7 z 27", done: 7, total: 27, barLabel: "Zapasy" },
+      {
+        label: "Plecak ewakuacyjny",
+        count: "Gotowe 1 z 10",
+        done: 1,
+        total: 10,
+        barLabel: "Plecak",
+      },
+    ];
+
+    it("draws one named bar per part with its own count", () => {
+      render(<ProgressPanel parts={parts} />);
+      expect(screen.getByRole("img", { name: "Zapasy" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Plecak" })).toBeInTheDocument();
+      expect(screen.getByText("Zapasy w domu")).toBeVisible();
+      expect(screen.getByText("Gotowe 1 z 10")).toBeVisible();
+    });
+
+    it("hides the bars from screen readers when the panel is a link", () => {
+      render(<ProgressPanel parts={parts} title="Gotowość na 72 godziny" href="/pl/list" />);
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByRole("link")).toHaveAccessibleName(
+        "Gotowość na 72 godziny Zapasy w domu Gotowe 7 z 27 Plecak ewakuacyjny Gotowe 1 z 10",
+      );
+    });
+  });
 });
