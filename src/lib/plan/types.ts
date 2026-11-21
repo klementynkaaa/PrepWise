@@ -1,7 +1,9 @@
 /**
  * Plan content and plan shape. Plain data only: every word a screen shows is
- * looked up in `messages/pl.json` (`plan.*`) by the ids and slugs below.
+ * looked up in the messages (`plan.*`, merged from `messages/pl.json` and the generated
+ * `messages/pl.knowledge.json`) by the ids and slugs below.
  */
+import type { EmergencyId, SourceId } from "./content.generated";
 import type { HousingType, Need, PeopleGroup, PetKind } from "@/lib/household/types";
 
 export const TIERS = [1, 2, 3] as const;
@@ -68,7 +70,9 @@ export type Trigger =
   | { hasPeople: PeopleGroup }
   | { hasPet: PetKind | "dog" | "any" }
   | { need: Need }
-  | { housing: HousingType };
+  | { housing: HousingType }
+  /** An emergency scenario the household picked. Never holds until S-03 lets them pick one. */
+  | { emergency: EmergencyId };
 
 export type Source = "official" | "prepwise";
 
@@ -84,16 +88,45 @@ export type PlanItem = {
   when?: Trigger;
   /** What the figure is meant to be once verified. Screens never read it: see `effectiveSource`. */
   intendedSource: Source;
-  /** True only once the figure has been checked against `sourceRef`. */
+  /**
+   * True only when the figure's evidence is complete and owner-verified in
+   * `knowledge/` (derived by the generator, never written by hand).
+   */
   verified: boolean;
-  /** The named official source the figure was verified against. */
-  sourceRef?: string;
+  /** The register source the figure was verified against (set with `verified`). */
+  sourceId?: SourceId;
   /** The "Najpierw" row (water only). */
   first?: true;
   /** Small-child food: also shows a pointer row in tier 1. */
   pointerInTier1?: true;
   /** The row says "zgodne z dietą" when the household has a special diet. */
   dietAware?: true;
+};
+
+/** What decides a figure's label: see `effectiveSource`. Items and scenarios both carry it. */
+export type SourceClaim = {
+  intendedSource: Source;
+  verified: boolean;
+  sourceId?: SourceId;
+};
+
+/** An emergency scenario (`knowledge/emergencies.json`): the items it adds to the baseline. */
+export type Scenario = SourceClaim & {
+  /** Permanent kebab-case slug. */
+  id: string;
+  /** Slugs of the items it adds; each has `when: { emergency: id }`. */
+  items: readonly string[];
+};
+
+/** A source in the bundled register (`knowledge/sources.json`). Its Polish title and publisher are messages. */
+export type RegisterSource = {
+  id: string;
+  kind: "official" | "other";
+  url: string;
+  /** Wayback copy of the page; required once an owner-verified figure cites the source. */
+  archivedUrl?: string;
+  /** Free text, e.g. the edition of a publication. */
+  edition?: string;
 };
 
 /** Who a formula term counts: one group, or several groups sharing the same amount. */

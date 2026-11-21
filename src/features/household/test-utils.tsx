@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactElement } from "react";
-import messages from "../../../messages/pl.json";
+import { messages } from "@/i18n/messages";
 import { createMemoryStore, type Household, type HouseholdStore } from "@/lib/household";
 import { HouseholdProvider } from "./HouseholdProvider";
 

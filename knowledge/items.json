@@ -1,0 +1,565 @@
+[
+  {
+    "id": "drinking-water",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "waterFood"
+    },
+    "unit": "l",
+    "amount": {
+      "perDay": {
+        "adults": 3,
+        "seniors": 3,
+        "children": 3,
+        "smallChildren": 3
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "official",
+    "first": true,
+    "copy": {
+      "name": "Woda pitna",
+      "listName": "Woda",
+      "why": "Woda jest potrzebna najszybciej, a w razie przerw w dostawach trudno ją zastąpić czymkolwiek innym."
+    }
+  },
+  {
+    "id": "shelf-stable-food",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "waterFood"
+    },
+    "unit": "portion",
+    "amount": {
+      "perDay": {
+        "adults": 3,
+        "seniors": 3,
+        "children": 3
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "dietAware": true,
+    "copy": {
+      "name": "Jedzenie, które nie wymaga gotowania",
+      "listName": "Jedzenie"
+    }
+  },
+  {
+    "id": "regular-medicines",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "medicine"
+    },
+    "unit": "day",
+    "amount": {
+      "dose": true
+    },
+    "roundStep": 1,
+    "when": {
+      "need": "regularMedicines"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Leki przyjmowane na stałe",
+      "listName": "Leki na stałe"
+    }
+  },
+  {
+    "id": "medical-equipment-power",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "medicine"
+    },
+    "unit": "day",
+    "amount": {
+      "forDays": {}
+    },
+    "roundStep": 1,
+    "when": {
+      "need": "medicalEquipment"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Zasilanie zapasowe do sprzętu medycznego",
+      "listName": "Zasilanie do sprzętu medycznego",
+      "note": "powerbank lub baterie — zużycie prądu sprzętu warto ustalić z lekarzem"
+    }
+  },
+  {
+    "id": "first-aid-kit",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "medicine"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "official",
+    "copy": {
+      "name": "Apteczka pierwszej pomocy",
+      "listName": "Apteczka",
+      "note": "{kids, select, none {z lekami przeciwbólowymi i na gorączkę} one {z lekami przeciwbólowymi i na gorączkę, także dla dziecka} other {z lekami przeciwbólowymi i na gorączkę, także dla dzieci}}"
+    }
+  },
+  {
+    "id": "flashlight",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "light"
+    },
+    "unit": "piece",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Latarka",
+      "listName": "Latarki"
+    }
+  },
+  {
+    "id": "flashlight-batteries",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "light"
+    },
+    "unit": "set",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Baterie do latarek",
+      "listName": "Baterie do latarek",
+      "note": "jeden komplet na latarkę"
+    }
+  },
+  {
+    "id": "candles-and-lighter",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "light"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": "blackout"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Świeczki i zapalniczka",
+      "listName": "Świeczki i zapalniczka",
+      "note": "światło zapasowe na dłuższy brak prądu, z dala od łatwopalnych rzeczy"
+    }
+  },
+  {
+    "id": "battery-radio",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "communication"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "official",
+    "copy": {
+      "name": "Radio na baterie lub na korbkę",
+      "listName": "Radio"
+    }
+  },
+  {
+    "id": "power-bank",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "communication"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Powerbank",
+      "listName": "Powerbank",
+      "note": "naładowany, do telefonu"
+    }
+  },
+  {
+    "id": "toilet-paper",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "hygiene"
+    },
+    "unit": "roll",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Papier toaletowy",
+      "listName": "Papier toaletowy"
+    }
+  },
+  {
+    "id": "hand-hygiene",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "hygiene"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Mydło i płyn do dezynfekcji rąk",
+      "listName": "Mydło i płyn do rąk"
+    }
+  },
+  {
+    "id": "wet-wipes",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "hygiene"
+    },
+    "unit": "pack",
+    "amount": {
+      "fixed": 2
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Mokre chusteczki",
+      "listName": "Mokre chusteczki"
+    }
+  },
+  {
+    "id": "flushing-water",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "hygiene"
+    },
+    "unit": "l",
+    "amount": {
+      "perDay": {
+        "adults": 5,
+        "seniors": 5,
+        "children": 5,
+        "smallChildren": 5
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "housing": "flat"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Woda do spłukiwania toalety",
+      "listName": "Woda do spłukiwania",
+      "note": "w bloku pompy nie działają bez prądu"
+    }
+  },
+  {
+    "id": "blanket",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "warmth"
+    },
+    "unit": "piece",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Koc",
+      "listName": "Koce"
+    }
+  },
+  {
+    "id": "heating-fuel",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "warmth"
+    },
+    "unit": "day",
+    "amount": {
+      "forDays": {}
+    },
+    "roundStep": 1,
+    "when": {
+      "housing": "house"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Zapasowe ogrzewanie",
+      "listName": "Zapasowe ogrzewanie",
+      "note": "opał lub grzejnik niezależny od prądu"
+    }
+  },
+  {
+    "id": "mobility-aid-power",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "mobility"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "need": "limitedMobility"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Zasilanie do sprzętu ułatwiającego poruszanie się",
+      "listName": "Zasilanie do sprzętu do poruszania się",
+      "note": "zapasowe baterie lub ładowarka, do tego gwizdek"
+    }
+  },
+  {
+    "id": "document-copies",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "documents"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Kopie dokumentów",
+      "listName": "Kopie dokumentów",
+      "note": "dowody, akty urodzenia, polisy — w wodoszczelnej teczce"
+    }
+  },
+  {
+    "id": "cash",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "documents"
+    },
+    "unit": "day",
+    "amount": {
+      "forDays": {}
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Gotówka w drobnych",
+      "listName": "Gotówka"
+    }
+  },
+  {
+    "id": "multitool",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "tools"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Nóż wielofunkcyjny",
+      "listName": "Nóż wielofunkcyjny"
+    }
+  },
+  {
+    "id": "duct-tape",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "tools"
+    },
+    "unit": "roll",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Taśma klejąca",
+      "listName": "Taśma klejąca"
+    }
+  },
+  {
+    "id": "small-child-food",
+    "placement": {
+      "kind": "section",
+      "section": "smallChild",
+      "tier": 1,
+      "category": "waterFood"
+    },
+    "unit": "day",
+    "amount": {
+      "forDays": {
+        "per": ["smallChildren"]
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "hasPeople": "smallChildren"
+    },
+    "intendedSource": "prepwise",
+    "pointerInTier1": true,
+    "copy": {
+      "name": "Jedzenie dla małego dziecka",
+      "listName": "Pokarm dla dziecka",
+      "note": "mleko, kaszki, słoiczki"
+    }
+  },
+  {
+    "id": "diapers",
+    "placement": {
+      "kind": "section",
+      "section": "smallChild",
+      "tier": 2
+    },
+    "unit": "piece",
+    "amount": {
+      "perDay": {
+        "smallChildren": 6
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "hasPeople": "smallChildren"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Pieluchy",
+      "listName": "Pieluchy"
+    }
+  },
+  {
+    "id": "pet-water",
+    "placement": {
+      "kind": "section",
+      "section": "pets"
+    },
+    "unit": "l",
+    "amount": {
+      "perDay": {
+        "smallDog": 0.5,
+        "mediumDog": 1.5,
+        "largeDog": 2,
+        "cat": 0.3,
+        "otherSmall": 0.1
+      }
+    },
+    "roundStep": 0.5,
+    "when": {
+      "hasPet": "any"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}",
+      "listName": "{kind, select, dog {Woda dla psa} other {Woda dla zwierząt}}"
+    }
+  },
+  {
+    "id": "pet-food",
+    "placement": {
+      "kind": "section",
+      "section": "pets"
+    },
+    "unit": "day",
+    "amount": {
+      "forDays": {
+        "per": ["smallDog", "mediumDog", "largeDog", "cat", "otherSmall"]
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "hasPet": "any"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}",
+      "listName": "{kind, select, dog {Karma dla psa} other {Karma dla zwierząt}}"
+    }
+  },
+  {
+    "id": "pet-kit",
+    "placement": {
+      "kind": "section",
+      "section": "pets"
+    },
+    "unit": "set",
+    "amount": {
+      "perMember": {
+        "smallDog": 1,
+        "mediumDog": 1,
+        "largeDog": 1,
+        "cat": 1,
+        "otherSmall": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "hasPet": "any"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
+      "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
+    }
+  }
+]

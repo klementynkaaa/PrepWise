@@ -28,6 +28,15 @@ Every recommended quantity in the plan shows exactly one of these labels:
 
 Never show an estimate as if it were official. A figure shows "Official guidance" only once it has been verified against a named official source; until then, including every draft figure, it shows "PREPWISE recommendation". The code enforces this, not the content author.
 
+"Official guidance" ("Oficjalne" in the app) needs all of these:
+
+- the item's evidence cites a source from the register that is official, meaning an https page on gov.pl (including PSP and RCB pages);
+- a verbatim quote from that source;
+- the owner as verifier, with the date of verification;
+- an archived (Wayback) link on the source.
+
+Anything less shows "PREPWISE recommendation". The knowledge-base check in CI enforces this; see `knowledge/README.md`.
+
 The shopping list repeats the plan's quantities without the label; it links to the sources ("Skąd te ilości?") instead.
 
 ## Priority

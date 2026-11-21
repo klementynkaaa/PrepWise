@@ -1,0 +1,249 @@
+// Schemas and cross-file rules for the knowledge base in `knowledge/`.
+// The schemas check what is specific to the knowledge base (ids, copy, evidence, sources and
+// references). An item's app fields (placement, unit, amount, ...) are passed through loosely:
+// `src/lib/plan/types.ts` stays the one definition of the item shape, checked by `tsc` through
+// `satisfies` on the generated file.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
+
+const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const id = z.string().regex(KEBAB, "must be kebab-case");
+const text = z.string().min(1, "must not be empty");
+const isoDate = z
+  .string()
+  .regex(ISO_DATE, "must be an ISO date (YYYY-MM-DD)")
+  .refine(
+    (d) => new Date(`${d}T00:00:00Z`).toISOString().slice(0, 10) === d,
+    "must be a real calendar date",
+  );
+
+/** Today's date in Poland (YYYY-MM-DD), so the owner's local day is never "in the future". */
+function todayInWarsaw() {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(new Date());
+}
+const httpsUrl = z.url().refine((u) => u.startsWith("https://"), "must be an https URL");
+
+const ARCHIVE_HOSTS = new Set(["web.archive.org", "archive.ph"]);
+const archiveUrl = httpsUrl.refine(
+  (u) => ARCHIVE_HOSTS.has(new URL(u).hostname),
+  "must be a snapshot on web.archive.org or archive.ph",
+);
+
+const sourceSchema = z.strictObject({
+  id,
+  kind: z.enum(["official", "other"]),
+  url: httpsUrl,
+  archivedUrl: archiveUrl.optional(),
+  edition: text.optional(),
+  accessedAt: isoDate,
+  copy: z.strictObject({ title: text, publisher: text }),
+});
+
+const evidenceSchema = z.strictObject({
+  sourceId: id,
+  quote: z.string(),
+  page: z.union([z.number().int().positive(), text]).optional(),
+  section: text.optional(),
+  verifiedBy: z.literal("owner").optional(),
+  verifiedAt: isoDate.optional(),
+});
+
+// Strict on top-level keys: everything outside `copy` and `evidence` is bundled into the app, so an
+// unknown key must fail here instead of shipping. Only the nested app fields stay loose.
+const itemSchema = z
+  .strictObject({
+    id,
+    placement: z.looseObject({}),
+    unit: z.string(),
+    amount: z.looseObject({}),
+    roundStep: z.number().positive(),
+    when: z.looseObject({}).optional(),
+    intendedSource: z.string(),
+    copy: z.strictObject({
+      name: text,
+      listName: text,
+      note: text.optional(),
+      why: text.optional(),
+    }),
+    evidence: evidenceSchema.optional(),
+    first: z.literal(true).optional(),
+    pointerInTier1: z.literal(true).optional(),
+    dietAware: z.literal(true).optional(),
+    // Derived fields: accepted here only so the rule below can report a clear message.
+    verified: z.unknown().optional(),
+    sourceRef: z.unknown().optional(),
+  })
+  .superRefine((item, ctx) => {
+    for (const key of ["verified", "sourceRef"]) {
+      if (item[key] !== undefined)
+        ctx.addIssue({ code: "custom", path: [key], message: "is derived; remove it" });
+    }
+  });
+
+const scenarioSchema = z
+  .strictObject({
+    id,
+    copy: z.strictObject({ name: text, explanation: text }),
+    intendedSource: z.enum(["official", "prepwise"]),
+    evidence: evidenceSchema.optional(),
+    items: z.array(id),
+  })
+  .superRefine((scenario, ctx) => {
+    if (new Set(scenario.items).size !== scenario.items.length) {
+      ctx.addIssue({ code: "custom", path: ["items"], message: "lists a slug twice" });
+    }
+  });
+
+const FILES = {
+  sources: ["sources.json", z.array(sourceSchema)],
+  items: ["items.json", z.array(itemSchema)],
+  emergencies: ["emergencies.json", z.array(scenarioSchema)],
+};
+
+function formatIssue(file, data, issue) {
+  const [index, ...rest] = issue.path;
+  const entry = typeof index === "number" ? data?.[index] : undefined;
+  const slug = entry && typeof entry.id === "string" ? ` [${entry.id}]` : "";
+  const where = typeof index === "number" ? `#${index}${slug}` : "";
+  const field = rest.length ? ` field "${rest.join(".")}"` : "";
+  return `knowledge/${file} ${where}${field}: ${issue.message}`.replace(/\s+:/, ":");
+}
+
+/** Reads and schema-checks the knowledge files in `dir`. Throws one error listing every problem. */
+export function loadKnowledge(dir) {
+  const result = {};
+  const problems = [];
+  for (const [name, [file, schema]] of Object.entries(FILES)) {
+    let data;
+    try {
+      data = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    } catch (error) {
+      problems.push(`knowledge/${file}: cannot read as JSON (${error.message})`);
+      continue;
+    }
+    const parsed = schema.safeParse(data);
+    if (parsed.success) result[name] = parsed.data;
+    else problems.push(...parsed.error.issues.map((issue) => formatIssue(file, data, issue)));
+  }
+  if (problems.length) throw new Error(problems.join("\n"));
+  return result;
+}
+
+/** Whether `url` is an https URL on gov.pl or one of its subdomains. */
+export function isGovPlUrl(url) {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && (hostname === "gov.pl" || hostname.endsWith(".gov.pl"));
+  } catch {
+    return false;
+  }
+}
+
+/** The evidence is complete and owner-verified (the shape is checked by `checkRules`). */
+export function isOwnerVerified(evidence) {
+  return (
+    evidence?.verifiedBy === "owner" &&
+    Boolean(evidence.quote?.trim()) &&
+    Boolean(evidence.verifiedAt)
+  );
+}
+
+function duplicates(file, entries, problems) {
+  const seen = new Set();
+  for (const { id: entryId } of entries) {
+    if (seen.has(entryId)) problems.push(`knowledge/${file} [${entryId}]: duplicate id`);
+    seen.add(entryId);
+  }
+}
+
+function checkEvidence(file, entry, sourcesById, today, problems) {
+  const { evidence } = entry;
+  if (!evidence) return;
+  const at = (field, message) =>
+    problems.push(`knowledge/${file} [${entry.id}] field "evidence.${field}": ${message}`);
+  const source = sourcesById.get(evidence.sourceId);
+  if (!source) at("sourceId", `unknown source "${evidence.sourceId}"`);
+  if (evidence.verifiedBy === undefined) return; // a draft
+  if (!evidence.quote.trim()) at("quote", "required when verifiedBy is set");
+  if (!evidence.verifiedAt) at("verifiedAt", "required when verifiedBy is set");
+  else if (evidence.verifiedAt > today) at("verifiedAt", "must not be in the future");
+  if (!source) return;
+  if (!source.archivedUrl) {
+    at("sourceId", `owner-verified, so source "${source.id}" needs an archivedUrl`);
+  }
+  if (entry.intendedSource !== "official" && source.kind === "official") {
+    problems.push(
+      `knowledge/${file} [${entry.id}]: owner-verified against official source "${source.id}", so intendedSource must be "official"`,
+    );
+  } else if (entry.intendedSource === "official" && source.kind !== "official") {
+    problems.push(
+      `knowledge/${file} [${entry.id}]: intendedSource is "official" but source "${source.id}" is kind "other"`,
+    );
+  }
+}
+
+/**
+ * Scenarios and the items they add must agree: a listed item exists and is triggered by exactly
+ * that scenario, and every emergency-triggered item is listed by it. A scenario never lists a
+ * baseline item (one with no emergency trigger): it adds only what the baseline lacks.
+ */
+function checkScenarioItems(kb, problems) {
+  const itemsById = new Map(kb.items.map((item) => [item.id, item]));
+  const scenarioIds = new Set(kb.emergencies.map((scenario) => scenario.id));
+  const listedBy = new Map();
+  for (const scenario of kb.emergencies) {
+    for (const slug of scenario.items) {
+      const item = itemsById.get(slug);
+      const at = `knowledge/emergencies.json [${scenario.id}] field "items"`;
+      if (!item) {
+        problems.push(`${at}: unknown item "${slug}"`);
+        continue;
+      }
+      listedBy.set(slug, [...(listedBy.get(slug) ?? []), scenario.id]);
+      const trigger = item.when?.emergency;
+      if (trigger === undefined) {
+        problems.push(`${at}: item "${slug}" is a baseline item (no emergency trigger)`);
+      } else if (trigger !== scenario.id) {
+        problems.push(`${at}: item "${slug}" is triggered by emergency "${trigger}", not this one`);
+      }
+    }
+  }
+  for (const item of kb.items) {
+    const trigger = item.when?.emergency;
+    if (trigger === undefined) continue;
+    if (!scenarioIds.has(trigger)) {
+      problems.push(
+        `knowledge/items.json [${item.id}] field "when.emergency": unknown emergency "${trigger}"`,
+      );
+    } else if (!listedBy.get(item.id)?.includes(trigger)) {
+      problems.push(
+        `knowledge/items.json [${item.id}]: triggered by emergency "${trigger}" but that scenario does not list it`,
+      );
+    }
+  }
+}
+
+/** Cross-file rules. Returns readable problems; an empty array means the knowledge base is valid. */
+export function checkRules(kb, { today = todayInWarsaw() } = {}) {
+  const problems = [];
+  duplicates("sources.json", kb.sources, problems);
+  duplicates("items.json", kb.items, problems);
+  duplicates("emergencies.json", kb.emergencies, problems);
+  const sourcesById = new Map(kb.sources.map((source) => [source.id, source]));
+  for (const source of kb.sources) {
+    if (source.kind === "official" && !isGovPlUrl(source.url)) {
+      problems.push(
+        `knowledge/sources.json [${source.id}] field "url": an official source needs an https URL on gov.pl`,
+      );
+    }
+  }
+  for (const item of kb.items) checkEvidence("items.json", item, sourcesById, today, problems);
+  for (const scenario of kb.emergencies) {
+    checkEvidence("emergencies.json", scenario, sourcesById, today, problems);
+  }
+  checkScenarioItems(kb, problems);
+  return problems;
+}
