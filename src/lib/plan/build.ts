@@ -2,6 +2,7 @@ import type { HouseholdSummary } from "@/lib/household/summary";
 import type { PeopleGroup, PetKind } from "@/lib/household/types";
 import { recommendedQuantity, roundUpToStep } from "@/lib/quantity";
 import { PLAN_ITEMS, SOURCES } from "./content";
+import { EMERGENCIES, type EmergencyId } from "./content.generated";
 import {
   CATEGORIES,
   SECTIONS,
@@ -63,7 +64,11 @@ function countOf(summary: HouseholdSummary, group: MemberGroup): number {
   return isPeopleGroup(group) ? summary.people[group] : summary.pets[group];
 }
 
-function triggerHolds(summary: HouseholdSummary, when: Trigger | undefined): boolean {
+function triggerHolds(
+  summary: HouseholdSummary,
+  when: Trigger | undefined,
+  chosen: ReadonlySet<EmergencyId>,
+): boolean {
   if (!when) return true;
   if ("hasPeople" in when) return summary.people[when.hasPeople] > 0;
   if ("hasPet" in when) {
@@ -72,8 +77,12 @@ function triggerHolds(summary: HouseholdSummary, when: Trigger | undefined): boo
     return summary.pets[when.hasPet] > 0;
   }
   if ("need" in when) return summary.needs.includes(when.need);
-  // The household cannot pick an emergency until S-03.
-  if ("emergency" in when) return false;
+  if ("emergency" in when) {
+    return (
+      when.emergency.some((id) => chosen.has(id)) &&
+      (when.housing === undefined || summary.housingType === when.housing)
+    );
+  }
   return summary.housingType === when.housing;
 }
 
@@ -156,15 +165,22 @@ function petSectionKind(summary: HouseholdSummary): PetSectionKind {
   return dogs === summary.petsTotal ? "dog" : "animals";
 }
 
+/** The chosen ids that are known emergencies, in content order; unknown ids are dropped. */
+function knownEmergencies(ids: readonly string[]): EmergencyId[] {
+  return EMERGENCIES.map((scenario) => scenario.id).filter((id) => ids.includes(id));
+}
+
 /**
  * Builds the plan for a household and a number of days, ordered by the
  * business rules: three tiers with category labels, then the member sections.
- * Empty categories, tiers and sections are left out. No text: screens format
- * every part with `plan.*` messages.
+ * The chosen `emergencies` add their items (ids that are not known emergencies
+ * are ignored). Empty categories, tiers and sections are left out. No text:
+ * screens format every part with `plan.*` messages.
  */
 export function buildPlan(
   summary: HouseholdSummary,
   days: number,
+  emergencies: readonly string[] = [],
   items: readonly PlanItem[] = PLAN_ITEMS,
 ): Plan {
   if (!Number.isFinite(days) || days <= 0) {
@@ -178,12 +194,21 @@ export function buildPlan(
     const categories = tierRows.get(tier)!;
     categories.set(category, [...(categories.get(category) ?? []), row]);
   };
+  const known = knownEmergencies(emergencies);
+  const chosen = new Set<EmergencyId>(known);
   let itemCount = 0;
+  let emergencyItemCount = 0;
 
   for (const item of items) {
-    if (!triggerHolds(summary, item.when)) continue;
+    if (!triggerHolds(summary, item.when, chosen)) continue;
     const computed = compute(item, summary, days);
     if (!computed) continue;
+    const brought =
+      item.when && "emergency" in item.when
+        ? known.filter(
+            (id) => item.when && "emergency" in item.when && item.when.emergency.includes(id),
+          )
+        : undefined;
     const row: PlanRowData = {
       itemId: item.id,
       quantity: computed.quantity,
@@ -192,8 +217,10 @@ export function buildPlan(
       source: effectiveSource(item),
       first: item.first === true,
       ...(item.dietAware && summary.needs.includes("specialDiet") ? { diet: true as const } : {}),
+      ...(brought ? { emergencies: brought } : {}),
     };
     itemCount += 1;
+    if (brought) emergencyItemCount += 1;
 
     const { placement } = item;
     if (placement.kind === "tier") {
@@ -227,8 +254,37 @@ export function buildPlan(
   const sections: PlanSection[] = SECTIONS.flatMap((id): PlanSection[] => {
     const rows = sectionRows.get(id)!;
     if (rows.length === 0) return [];
-    return id === "pets" ? [{ id, petKind: petSectionKind(summary), rows }] : [{ id, rows }];
+    if (id === "pets") return [{ id, petKind: petSectionKind(summary), rows }];
+    if (id === "backpack") {
+      const brought = new Set(rows.flatMap((row) => row.emergencies ?? []));
+      return [{ id, emergencies: known.filter((e) => brought.has(e)), rows }];
+    }
+    return [{ id, rows }];
   });
 
-  return { days, tiers, sections, itemCount };
+  return { days, tiers, sections, itemCount, emergencyItemCount };
+}
+
+/** The ids of the real items a plan holds (pointer rows left out). */
+function itemIdsOf(plan: Plan): Set<string> {
+  const rows = [
+    ...plan.tiers.flatMap((tier) => tier.categories.flatMap((category) => category.rows)),
+    ...plan.sections.flatMap((section) => section.rows),
+  ];
+  return new Set(rows.filter((row) => row.pointer === undefined).map((row) => row.itemId));
+}
+
+/**
+ * How many items choosing `draft` adds to the plan compared with `saved`: the item ids
+ * `buildPlan(…, draft)` has that `buildPlan(…, saved)` has not. A swap of one emergency for
+ * another still counts what the new one adds; items both share count for nothing.
+ */
+export function addedItemCount(
+  summary: HouseholdSummary,
+  days: number,
+  saved: readonly string[],
+  draft: readonly string[],
+): number {
+  const before = itemIdsOf(buildPlan(summary, days, saved));
+  return [...itemIdsOf(buildPlan(summary, days, draft))].filter((id) => !before.has(id)).length;
 }

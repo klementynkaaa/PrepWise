@@ -37,7 +37,7 @@ The Polish text for screens is generated from `copy`; add it nowhere else.
 
 ## Adding a scenario
 
-Add an object to `emergencies.json` with a new slug: `copy` (`name`, `explanation`), `intendedSource`, optional `evidence`, and `items`, the slugs of the items it adds. Each listed item must exist in `items.json` and carry `"when": { "emergency": "<scenario slug>" }`; every item triggered by an emergency must be listed by it. A scenario lists only items the baseline lacks, never a baseline item.
+Add an object to `emergencies.json` with a new slug: `copy` (`name`, `explanation`), `intendedSource`, optional `evidence`, and `items`, the slugs of the items it adds. Each listed item must exist in `items.json` and carry `"when": { "emergency": ["<scenario slug>"] }`: a non-empty list of scenario slugs, with no repeats. An item several scenarios share (the evacuation backpack) lists them all, and each of those scenarios lists the item. A scenario lists an item if and only if its slug is in that item's list. The `when` may also carry `"housing"` (for example `"house"`) beside `emergency`: the item then needs both. A scenario lists only items the baseline lacks, never a baseline item.
 
 ## Citing a source
 

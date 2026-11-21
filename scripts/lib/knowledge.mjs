@@ -186,9 +186,10 @@ function checkEvidence(file, entry, sourcesById, today, problems) {
 }
 
 /**
- * Scenarios and the items they add must agree: a listed item exists and is triggered by exactly
- * that scenario, and every emergency-triggered item is listed by it. A scenario never lists a
- * baseline item (one with no emergency trigger): it adds only what the baseline lacks.
+ * Scenarios and the items they add must agree: a scenario lists an item if and only if the
+ * scenario's id is in the item's `when.emergency`. `when.emergency` is a non-empty list of known
+ * scenario ids without repeats, and may carry a `housing` beside it (no other key). A scenario
+ * never lists a baseline item (one with no emergency trigger): it adds only what the baseline lacks.
  */
 function checkScenarioItems(kb, problems) {
   const itemsById = new Map(kb.items.map((item) => [item.id, item]));
@@ -206,22 +207,38 @@ function checkScenarioItems(kb, problems) {
       const trigger = item.when?.emergency;
       if (trigger === undefined) {
         problems.push(`${at}: item "${slug}" is a baseline item (no emergency trigger)`);
-      } else if (trigger !== scenario.id) {
-        problems.push(`${at}: item "${slug}" is triggered by emergency "${trigger}", not this one`);
+      } else if (Array.isArray(trigger) && !trigger.includes(scenario.id)) {
+        problems.push(
+          `${at}: item "${slug}" is triggered by emergencies ${trigger.map((e) => `"${e}"`).join(", ")}, not this one`,
+        );
       }
     }
   }
   for (const item of kb.items) {
     const trigger = item.when?.emergency;
     if (trigger === undefined) continue;
-    if (!scenarioIds.has(trigger)) {
-      problems.push(
-        `knowledge/items.json [${item.id}] field "when.emergency": unknown emergency "${trigger}"`,
-      );
-    } else if (!listedBy.get(item.id)?.includes(trigger)) {
-      problems.push(
-        `knowledge/items.json [${item.id}]: triggered by emergency "${trigger}" but that scenario does not list it`,
-      );
+    const at = (message) =>
+      problems.push(`knowledge/items.json [${item.id}] field "when.emergency": ${message}`);
+    if (!Array.isArray(trigger) || trigger.length === 0) {
+      at("must be a non-empty list of emergency ids");
+      continue;
+    }
+    for (const key of Object.keys(item.when)) {
+      if (key !== "emergency" && key !== "housing") {
+        problems.push(
+          `knowledge/items.json [${item.id}] field "when.${key}": only "housing" may sit beside "emergency"`,
+        );
+      }
+    }
+    if (new Set(trigger).size !== trigger.length) at("lists an emergency twice");
+    for (const emergency of new Set(trigger)) {
+      if (typeof emergency !== "string" || !scenarioIds.has(emergency)) {
+        at(`unknown emergency "${emergency}"`);
+      } else if (!listedBy.get(item.id)?.includes(emergency)) {
+        problems.push(
+          `knowledge/items.json [${item.id}]: triggered by emergency "${emergency}" but that scenario does not list it`,
+        );
+      }
     }
   }
 }

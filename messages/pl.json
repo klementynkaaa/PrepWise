@@ -303,7 +303,8 @@
     },
     "sections": {
       "smallChild": "Dla małego dziecka",
-      "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+      "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}",
+      "backpack": "Plecak ewakuacyjny"
     },
     "formula": {
       "perDay": "{amount} × {who} × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
@@ -384,7 +385,8 @@
       },
       "sections": {
         "smallChild": "Dla dziecka",
-        "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+        "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}",
+        "backpack": "Plecak ewakuacyjny"
       }
     }
   },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPlan, planStage } from "./build";
+import { addedItemCount, buildPlan, planStage } from "./build";
 import { PLAN_ITEMS } from "./content";
 import { defaultSummary, largeSummary, minimalSummary, summaryOf } from "./fixtures";
 import type { Plan, PlanItem, PlanRowData } from "./types";
@@ -292,13 +292,117 @@ describe("buildPlan — large household (9 people, 2 dogs, a cat, every need, ho
 });
 
 describe("buildPlan — rules", () => {
-  it("never shows an emergency item: the household cannot pick an emergency yet", () => {
+  it("shows no emergency item when none is chosen: baseline only", () => {
     const emergencyIds = PLAN_ITEMS.filter((i) => i.when && "emergency" in i.when).map((i) => i.id);
     expect(emergencyIds).toContain("candles-and-lighter");
     for (const summary of [defaultSummary(), minimalSummary(), largeSummary()]) {
       const plan = buildPlan(summary, 3);
       for (const id of emergencyIds) expect(has(plan, id), id).toBe(false);
+      expect(plan.emergencyItemCount).toBe(0);
+      expect(plan.sections.some((section) => section.id === "backpack")).toBe(false);
+      expect(rowsOf(plan).every((r) => r.emergencies === undefined)).toBe(true);
     }
+  });
+
+  const BACKPACK = [
+    "evacuation-backpack",
+    "backpack-water",
+    "backpack-water-filter",
+    "backpack-first-aid",
+    "backpack-food",
+    "backpack-torch",
+    "backpack-radio",
+    "backpack-thermal-rain",
+    "backpack-documents-cash",
+    "backpack-hygiene",
+  ];
+  const ADDED = {
+    blackout: ["candles-and-lighter", "walkie-talkies", "camping-stove"],
+    "no-tap-water": ["bucket-with-bags", "water-purification-tablets", "water-canister"],
+    "severe-weather": ["thermal-blanket", "warm-clothing"],
+    // A house, so the sandbags are there.
+    flood: ["sandbags", "waterproof-document-pouch", "signal-cloths", ...BACKPACK],
+    evacuation: BACKPACK,
+  } as const;
+
+  it.each(Object.entries(ADDED))("adds the items of %s and only those", (id, ids) => {
+    const baseline = new Set(rowsOf(buildPlan(largeSummary(), 3)).map((r) => r.itemId));
+    const plan = buildPlan(largeSummary(), 3, [id]);
+    const added = rowsOf(plan)
+      .map((r) => r.itemId)
+      .filter((itemId) => !baseline.has(itemId));
+    expect(added.sort()).toEqual([...ids].sort());
+    expect(plan.emergencyItemCount).toBe(ids.length);
+    for (const itemId of ids) expect(row(plan, itemId).emergencies).toEqual([id]);
+  });
+
+  it("puts the backpack in its own last section, tagged with the emergencies that brought it", () => {
+    const plan = buildPlan(largeSummary(), 3, ["flood"]);
+    const last = plan.sections.at(-1);
+    expect(last).toMatchObject({ id: "backpack", emergencies: ["flood"] });
+    expect(last?.rows.map((r) => r.itemId)).toEqual(BACKPACK);
+    // No tier and no category: the rows live only in the section.
+    expect(last?.rows.every((r) => r.tier === undefined)).toBe(true);
+    expect(plan.sections.map((s) => s.id)).toEqual(["smallChild", "pets", "backpack"]);
+  });
+
+  it("adds the backpack once for flood and evacuation, tagged with both", () => {
+    const plan = buildPlan(largeSummary(), 3, ["evacuation", "flood"]);
+    expect(plan.sections.filter((s) => s.id === "backpack")).toHaveLength(1);
+    const ids = rowsOf(plan).map((r) => r.itemId);
+    for (const id of BACKPACK) expect(ids.filter((x) => x === id)).toHaveLength(1);
+    expect(plan.sections.at(-1)).toMatchObject({ emergencies: ["flood", "evacuation"] });
+    expect(row(plan, "backpack-torch").emergencies).toEqual(["flood", "evacuation"]);
+    // Backpack (10) + the flood extras (3) counted once each.
+    expect(plan.emergencyItemCount).toBe(13);
+  });
+
+  it("counts backpack amounts for every person, small children included, no pets", () => {
+    const plan = buildPlan(defaultSummary(), 3, ["evacuation"]);
+    // 2 adults + 1 small child = 3 people; the dog adds nothing.
+    expect(row(plan, "evacuation-backpack").quantity).toBe(3);
+    expect(row(plan, "backpack-water").quantity).toBe(12);
+    expect(row(plan, "backpack-food").quantity).toBe(9);
+  });
+
+  it("adds sandbags for flood only in a house", () => {
+    expect(has(buildPlan(minimalSummary(), 3, ["flood"]), "sandbags")).toBe(false);
+    expect(has(buildPlan(defaultSummary(), 3, ["flood"]), "sandbags")).toBe(false);
+    expect(has(buildPlan(largeSummary(), 3, ["flood"]), "sandbags")).toBe(true);
+    // Evacuation alone never brings sandbags, even in a house.
+    expect(has(buildPlan(largeSummary(), 3, ["evacuation"]), "sandbags")).toBe(false);
+  });
+
+  it("ignores ids that are not known emergencies", () => {
+    expect(outline(buildPlan(defaultSummary(), 3, ["tornado", "", "Flood"]))).toEqual(
+      outline(buildPlan(defaultSummary(), 3)),
+    );
+    const mixed = buildPlan(defaultSummary(), 3, ["tornado", "blackout"]);
+    expect(mixed.emergencyItemCount).toBe(3);
+  });
+
+  it("keeps the plan the same whatever order the emergencies come in", () => {
+    expect(buildPlan(largeSummary(), 3, ["flood", "blackout"])).toEqual(
+      buildPlan(largeSummary(), 3, ["blackout", "flood"]),
+    );
+  });
+
+  it("counts an item that holds because of an emergency in itemCount too", () => {
+    const base = buildPlan(defaultSummary(), 3);
+    const plan = buildPlan(defaultSummary(), 3, ["severe-weather"]);
+    expect(plan.itemCount).toBe(base.itemCount + 2);
+    expect(plan.emergencyItemCount).toBe(2);
+  });
+
+  it("applies an emergency trigger with a housing from a custom content list", () => {
+    const items = [
+      item({ id: "a", when: { emergency: ["flood", "evacuation"], housing: "house" } }),
+      item({ id: "b", when: { emergency: ["blackout"] } }),
+    ];
+    expect(
+      rowsOf(buildPlan(largeSummary(), 3, ["evacuation"], items)).map((r) => r.itemId),
+    ).toEqual(["a"]);
+    expect(rowsOf(buildPlan(minimalSummary(), 3, ["evacuation"], items))).toEqual([]);
   });
 
   it("shows every row of every fixture as a PREPWISE recommendation", () => {
@@ -315,7 +419,7 @@ describe("buildPlan — rules", () => {
         sourceId: "poradnik-bezpieczenstwa-portal",
       }),
     ];
-    expect(rowsOf(buildPlan(minimalSummary(), 3, items))[0].source).toBe("official");
+    expect(rowsOf(buildPlan(minimalSummary(), 3, [], items))[0].source).toBe("official");
   });
 
   it("scales with days other than 3", () => {
@@ -338,12 +442,12 @@ describe("buildPlan — rules", () => {
 
   it("rounds up to the item's step", () => {
     const items = [item({ amount: { perDay: { adults: 1.1 } }, roundStep: 1 })];
-    expect(rowsOf(buildPlan(minimalSummary(), 3, items))[0].quantity).toBe(4);
+    expect(rowsOf(buildPlan(minimalSummary(), 3, [], items))[0].quantity).toBe(4);
   });
 
   it("does not add a step for float error (0.2 × 3 with step 0.1 is 0.6)", () => {
     const items = [item({ amount: { perDay: { adults: 0.2 } }, roundStep: 0.1 })];
-    expect(rowsOf(buildPlan(minimalSummary(), 3, items))[0].quantity).toBe(0.6);
+    expect(rowsOf(buildPlan(minimalSummary(), 3, [], items))[0].quantity).toBe(0.6);
   });
 
   it("sums groups whose daily amounts differ and keeps them as separate terms", () => {
@@ -351,7 +455,7 @@ describe("buildPlan — rules", () => {
     const summary = summaryOf({
       people: { adults: 2, seniors: 1, children: 1, smallChildren: 0 },
     });
-    const [only] = rowsOf(buildPlan(summary, 3, items));
+    const [only] = rowsOf(buildPlan(summary, 3, [], items));
     // (3 × 2 + 4 × 1 + 3 × 1) × 3 = 39
     expect(only.quantity).toBe(39);
     expect(only.formula).toEqual({
@@ -378,7 +482,7 @@ describe("buildPlan — rules", () => {
 
   it("drops a tier with no items", () => {
     const items = [item({ placement: { kind: "tier", tier: 2, category: "light" } })];
-    const plan = buildPlan(minimalSummary(), 3, items);
+    const plan = buildPlan(minimalSummary(), 3, [], items);
     expect(plan.tiers.map((t) => t.tier)).toEqual([2]);
     expect(plan.itemCount).toBe(1);
   });
@@ -432,7 +536,7 @@ describe("buildPlan — rules", () => {
       hasPets: true,
       pets: { smallDog: 0, mediumDog: 0, largeDog: 0, cat: 0, otherSmall: 0, ...pets },
     });
-    expect(buildPlan(summary, 3, [item({ when })]).itemCount).toBe(included ? 1 : 0);
+    expect(buildPlan(summary, 3, [], [item({ when })]).itemCount).toBe(included ? 1 : 0);
   });
 
   it("is in the 'ready' stage until the list exists, then 'collecting'", () => {
@@ -443,5 +547,36 @@ describe("buildPlan — rules", () => {
     expect(planStage(plan, true, true)).toBe("complete");
     // Without a list nothing can be complete.
     expect(planStage(plan, false, true)).toBe("ready");
+  });
+});
+
+describe("addedItemCount", () => {
+  const summary = largeSummary();
+
+  it("counts what choosing adds to nothing chosen", () => {
+    expect(addedItemCount(summary, 3, [], [])).toBe(0);
+    expect(addedItemCount(summary, 3, [], ["blackout"])).toBe(3);
+    expect(addedItemCount(summary, 3, [], ["flood", "evacuation"])).toBe(13);
+  });
+
+  it("counts a shared item once and only what the saved choice lacks", () => {
+    // The backpack is already there; flood brings only its own 3 items.
+    expect(addedItemCount(summary, 3, ["evacuation"], ["evacuation", "flood"])).toBe(3);
+  });
+
+  it("counts what a swapped-in emergency adds", () => {
+    expect(addedItemCount(summary, 3, ["blackout"], ["severe-weather"])).toBe(2);
+    expect(addedItemCount(summary, 3, ["flood"], ["evacuation"])).toBe(0);
+  });
+
+  it("is zero when emergencies are removed", () => {
+    expect(addedItemCount(summary, 3, ["blackout", "flood"], ["blackout"])).toBe(0);
+    expect(addedItemCount(summary, 3, ["blackout"], [])).toBe(0);
+  });
+
+  it("counts sandbags only for a house and ignores unknown ids", () => {
+    expect(addedItemCount(minimalSummary(), 3, [], ["flood"])).toBe(12);
+    expect(addedItemCount(summary, 3, [], ["flood"])).toBe(13);
+    expect(addedItemCount(summary, 3, [], ["tornado"])).toBe(0);
   });
 });

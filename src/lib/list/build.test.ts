@@ -115,6 +115,7 @@ describe("buildList — groups", () => {
       tiers: [],
       sections: [{ id: "smallChild", rows: [row] }],
       itemCount: 1,
+      emergencyItemCount: 0,
     };
     expect(() => buildList(plan, [])).toThrow(/no tier/);
   });
