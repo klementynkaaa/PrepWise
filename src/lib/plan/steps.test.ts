@@ -29,6 +29,12 @@ describe("startSteps", () => {
     expect(startSteps(input).current).toBe(3);
   });
 
+  it("marks a fully ticked backpack done while home supplies are still open", () => {
+    const input = { stage: "collecting", homeLeft: 3, backpackLeft: 0, hasBackpack: true } as const;
+    expect(states(input)).toEqual(["plan:done", "supplies:current", "backpack:done"]);
+    expect(startSteps(input).current).toBe(2);
+  });
+
   it("is all done when the stage is complete", () => {
     const result = startSteps({ stage: "complete", homeLeft: 0, hasBackpack: true });
     expect(result.steps.every((step) => step.state === "done")).toBe(true);

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createPlanThroughUi, seedCompleteProfile } from "./seed";
+import { chooseEmergenciesThroughUi, createPlanThroughUi, seedCompleteProfile } from "./seed";
 
 async function waitForControlledPage(page: Page) {
   await page.evaluate(() => navigator.serviceWorker.ready);
@@ -12,14 +12,6 @@ async function waitForControlledPage(page: Page) {
 
 const sheet = (page: Page) => page.getByRole("dialog", { name: "Sytuacje" });
 
-/** Opens the sheet from the panel, picks the emergencies and saves them with "Gotowe". */
-async function choose(page: Page, names: string[]) {
-  await page.getByRole("button", { name: /^(Dodaj sytuację|Zmień sytuacje w planie)$/ }).click();
-  for (const name of names) await sheet(page).getByRole("checkbox", { name }).check();
-  await sheet(page).getByRole("button", { name: "Gotowe" }).click();
-  await expect(sheet(page)).toBeHidden();
-}
-
 test("an emergency is added and removed through the sheet on Plan", async ({ page }) => {
   await seedCompleteProfile(page);
   await createPlanThroughUi(page);
@@ -29,7 +21,7 @@ test("an emergency is added and removed through the sheet on Plan", async ({ pag
 
   await page.getByRole("button", { name: "Dodaj sytuację" }).click();
   await sheet(page).getByRole("checkbox", { name: "Brak prądu" }).check();
-  await expect(sheet(page).getByText("Dojdzie 3 rzeczy do planu.")).toBeVisible();
+  await expect(sheet(page).getByText("W planie z sytuacji: 3 rzeczy.")).toBeVisible();
   await sheet(page).getByRole("button", { name: "Gotowe" }).click();
   await expect(sheet(page)).toBeHidden();
 
@@ -61,7 +53,7 @@ test("the backpack shows as its own group with two bars on Plan, List and Start"
 }) => {
   await seedCompleteProfile(page);
   await createPlanThroughUi(page);
-  await choose(page, ["Powódź", "Ewakuacja"]);
+  await chooseEmergenciesThroughUi(page, ["Powódź", "Ewakuacja"]);
 
   await expect(page.getByRole("heading", { level: 2, name: "Plecak ewakuacyjny" })).toBeVisible();
   await page.getByRole("button", { name: "Stwórz listę zakupów" }).click();
@@ -114,7 +106,7 @@ test("the sheet works offline, and the choice stays after a reload", async ({ pa
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByText("Offline", { exact: true })).toBeVisible();
-  await choose(page, ["Brak prądu"]);
+  await chooseEmergenciesThroughUi(page, ["Brak prądu"]);
   await expect(page.getByRole("heading", { level: 2, name: "Sytuacje w planie" })).toBeVisible();
 
   await page.reload();

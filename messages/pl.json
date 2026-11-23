@@ -355,7 +355,7 @@
           "sourceOfficial": "Źródło: oficjalny poradnik",
           "sourcePrepwise": "Źródło: rekomendacja PREPWISE",
           "countNone": "Bez sytuacji plan zostaje podstawą na 72 godziny.",
-          "count": "{count, plural, one {Dojdzie # rzecz do planu.} few {Dojdzie # rzeczy do planu.} many {Dojdzie # rzeczy do planu.} other {Dojdzie # rzeczy do planu.}}",
+          "count": "{count, plural, one {W planie z sytuacji: # rzecz.} few {W planie z sytuacji: # rzeczy.} many {W planie z sytuacji: # rzeczy.} other {W planie z sytuacji: # rzeczy.}}",
           "done": "Gotowe",
           "saving": "Zapisywanie…",
           "errorTitle": "Nie udało się zapisać sytuacji",

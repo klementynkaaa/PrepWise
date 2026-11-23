@@ -45,7 +45,7 @@ export function EmergenciesSheet({
   summary,
   saved,
 }: EmergenciesSheetProps) {
-  const { setEmergencies } = useHousehold();
+  const { emergencies: stored, setEmergencies } = useHousehold();
   const [draft, setDraft] = useState<readonly EmergencyId[]>(saved);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -64,8 +64,11 @@ export function EmergenciesSheet({
   // A save belongs to the opening that started it: closing the sheet detaches it, so its
   // result neither closes anything nor shows a note.
   const attempt = useRef(0);
+  // Set at once on the first tap; `saving` state lags a render behind a quick double tap.
+  const inFlight = useRef(false);
   const dismiss = () => {
     attempt.current += 1;
+    inFlight.current = false;
     onClose();
   };
 
@@ -81,7 +84,7 @@ export function EmergenciesSheet({
   );
 
   const save = () => {
-    if (saving) return;
+    if (saving || inFlight.current) return;
     if (sameSet(draft, saved)) {
       dismiss();
       return;
@@ -89,16 +92,22 @@ export function EmergenciesSheet({
     // Counted now, against the plan as it is stored now, not from the plan after the save.
     const added = addedItemCount(summary, PLAN_DAYS, saved, draft);
     const mine = ++attempt.current;
+    inFlight.current = true;
     setSaving(true);
     setFailed(false);
-    setEmergencies(draft).then(
+    // Ids this build doesn't know (chosen on a newer device) are kept, never deselected.
+    const known = new Set<string>(EMERGENCIES.map((scenario) => scenario.id));
+    const unknown = stored.filter((id) => !known.has(id));
+    setEmergencies([...draft, ...unknown]).then(
       () => {
         if (mine !== attempt.current) return;
+        inFlight.current = false;
         setSaving(false);
         onSaved(added);
       },
       () => {
         if (mine !== attempt.current) return;
+        inFlight.current = false;
         setSaving(false);
         setFailed(true);
       },

@@ -276,6 +276,7 @@ function TodoSteps({
     stage,
     homeLeft: home.left,
     hasBackpack: backpack !== null,
+    backpackLeft: backpack?.left,
   });
   const listHref = appHref("list", locale);
   const status = (state: StartStepState) => t(`status.${state}`);

@@ -89,7 +89,7 @@ describe("plan: the emergencies panel and sheet", () => {
     const inSheet = await openSheet();
 
     await userEvent.click(inSheet.getByRole("checkbox", { name: "Brak prądu" }));
-    expect(inSheet.getByText("Dojdzie 3 rzeczy do planu.")).toBeVisible();
+    expect(inSheet.getByText("W planie z sytuacji: 3 rzeczy.")).toBeVisible();
     // Nothing is stored until Gotowe.
     expect(await store.load()).toMatchObject({ emergencies: [] });
 
@@ -181,6 +181,23 @@ describe("plan: the emergencies panel and sheet", () => {
     expect(screen.getAllByText(/^Dodano \d+ rzeczy do planu\.$/).length).toBeGreaterThan(0);
   });
 
+  it("saves once when Gotowe is pressed twice before the screen updates", async () => {
+    const store = createMemoryStore(household());
+    const save = deferred();
+    const setEmergencies = vi.fn(() => save.promise);
+    renderPlan({ ...store, setEmergencies });
+    const inSheet = await openSheet();
+    await userEvent.click(inSheet.getByRole("checkbox", { name: "Ewakuacja" }));
+
+    const done = inSheet.getByRole("button", { name: "Gotowe" });
+    await act(async () => {
+      done.click();
+      done.click();
+    });
+    expect(setEmergencies).toHaveBeenCalledTimes(1);
+    await act(async () => save.resolve());
+  });
+
   it("shows no note when the sheet was closed while the save ran", async () => {
     const store = createMemoryStore(household());
     const save = deferred();
@@ -216,6 +233,20 @@ describe("plan: the emergencies panel and sheet", () => {
     await userEvent.click(inSheet.getByRole("button", { name: "Spróbuj ponownie" }));
     await waitFor(() => expect(sheet()).not.toHaveAttribute("open"));
     expect(await store.load()).toMatchObject({ emergencies: ["flood"] });
+  });
+
+  it("keeps a stored emergency this build does not know when saving", async () => {
+    const store = createMemoryStore(household());
+    await store.setEmergencies(["from-a-newer-build"]);
+    renderPlan(store);
+    const inSheet = await openSheet();
+    await userEvent.click(inSheet.getByRole("checkbox", { name: "Brak prądu" }));
+    await userEvent.click(inSheet.getByRole("button", { name: "Gotowe" }));
+
+    await waitFor(() => expect(sheet()).not.toHaveAttribute("open"));
+    expect(await store.load()).toMatchObject({
+      emergencies: expect.arrayContaining(["blackout", "from-a-newer-build"]),
+    });
   });
 
   it("opens the sheet from #sytuacje, clears the hash and returns focus to the panel", async () => {

@@ -70,7 +70,7 @@ export const WithFooter: Story = {
     title: "Sytuacje",
     footer: (
       <div className="flex flex-col gap-2">
-        <p className="text-body-sm text-ink-muted">Dojdzie 3 rzeczy do planu.</p>
+        <p className="text-body-sm text-ink-muted">W planie z sytuacji: 3 rzeczy.</p>
         <Button>Gotowe</Button>
       </div>
     ),
@@ -106,7 +106,7 @@ export const LongContent: Story = {
     children: longParagraphs,
     footer: (
       <div className="flex flex-col gap-2">
-        <p className="text-body-sm text-ink-muted">Dojdzie 19 rzeczy do planu.</p>
+        <p className="text-body-sm text-ink-muted">W planie z sytuacji: 19 rzeczy.</p>
         <Button>Gotowe</Button>
       </div>
     ),

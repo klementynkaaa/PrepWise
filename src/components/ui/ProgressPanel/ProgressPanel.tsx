@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { LinkPanel, Panel } from "../Panel";
-import { ProgressBar, ProgressRing } from "../Progress";
+import { ProgressBar } from "../Progress";
 
 type ProgressPart = {
   /** The bar's name, e.g. "Zapasy w domu" / "Plecak ewakuacyjny". */
@@ -32,12 +32,6 @@ type SingleProgress = ProgressPanelBase & {
    * `href` the bar is hidden from screen readers: the link is named by its words.
    */
   barLabel: string;
-  /**
-   * Shows a large ring with this short count inside ("4/20",
-   * `progress.fraction`) beside the words, instead of the bar. Used at the
-   * top of Start.
-   */
-  ring?: { fraction: string };
   parts?: undefined;
 };
 
@@ -52,14 +46,13 @@ type PartsProgress = ProgressPanelBase & {
   done?: undefined;
   total?: undefined;
   barLabel?: undefined;
-  ring?: undefined;
 };
 
 type ProgressPanelProps = SingleProgress | PartsProgress;
 
 /**
  * One progress bar for a whole list: the count, the bar and what is left, in
- * a panel. With `parts` it draws one named bar per part instead. Shared by the list header and Start; with `href` the panel is a
+ * a panel. With `parts` it draws one named bar per part instead. Shared by the list header and Plan; with `href` the panel is a
  * link, so keep its words short.
  */
 export function ProgressPanel(props: ProgressPanelProps) {
@@ -88,30 +81,7 @@ export function ProgressPanel(props: ProgressPanelProps) {
     return href ? <LinkPanel href={href}>{body}</LinkPanel> : <Panel>{body}</Panel>;
   }
 
-  const { count, left, done, total, barLabel, ring } = props;
-  if (ring) {
-    const ringBody = (
-      <>
-        {title && <h2 className="text-heading-sm">{title}</h2>}
-        <div className="flex items-center gap-4">
-          <ProgressRing
-            done={done}
-            total={total}
-            label={barLabel}
-            fraction={ring.fraction}
-            size="lg"
-            decorative={href !== undefined}
-          />
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-body-strong">{count}</p>
-            <p className="text-body-sm text-ink-muted">{left}</p>
-          </div>
-        </div>
-      </>
-    );
-    return href ? <LinkPanel href={href}>{ringBody}</LinkPanel> : <Panel>{ringBody}</Panel>;
-  }
-
+  const { count, left, done, total, barLabel } = props;
   const bar = <ProgressBar done={done} total={total} label={barLabel} />;
   const body = (
     <>
