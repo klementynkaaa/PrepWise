@@ -163,6 +163,90 @@ describe("list screen", () => {
     expect(screen.getAllByRole("button", { expanded: false })).toHaveLength(4);
   });
 
+  it("shows the pets and the backpack groups together, with two bars and the emergencies in the captions", async () => {
+    const store = await storeWithList();
+    await store.setEmergencies(["blackout", "evacuation"]);
+    renderList(store);
+
+    const home = await screen.findByText("Zapasy w domu");
+    expect(home).toBeInTheDocument();
+    expect(screen.getAllByText(/^Gotowe 0 z \d+$/)).toHaveLength(2);
+    expect(screen.getAllByRole("img", { name: /^Postęp (zapasów w domu|plecaka)/ })).toHaveLength(
+      2,
+    );
+    // The single bar is gone.
+    expect(screen.queryByRole("img", { name: "Postęp listy zakupów" })).not.toBeInTheDocument();
+
+    // Groups: tiers, the dog's, then the backpack, each with its own key.
+    const keys = [...document.querySelectorAll("ul[id^='list-']")].map((el) => el.id);
+    expect(keys).toEqual([
+      "list-tier-1",
+      "list-tier-2",
+      "list-tier-3",
+      "list-pets",
+      "list-backpack",
+    ]);
+    expect(screen.getByRole("heading", { level: 2, name: "Dla psa" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Plecak ewakuacyjny" }),
+    ).toBeInTheDocument();
+    expect(groupOrder("pets")).toContain("Woda dla psa");
+    expect(groupOrder("backpack")).toContain("Plecak ewakuacyjny");
+
+    // What added an item is in its detail line.
+    expect(box("Świeczki i zapalniczka")).toHaveAccessibleDescription(/ · na brak prądu \d+ \S+$/);
+    expect(box("Plecak ewakuacyjny")).toHaveAccessibleDescription(/ · na ewakuację \d+ szt\.$/);
+  });
+
+  it("names several emergencies in one caption", async () => {
+    const store = await storeWithList();
+    await store.setEmergencies(["flood", "evacuation"]);
+    renderList(store);
+    await screen.findByText("Zapasy w domu");
+    expect(box("Plecak ewakuacyjny")).toHaveAccessibleDescription(
+      / · na powódź i ewakuację \d+ szt\.$/,
+    );
+  });
+
+  it("shows the success panel only when the home supplies and the backpack are both ticked", async () => {
+    const store = await storeWithList();
+    await store.setEmergencies(["evacuation"]);
+    renderList(store);
+    await screen.findByText("Zapasy w domu");
+    const plan = buildPlan(summarise(defaultHousehold()), 3, ["evacuation"]);
+    const groups = buildList(plan, []).groups;
+    const homeRows = groups.filter((g) => g.kind !== "backpack").flatMap((g) => g.rows);
+    const backpackRows = groups.filter((g) => g.kind === "backpack").flatMap((g) => g.rows);
+
+    for (const row of homeRows) await act(() => store.setTick(row.itemId, true, row.quantity));
+    await waitFor(() =>
+      expect(
+        screen.getByText(`Gotowe ${homeRows.length} z ${homeRows.length}`),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("heading", { name: /^Wszystko na 72 godziny gotowe/ })).toBeNull();
+
+    for (const row of backpackRows) await act(() => store.setTick(row.itemId, true, row.quantity));
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Wszystko na 72 godziny gotowe" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Zapasy w domu")).not.toBeInTheDocument();
+  });
+
+  it("hides the ticks of a removed emergency and restores them when it is added again", async () => {
+    const store = await storeWithList();
+    await store.setEmergencies(["blackout"]);
+    await store.setTick("candles-and-lighter", true, 1);
+    renderList(store);
+    await screen.findByText("Gotowe 1 z 25");
+
+    await act(() => store.setEmergencies([]));
+    await screen.findByText("Gotowe 0 z 22");
+    expect(screen.queryByText("Zapasy w domu")).not.toBeInTheDocument();
+    await act(() => store.setEmergencies(["blackout"]));
+    await screen.findByText("Gotowe 1 z 25");
+  });
+
   it("leaves the row as stored and explains when a tick can't be saved", async () => {
     const store = await storeWithList();
     const failing: HouseholdStore = {

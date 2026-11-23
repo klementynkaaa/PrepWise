@@ -24,7 +24,7 @@ import { AppUnavailable } from "@/features/shell/AppUnavailable";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household, type Tick } from "@/lib/household";
 import { buildList, type ListRow } from "@/lib/list";
-import { buildPlan } from "@/lib/plan";
+import { buildPlan, knownEmergencies } from "@/lib/plan";
 import { groupKey, ListGroupPanel, rowCheckbox } from "./ListGroups";
 
 /**
@@ -46,6 +46,7 @@ export function ListScreen({ locale }: { locale: AppLocale }) {
     <ListReady
       household={profile.household}
       ticks={profile.ticks}
+      emergencies={profile.emergencies}
       locale={locale}
       focusFirst={created}
     />
@@ -119,11 +120,13 @@ type PendingTick = { itemId: string; ticked: boolean };
 function ListReady({
   household,
   ticks,
+  emergencies,
   locale,
   focusFirst,
 }: {
   household: Household;
   ticks: Tick[];
+  emergencies: string[];
   locale: AppLocale;
   focusFirst: boolean;
 }) {
@@ -131,14 +134,15 @@ function ListReady({
   const { setTick } = useHousehold();
 
   const summary = useMemo(() => summarise(household), [household]);
-  const plan = useMemo(() => buildPlan(summary, PLAN_DAYS), [summary]);
+  const chosen = useMemo(() => knownEmergencies(emergencies), [emergencies]);
+  const plan = useMemo(() => buildPlan(summary, PLAN_DAYS, chosen), [summary, chosen]);
   const shopping = useMemo(() => buildList(plan, ticks), [plan, ticks]);
   const listFormat = useMemo(
     () => new Intl.ListFormat(locale, { style: "long", type: "conjunction" }),
     [locale],
   );
   const ctx: RowContext = { t, args: itemArgs(summary, plan), list: listFormat };
-  const { progress } = shopping;
+  const { progress, home, backpack } = shopping;
   const hours = plan.days * 24;
 
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -241,6 +245,26 @@ function ListReady({
                 {t("list.done.body", { done: progress.done, total: progress.total })}
               </EmptyState>
             </Panel>
+          ) : backpack ? (
+            // An evacuation backpack in the plan: its own bar beside the home supplies.
+            <ProgressPanel
+              parts={[
+                {
+                  label: t("list.progress.home"),
+                  count: t("progress.done", { done: home.done, total: home.total }),
+                  done: home.done,
+                  total: home.total,
+                  barLabel: t("list.progress.homeBar"),
+                },
+                {
+                  label: t("list.progress.backpack"),
+                  count: t("progress.done", { done: backpack.done, total: backpack.total }),
+                  done: backpack.done,
+                  total: backpack.total,
+                  barLabel: t("list.progress.backpackBar"),
+                },
+              ]}
+            />
           ) : (
             <ProgressPanel
               count={t("progress.done", { done: progress.done, total: progress.total })}

@@ -166,7 +166,7 @@ function petSectionKind(summary: HouseholdSummary): PetSectionKind {
 }
 
 /** The chosen ids that are known emergencies, in content order; unknown ids are dropped. */
-function knownEmergencies(ids: readonly string[]): EmergencyId[] {
+export function knownEmergencies(ids: readonly string[]): EmergencyId[] {
   return EMERGENCIES.map((scenario) => scenario.id).filter((id) => ids.includes(id));
 }
 

@@ -6,7 +6,7 @@ import { Button, ButtonLink, LiveStatus, Notice, Panel, ProgressBar } from "@/co
 import { appHref } from "@/features/household/paths";
 import { useHousehold } from "@/features/household/useHousehold";
 import type { AppLocale } from "@/i18n/routing";
-import type { ListProgress } from "@/lib/list";
+import type { ListProgress, ShoppingList } from "@/lib/list";
 import type { Translator } from "./format";
 
 type ListPanelProps = { t: Translator; locale: AppLocale };
@@ -14,25 +14,73 @@ type ListPanelProps = { t: Translator; locale: AppLocale };
 /**
  * The "Lista zakupów" panel at the end of Plan, once the list exists: the
  * list's progress (the same numbers as the list and Start) and a way into it.
+ * With an evacuation backpack it shows two bars, home supplies and the backpack.
  */
 export function ListProgressPanel({
   t,
   locale,
-  progress,
-}: ListPanelProps & { progress: ListProgress }) {
+  shopping,
+}: ListPanelProps & { shopping: Pick<ShoppingList, "progress" | "home" | "backpack"> }) {
+  const { progress, home, backpack } = shopping;
   return (
     <Panel>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="text-heading-sm">{t("plan.list.title")}</h2>
-        <p className="text-body-strong">
-          {t("progress.done", { done: progress.done, total: progress.total })}
-        </p>
-      </div>
-      <ProgressBar done={progress.done} total={progress.total} label={t("list.progress.bar")} />
+      {backpack ? (
+        <>
+          <h2 className="text-heading-sm">{t("plan.list.title")}</h2>
+          <div className="flex flex-col gap-4">
+            <PartBar
+              t={t}
+              label={t("list.progress.home")}
+              barLabel={t("list.progress.homeBar")}
+              progress={home}
+            />
+            <PartBar
+              t={t}
+              label={t("list.progress.backpack")}
+              barLabel={t("list.progress.backpackBar")}
+              progress={backpack}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <h2 className="text-heading-sm">{t("plan.list.title")}</h2>
+            <p className="text-body-strong">
+              {t("progress.done", { done: progress.done, total: progress.total })}
+            </p>
+          </div>
+          <ProgressBar done={progress.done} total={progress.total} label={t("list.progress.bar")} />
+        </>
+      )}
       <ButtonLink href={appHref("list", locale)} variant="secondary">
         {t("plan.list.open")}
       </ButtonLink>
     </Panel>
+  );
+}
+
+function PartBar({
+  t,
+  label,
+  barLabel,
+  progress,
+}: {
+  t: Translator;
+  label: string;
+  barLabel: string;
+  progress: ListProgress;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="min-w-0 text-body-strong">{label}</p>
+        <p className="text-body-sm font-bold">
+          {t("progress.done", { done: progress.done, total: progress.total })}
+        </p>
+      </div>
+      <ProgressBar done={progress.done} total={progress.total} label={barLabel} />
+    </div>
   );
 }
 

@@ -1,4 +1,4 @@
-import { Icon } from "../Icon";
+import { cn } from "../_shared/cn";
 
 type EmergencyTagsProps = {
   /**
@@ -8,13 +8,15 @@ type EmergencyTagsProps = {
   lead: string;
   /** Names of the emergencies that added the item, e.g. ["Brak prądu"]. */
   names: string[];
+  /** White pills, for use on a tinted band such as a `PriorityHeader`. */
+  onTint?: boolean;
 };
 
 /**
- * Small pills with a plus icon naming the emergencies that added an item.
+ * Small pills naming the emergencies that added an item.
  * Sits under a row's caption, on the left. Renders nothing for an empty list.
  */
-export function EmergencyTags({ lead, names }: EmergencyTagsProps) {
+export function EmergencyTags({ lead, names, onTint = false }: EmergencyTagsProps) {
   if (names.length === 0) return null;
   return (
     <span className="flex flex-wrap gap-1">
@@ -22,9 +24,11 @@ export function EmergencyTags({ lead, names }: EmergencyTagsProps) {
       {names.map((name) => (
         <span
           key={name}
-          className="inline-flex min-w-0 items-center gap-1 rounded-full bg-notice-bg px-2 py-0.5 text-label text-accent-pressed"
+          className={cn(
+            "inline-flex min-w-0 items-center rounded-full px-2 py-0.5 text-label text-accent-pressed",
+            onTint ? "bg-surface" : "bg-notice-bg",
+          )}
         >
-          <Icon name="plus" />
           <span className="min-w-0 break-words">{name}</span>
         </span>
       ))}

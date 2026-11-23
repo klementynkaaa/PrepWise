@@ -19,10 +19,11 @@ type ProgressRingProps = ProgressProps & {
   /** The short count inside the ring, e.g. "3/7" (`progress.fraction`). */
   fraction: string;
   /**
-   * `lg` (80px) heads a screen, as on Start, and shows a check mark instead
-   * of the fraction once everything is done; `md` (48px) sits in a row.
+   * `lg` (80px) and `xl` (88px, for a percentage) head a screen, as on Start,
+   * and show a check mark instead of the text once everything is done; `md`
+   * (48px) sits in a row.
    */
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
   /**
    * Hidden from screen readers when visible words beside it already say the
    * count (e.g. inside a link, where it would join the link's name).
@@ -31,7 +32,7 @@ type ProgressRingProps = ProgressProps & {
 };
 
 /**
- * 48px ring. The fraction is one string ("3/7") so it can never render
+ * Progress ring. The text inside is one string ("3/7") so it can never render
  * half-filled (the mockups' "/38" bug); screen readers hear the label.
  */
 export function ProgressRing({
@@ -48,7 +49,11 @@ export function ProgressRing({
       aria-hidden={decorative || undefined}
       className={cn(
         "relative shrink-0",
-        size === "lg" ? "size-progress-ring-lg" : "size-progress-ring",
+        size === "xl"
+          ? "size-progress-ring-xl"
+          : size === "lg"
+            ? "size-progress-ring-lg"
+            : "size-progress-ring",
       )}
     >
       <svg
@@ -83,10 +88,14 @@ export function ProgressRing({
         aria-hidden="true"
         className={cn(
           "absolute inset-0 flex items-center justify-center",
-          size === "lg" ? "text-body-strong font-bold" : "text-label",
+          size === "xl"
+            ? "text-title"
+            : size === "lg"
+              ? "text-body-strong font-bold"
+              : "text-label",
         )}
       >
-        {size === "lg" && total > 0 && done >= total ? (
+        {size !== "md" && total > 0 && done >= total ? (
           <span className="text-accent">
             <Icon name="check" size="xl" />
           </span>

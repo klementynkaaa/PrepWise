@@ -12,6 +12,8 @@ type PriorityHeaderProps = {
    * a check, the count and a chevron. `controls` is the id of the group's rows.
    */
   collapse?: { expanded: boolean; onToggle: () => void; controls: string };
+  /** Extra content inside the band under the name, e.g. the backpack's emergency tags. */
+  below?: ReactNode;
   /** The disclosure button, so a screen can move focus to it after folding. */
   ref?: Ref<HTMLButtonElement>;
 } & (
@@ -30,7 +32,7 @@ const doneMetaText = "text-caption font-semibold whitespace-nowrap text-accent";
 
 /**
  * Heading of a plan or list panel: the priority number in a circle (when
- * there is one), the name, and an optional count on the right. With
+ * there is one), the name, and an optional count on the right, on a tinted band. With
  * `collapse` the whole header is a disclosure button inside the heading, so
  * the heading level still works for navigation.
  */
@@ -41,6 +43,7 @@ export function PriorityHeader({
   children,
   level = 2,
   collapse,
+  below,
   ref,
 }: PriorityHeaderProps) {
   const Heading = level === 2 ? "h2" : "h3";
@@ -65,7 +68,7 @@ export function PriorityHeader({
           aria-expanded={collapse.expanded}
           aria-controls={collapse.controls}
           onClick={collapse.onToggle}
-          className="flex min-h-touch w-full items-center gap-2 rounded-md px-2.5 py-2 text-left active:bg-surface-sunken"
+          className="flex min-h-touch w-full items-center gap-2 rounded-md bg-notice-bg px-2.5 py-2 text-left active:opacity-80"
         >
           {title}{" "}
           <span className={cn("ml-auto inline-flex items-center gap-1 pl-2", doneMetaText)}>
@@ -86,16 +89,17 @@ export function PriorityHeader({
     );
   }
 
-  const heading = (
-    <Heading className="flex items-center gap-2 px-2.5 py-2 text-control font-bold">
-      {title}
-    </Heading>
-  );
-  if (meta === undefined) return heading;
+  // One tinted band, so each group's start stands out while scrolling. `below`
+  // (e.g. the emergency tags of the backpack) sits inside the band under the name.
   return (
-    <div className="flex items-center justify-between gap-2 pr-2.5">
-      {heading}
-      <span className={metaText}>{meta}</span>
+    <div className="flex flex-col gap-1 rounded-md bg-notice-bg pb-2">
+      <div className="flex items-center justify-between gap-2 pr-2.5">
+        <Heading className="flex items-center gap-2 px-2.5 pt-2 text-control font-bold">
+          {title}
+        </Heading>
+        {meta !== undefined && <span className={metaText}>{meta}</span>}
+      </div>
+      {below ? <div className="px-2.5">{below}</div> : null}
     </div>
   );
 }

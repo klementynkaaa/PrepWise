@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
   Divider,
+  EmergencyTags,
   ListSectionLabel,
   PanelList,
   PlanRow,
@@ -13,6 +14,7 @@ import {
 import type { PlanRowData, PlanSection, PlanTier } from "@/lib/plan";
 import {
   countItems,
+  emergencyNames,
   formatAmount,
   formatCaption,
   tierItemCount,
@@ -62,12 +64,24 @@ export function SectionPanel({ section, ctx }: { section: PlanSection; ctx: RowC
     <PanelSection
       id={sectionAnchor(section.id)}
       heading={
-        <PriorityHeader meta={t("itemCount", { count: countItems(section.rows) })}>
+        <PriorityHeader
+          meta={t("itemCount", { count: countItems(section.rows) })}
+          below={
+            // The backpack is tagged once, here, instead of on each row.
+            section.id === "backpack" ? (
+              <EmergencyTags
+                onTint
+                lead={ctx.t("plan.emergencies.ui.lead")}
+                names={emergencyNames(ctx.t, section.emergencies)}
+              />
+            ) : undefined
+          }
+        >
           {t(`sections.${section.id}`, { kind })}
         </PriorityHeader>
       }
     >
-      <PlanRows rows={section.rows} ctx={ctx} />
+      <PlanRows rows={section.rows} ctx={ctx} tagged={section.id !== "backpack"} />
     </PanelSection>
   );
 }
@@ -91,19 +105,36 @@ function PanelSection({
   );
 }
 
-function PlanRows({ rows, ctx }: { rows: readonly PlanRowData[]; ctx: RowContext }) {
+/** `tagged` is false in the backpack, whose header carries the emergency tags once. */
+function PlanRows({
+  rows,
+  ctx,
+  tagged = true,
+}: {
+  rows: readonly PlanRowData[];
+  ctx: RowContext;
+  tagged?: boolean;
+}) {
   return (
     <ul className="flex flex-col">
       {rows.map((row) => (
         <li key={row.pointer ? `${row.itemId}-pointer` : row.itemId}>
-          <PlanRowItem row={row} ctx={ctx} />
+          <PlanRowItem row={row} ctx={ctx} tagged={tagged} />
         </li>
       ))}
     </ul>
   );
 }
 
-function PlanRowItem({ row, ctx: { t, args, list } }: { row: PlanRowData; ctx: RowContext }) {
+function PlanRowItem({
+  row,
+  ctx: { t, args, list },
+  tagged,
+}: {
+  row: PlanRowData;
+  ctx: RowContext;
+  tagged: boolean;
+}) {
   const formula = row.pointer ? (
     // Leads to the item in its own section further down; the row itself has no link.
     <TextLink href={`#${sectionAnchor(row.pointer)}`} size="caption">
@@ -123,6 +154,14 @@ function PlanRowItem({ row, ctx: { t, args, list } }: { row: PlanRowData; ctx: R
         spoken: t(`plan.source.${row.source}.spoken`),
       }}
       firstLabel={row.first ? t("plan.first") : undefined}
+      tags={
+        tagged && row.emergencies ? (
+          <EmergencyTags
+            lead={t("plan.emergencies.ui.lead")}
+            names={emergencyNames(t, row.emergencies)}
+          />
+        ) : undefined
+      }
     />
   );
 }

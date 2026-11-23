@@ -14,6 +14,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Single: Story = {};
 
+/** Item art at 52px (`thumb`), at the start of a row, e.g. in Start's readiness panel. */
+export const Thumb: Story = { args: { name: "item-backpack", thumb: true } };
+
 /** All 26, at their group's size. Screen readers skip them. */
 export const All: Story = {
   render: () => (

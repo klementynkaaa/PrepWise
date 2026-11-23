@@ -155,7 +155,8 @@ describe("plan screen", () => {
     // The live region is there, empty, before the failure, so the failure is read.
     const region = screen
       .getAllByRole("status")
-      .find((element) => element.classList.contains("sr-only"))!;
+      .filter((element) => element.classList.contains("sr-only"))
+      .at(-1)!;
     expect(region).toHaveTextContent("");
 
     await userEvent.click(create);

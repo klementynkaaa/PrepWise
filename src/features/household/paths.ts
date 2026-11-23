@@ -22,6 +22,11 @@ export function appHref(name: keyof typeof appPaths, locale: AppLocale): string 
   return localePath(appPaths[name], locale);
 }
 
+/** Plan with its "Sytuacje" sheet open: the hash is read once on Plan and cleared. */
+export function emergenciesHref(locale: AppLocale): string {
+  return `${appHref("plan", locale)}#sytuacje`;
+}
+
 /**
  * Where the back link of a step leads: the previous step, the intro for the
  * first step, or the overview while editing a finished profile.

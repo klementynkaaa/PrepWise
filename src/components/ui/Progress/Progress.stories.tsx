@@ -29,6 +29,13 @@ type Story = StoryObj<typeof meta>;
 export const Partial: Story = {};
 /** 80px ring at the top of a screen (Start). */
 export const Large: Story = { args: { size: "lg" } };
+/** 88px ring with a percentage, at the top of Start's readiness panel. */
+export const Percentage: Story = {
+  args: { size: "xl", done: 15, total: 45, label: "Gotowe 15 z 45", fraction: "33%" },
+};
+export const PercentageComplete: Story = {
+  args: { size: "xl", done: 45, total: 45, label: "Gotowe 45 z 45", fraction: "100%" },
+};
 export const Empty: Story = { args: { done: 0, label: "Gotowe 0 z 38", fraction: "0/38" } };
 export const Complete: Story = { args: { done: 38, label: "Gotowe 38 z 38", fraction: "38/38" } };
 

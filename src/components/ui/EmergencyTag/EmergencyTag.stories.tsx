@@ -9,7 +9,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Mała plakietka z plusem, która mówi, jaka sytuacja dodała rzecz do planu (np. „Brak prądu”). " +
+          "Mała plakietka, która mówi, jaka sytuacja dodała rzecz do planu (np. „Brak prądu”). " +
           "Stawiamy ją pod podpisem wiersza planu, po lewej, żeby nie myliła się z plakietką źródła po prawej. " +
           "Czytnik ekranu słyszy najpierw ukryty wstęp („dodane na sytuację:”). " +
           "Nie używaj jej na liście zakupów (tam nazwa sytuacji stoi w szarej linii) ani jako przycisku.",
@@ -36,4 +36,16 @@ export const TwoTags: Story = { args: { names: ["Brak prądu", "Powódź"] } };
 /** A long name wraps inside the pill instead of overflowing. */
 export const LongName: Story = {
   args: { names: ["Brak wody w kranie przez kilka dni z rzędu", "Gwałtowna pogoda"] },
+};
+
+/** Na niebieskim pasku nagłówka (plecak ewakuacyjny): białe plakietki. */
+export const OnTintedBand: Story = {
+  args: { onTint: true, names: ["Powódź", "Ewakuacja"] },
+  decorators: [
+    (Story) => (
+      <div className="w-72 rounded-md bg-notice-bg p-3">
+        <Story />
+      </div>
+    ),
+  ],
 };

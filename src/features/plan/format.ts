@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import type { HouseholdSummary } from "@/lib/household";
 import type {
+  EmergencyId,
   FormulaParts,
   FormulaTerm,
   FormulaWho,
@@ -105,13 +106,16 @@ export function formatFormula(
 
 /**
  * The caption under a row: formula, the item's note, the diet reminder and,
- * on a section row that keeps one, its priority ("priorytet 1").
+ * on a section row that keeps one, its priority ("priorytet 1"). With
+ * `withEmergencies` it ends with what added the row ("na brak prądu"); Plan
+ * shows that as tags instead, the list in the caption.
  */
 export function formatCaption(
   t: Translator,
   row: PlanRowData,
   args: ItemArgs,
   list: Intl.ListFormat,
+  { withEmergencies = false }: { withEmergencies?: boolean } = {},
 ): string {
   const note = t.has(`plan.items.${row.itemId}.note`)
     ? t(`plan.items.${row.itemId}.note`, args)
@@ -121,9 +125,26 @@ export function formatCaption(
     note,
     row.diet ? t("plan.formula.diet") : null,
     row.tier ? t("plan.formula.tier", { tier: row.tier }) : null,
+    withEmergencies ? formatEmergenciesFor(t, row.emergencies, list) : null,
   ]
     .filter((part): part is string => part !== null && part !== "")
     .join(" · ");
+}
+
+/** "na brak prądu", "na powódź i ewakuację": what added a row, for a caption. Null when nothing did. */
+export function formatEmergenciesFor(
+  t: Translator,
+  ids: readonly EmergencyId[] | undefined,
+  list: Intl.ListFormat,
+): string | null {
+  if (!ids || ids.length === 0) return null;
+  const names = list.format(ids.map((id) => t(`plan.emergencies.ui.accusative.${id}`)));
+  return t("plan.emergencies.ui.captionFor", { names });
+}
+
+/** The names of the emergencies (nominative), for tags and summaries. */
+export function emergencyNames(t: Translator, ids: readonly EmergencyId[]): string[] {
+  return ids.map((id) => t(`plan.emergencies.${id}.name`));
 }
 
 /** Rows that count as items: pointer rows only lead to an item shown elsewhere. */

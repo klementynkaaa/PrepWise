@@ -37,7 +37,24 @@ describe("overview", () => {
       "/pl/start/pets",
       "/pl/start/housing",
       "/pl/start/needs",
+      "/pl/plan#sytuacje",
     ]);
+  });
+
+  it("lists the chosen emergencies by name, or says none, and changes them on Plan's sheet", async () => {
+    const none = renderScreen(<Overview locale="pl" />, createMemoryStore(completeHousehold()));
+    expect(await screen.findByText("Żadna — plan na 72 godziny")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Zmień: Sytuacje" })).toHaveAttribute(
+      "href",
+      "/pl/plan#sytuacje",
+    );
+    none.unmount();
+
+    const store = createMemoryStore(completeHousehold());
+    await store.setEmergencies(["evacuation", "blackout", "unknown-one"]);
+    renderScreen(<Overview locale="pl" />, store);
+    // Content order, and an id this build doesn't know is left out.
+    expect(await screen.findByText("Brak prądu, Ewakuacja")).toBeInTheDocument();
   });
 
   it("writes Brak for no pets and no needs, and changes pets through the people step", async () => {

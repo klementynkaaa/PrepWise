@@ -18,6 +18,18 @@ export function groupKey(group: ListGroup): string {
   }
 }
 
+/** The heading of a group. A new kind of group fails to compile here until it has one. */
+function groupTitle(t: RowContext["t"], group: ListGroup): string {
+  switch (group.kind) {
+    case "tier":
+      return t(`plan.tiers.${group.tier}`);
+    case "pets":
+      return t("plan.sections.pets", { kind: group.petKind });
+    case "backpack":
+      return t("list.sections.backpack");
+  }
+}
+
 /** The id of a group's rows, which its disclosure header controls. */
 export const groupRowsId = (key: string) => `list-${key}`;
 
@@ -48,27 +60,18 @@ export function ListGroupPanel({ group, ctx, collapse, headerRef, onTick }: List
   const key = groupKey(group);
   const rowsId = groupRowsId(key);
   const meta = t("progress.count", { done: group.done, total: group.total });
+  const common = { ref: headerRef, meta, collapse: collapse && { ...collapse, controls: rowsId } };
   const header =
     group.kind === "tier" ? (
       <PriorityHeader
-        ref={headerRef}
+        {...common}
         tier={group.tier}
         tierLabel={t("plan.tierLabel", { tier: group.tier })}
-        meta={meta}
-        collapse={collapse && { ...collapse, controls: rowsId }}
       >
-        {t(`plan.tiers.${group.tier}`)}
+        {groupTitle(t, group)}
       </PriorityHeader>
     ) : (
-      <PriorityHeader
-        ref={headerRef}
-        meta={meta}
-        collapse={collapse && { ...collapse, controls: rowsId }}
-      >
-        {group.kind === "pets"
-          ? t("plan.sections.pets", { kind: group.petKind })
-          : t("plan.sections.backpack")}
-      </PriorityHeader>
+      <PriorityHeader {...common}>{groupTitle(t, group)}</PriorityHeader>
     );
 
   return (
@@ -101,7 +104,9 @@ function ListRowItem({
   onTick: (row: ListRow, checked: boolean) => void;
 }) {
   // The group already names the priority, so a child item's "priorytet 1" is left out.
-  const detail = formatCaption(t, { ...row.detailSource, tier: undefined }, args, list);
+  const detail = formatCaption(t, { ...row.detailSource, tier: undefined }, args, list, {
+    withEmergencies: true,
+  });
   return (
     <ChecklistRow
       name={t(`plan.items.${row.itemId}.listName`, args)}
