@@ -46,7 +46,7 @@ const candle = (overrides = {}) =>
   item({
     id: "candle",
     intendedSource: "prepwise",
-    when: { emergency: "blackout" },
+    when: { emergency: ["blackout"] },
     copy: { name: "Świeczka", listName: "Świeczka" },
     ...overrides,
   });
@@ -189,10 +189,60 @@ describe("checkRules: scenarios", () => {
 
   it("rejects an item triggered by another scenario", () => {
     const problems = checkRules(
-      withScenario({}, [item(), candle({ when: { emergency: "flood" } })]),
+      withScenario({}, [item(), candle({ when: { emergency: ["flood"] } })]),
       { today },
     );
-    expect(problems.join("\n")).toContain('triggered by emergency "flood", not this one');
+    expect(problems.join("\n")).toContain('triggered by emergencies "flood", not this one');
+  });
+
+  it("accepts a shared item listed by two scenarios, with a housing beside the list", () => {
+    const shared = candle({ when: { emergency: ["blackout", "flood"], housing: "house" } });
+    const problems = checkRules(
+      kb({
+        items: [item(), shared],
+        emergencies: [scenario(), scenario({ id: "flood", items: ["candle"] })],
+      }),
+      { today },
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("rejects a shared item that one of its scenarios does not list", () => {
+    const shared = candle({ when: { emergency: ["blackout", "flood"] } });
+    const problems = checkRules(
+      kb({
+        items: [item(), shared],
+        emergencies: [scenario(), scenario({ id: "flood", items: [] })],
+      }),
+      { today },
+    );
+    expect(problems).toEqual([
+      'knowledge/items.json [candle]: triggered by emergency "flood" but that scenario does not list it',
+    ]);
+  });
+
+  it.each([
+    ["an empty list", [], "must be a non-empty list"],
+    ["a single id, not a list", "blackout", "must be a non-empty list"],
+    ["a repeated id", ["blackout", "blackout"], "lists an emergency twice"],
+    ["an unknown id", ["blackout", "nope"], 'unknown emergency "nope"'],
+  ])("rejects when.emergency with %s", (_, emergency, message) => {
+    const problems = checkRules(
+      kb({ items: [item(), candle({ when: { emergency } })], emergencies: [scenario()] }),
+      { today },
+    );
+    expect(problems.join("\n")).toContain(`field "when.emergency": ${message}`);
+  });
+
+  it("rejects another trigger beside an emergency one", () => {
+    const problems = checkRules(
+      kb({
+        items: [item(), candle({ when: { emergency: ["blackout"], need: "specialDiet" } })],
+        emergencies: [scenario()],
+      }),
+      { today },
+    );
+    expect(problems.join("\n")).toContain('field "when.need": only "housing" may sit beside');
   });
 
   it("rejects an orphaned emergency item", () => {

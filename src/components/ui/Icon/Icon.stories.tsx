@@ -9,6 +9,7 @@ const names: IconName[] = [
   "info",
   "offline",
   "back",
+  "forward",
   "plus",
   "minus",
   "check",
@@ -22,7 +23,7 @@ const meta = {
   args: { name: "home", size: "md" },
   argTypes: {
     name: { control: "select", options: names },
-    size: { control: "inline-radio", options: ["md", "lg", "xl"] },
+    size: { control: "inline-radio", options: ["sm", "md", "lg", "xl"] },
   },
 } satisfies Meta<typeof Icon>;
 

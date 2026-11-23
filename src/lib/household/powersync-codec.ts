@@ -51,6 +51,7 @@ export const SQLITE_COLUMNS: { [T in TableName]: Record<string, SqliteType> } = 
   household_needs: columnTypes("household_needs"),
   household_steps: columnTypes("household_steps"),
   household_ticks: columnTypes("household_ticks"),
+  household_emergencies: columnTypes("household_emergencies"),
 };
 
 function columnTypes(table: TableName): Record<string, SqliteType> {
@@ -77,6 +78,7 @@ export const LOCAL_TABLES = {
   household_needs: "local_household_needs",
   household_steps: "local_household_steps",
   household_ticks: "local_household_ticks",
+  household_emergencies: "local_household_emergencies",
 } as const satisfies Record<TableName, string>;
 
 /**

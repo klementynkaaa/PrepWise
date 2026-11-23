@@ -10,6 +10,12 @@ type BottomSheetProps = {
   /** Accessible name of the close button, e.g. "Zamknij". */
   closeLabel: string;
   children: ReactNode;
+  /**
+   * A sticky area at the bottom, under a hairline: the main action, or a
+   * status line with it. The body above scrolls; the footer stays in view,
+   * also at large text.
+   */
+  footer?: ReactNode;
 };
 
 /**
@@ -17,7 +23,14 @@ type BottomSheetProps = {
  * inside, the page behind is inert, Escape and a tap on the scrim close it,
  * and focus returns to the opener. Controlled by `open`.
  */
-export function BottomSheet({ open, onClose, title, closeLabel, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  closeLabel,
+  children,
+  footer,
+}: BottomSheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -41,9 +54,9 @@ export function BottomSheet({ open, onClose, title, closeLabel, children }: Bott
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      className="m-0 mx-auto mt-auto max-h-dvh w-full max-w-app rounded-t-lg bg-surface p-0 text-ink backdrop:bg-scrim"
+      className="m-0 mx-auto mt-auto max-h-dvh w-full max-w-app flex-col rounded-t-lg bg-surface p-0 text-ink backdrop:bg-scrim open:flex"
     >
-      <div className="flex flex-col gap-4 px-5 pt-2.5 pb-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 pt-2.5 pb-5">
         <span aria-hidden="true" className="mx-auto h-1 w-10 rounded-full bg-disabled-bg" />
         <div className="flex items-start justify-between gap-3">
           <h2 id={titleId} className="text-title">
@@ -60,6 +73,7 @@ export function BottomSheet({ open, onClose, title, closeLabel, children }: Bott
         </div>
         {children}
       </div>
+      {footer && <div className="shrink-0 border-t border-line bg-surface px-5 py-3">{footer}</div>}
     </dialog>
   );
 }

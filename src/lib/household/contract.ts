@@ -1,5 +1,6 @@
 import {
   setRowId,
+  HOUSEHOLD_EMERGENCY_FIELDS,
   HOUSEHOLD_FIELDS,
   HOUSEHOLD_NEED_FIELDS,
   HOUSEHOLD_STEP_FIELDS,
@@ -7,6 +8,7 @@ import {
   ROW_SCHEMA_VERSION,
   rowSchemas,
   type FieldTs,
+  type HouseholdEmergencyRow,
   type HouseholdField,
   type HouseholdNeedRow,
   type HouseholdRow,
@@ -38,6 +40,8 @@ export type HouseholdRows = {
   steps: HouseholdStepRow[];
   /** Ticked (and unticked) shopping-list items. Not part of `Household`. */
   ticks: HouseholdTickRow[];
+  /** Emergencies added to the plan. Not part of `Household`. */
+  emergencies: HouseholdEmergencyRow[];
 };
 
 /** The changed columns of a row, with `updated_at` and the `field_ts` of exactly those columns. */
@@ -369,6 +373,65 @@ export function ticksOf(rows: HouseholdRows): Tick[] {
     .map((r) => ({ item: r.item, selected: r.selected, quantity: r.quantity }));
 }
 
+/**
+ * The row changes that make the selected emergencies exactly `ids`, with
+ * `field_ts` for exactly the changed columns, set to `now`:
+ * - an id with no row yet: an insert;
+ * - an existing row whose `selected` differs: a patch of `selected`
+ *   (re-selecting and deselecting both keep the row);
+ * - nothing differs: no change.
+ * Duplicate ids count once. Throws HouseholdStoreError("invalid") without a
+ * household or when an id is not a valid emergency id.
+ */
+export function emergencyChanges(
+  rows: HouseholdRows,
+  householdId: string,
+  ids: readonly string[],
+  now: Date,
+): RowChange[] {
+  const household = rows.household;
+  if (!household || household.id !== householdId) throw new HouseholdStoreError("invalid");
+  const at = now.toISOString();
+  const wanted = new Set(ids);
+  const changes: RowChange[] = [];
+
+  for (const emergency of wanted) {
+    const id = setRowId(household.id, emergency);
+    if (rows.emergencies.some((r) => r.id === id)) continue;
+    const parsed = rowSchemas.household_emergencies.safeParse({
+      id,
+      household_id: household.id,
+      emergency,
+      selected: true,
+      updated_at: at,
+      field_ts: stamp(HOUSEHOLD_EMERGENCY_FIELDS, at),
+    });
+    if (!parsed.success) throw new HouseholdStoreError("invalid", { cause: parsed.error });
+    changes.push({ table: "household_emergencies", id, op: "insert", fields: parsed.data });
+  }
+
+  for (const row of rows.emergencies) {
+    if (row.household_id !== household.id) continue;
+    const selected = wanted.has(row.emergency);
+    if (row.selected === selected) continue;
+    changes.push({
+      table: "household_emergencies",
+      id: row.id,
+      op: "patch",
+      fields: { selected, updated_at: at, field_ts: stamp(["selected"], at) },
+    });
+  }
+  return changes;
+}
+
+/** The household's chosen emergency ids: selected rows only, other households' rows left out. */
+export function emergenciesOf(rows: HouseholdRows): string[] {
+  const householdId = rows.household?.id;
+  return rows.emergencies
+    .filter((r) => r.household_id === householdId && r.selected)
+    .map((r) => r.emergency);
+}
+
 type Change<R extends { updated_at: string; field_ts: FieldTs }> =
   | { op: "insert"; fields: R }
   | { op: "patch"; fields: Partial<R> & Pick<R, "updated_at" | "field_ts"> };
@@ -399,7 +462,7 @@ function upsert<R extends { id: string; updated_at: string; field_ts: FieldTs }>
  * column. Throws on a patch for a row that does not exist.
  */
 export function applyChanges(rows: HouseholdRows, changes: readonly RowChange[]): HouseholdRows {
-  let { household, needs, steps, ticks } = rows;
+  let { household, needs, steps, ticks, emergencies } = rows;
   for (const change of changes) {
     switch (change.table) {
       case "households":
@@ -418,15 +481,18 @@ export function applyChanges(rows: HouseholdRows, changes: readonly RowChange[])
       case "household_ticks":
         ticks = upsert(ticks, change.id, change);
         break;
+      case "household_emergencies":
+        emergencies = upsert(emergencies, change.id, change);
+        break;
     }
   }
-  return { household, needs, steps, ticks };
+  return { household, needs, steps, ticks, emergencies };
 }
 
 /**
  * The rows of a `Household`, every `field_ts` set to its `updatedAt`. Only
- * selected set elements get a row, and there are no ticks. For the memory
- * store and test fixtures.
+ * selected set elements get a row, and there are no ticks or emergencies.
+ * For the memory store and test fixtures.
  */
 export function toRows(household: Household): HouseholdRows {
   const { id, updatedAt: at } = household;
@@ -435,6 +501,7 @@ export function toRows(household: Household): HouseholdRows {
     needs: household.needs.map((need) => needRow(id, need, at)),
     steps: household.completedSteps.map((step) => stepRow(id, step, at)),
     ticks: [],
+    emergencies: [],
   };
 }
 

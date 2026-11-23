@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { useState } from "react";
 import { expect, userEvent, within } from "storybook/test";
 import { ChecklistRow } from "../ChecklistRow";
+import { EmergencyTags } from "../EmergencyTag";
 import { PanelList } from "../Panel";
 import { FactChip, PriorityBadge, PriorityHeader, SaveStatus } from "./Status";
 
@@ -53,6 +54,18 @@ export const PriorityWithCount: Story = {
 /** Sekcja bez priorytetu (np. „Dla psa”): ten sam nagłówek, bez numeru. */
 export const SectionWithoutTier: Story = {
   render: () => <PriorityHeader meta="3 rzeczy">Dla psa</PriorityHeader>,
+};
+
+/** Plecak ewakuacyjny: plakietki sytuacji siedzą w pasku, pod nazwą. */
+export const SectionWithTags: Story = {
+  render: () => (
+    <PriorityHeader
+      meta="10 rzeczy"
+      below={<EmergencyTags onTint lead="dodane na sytuację:" names={["Powódź", "Ewakuacja"]} />}
+    >
+      Plecak ewakuacyjny
+    </PriorityHeader>
+  ),
 };
 
 /**

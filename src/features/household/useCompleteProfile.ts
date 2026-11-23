@@ -16,6 +16,8 @@ export type CompleteProfile =
       status: "ready";
       household: Household;
       ticks: Tick[];
+      /** Ids of the emergencies the household added to its plan. */
+      emergencies: string[];
       planCreated: boolean;
       listCreated: boolean;
     };
@@ -26,7 +28,7 @@ export type CompleteProfile =
  * intro (client side: a static export has no server to redirect).
  */
 export function useCompleteProfile(locale: AppLocale): CompleteProfile {
-  const { status, household, ticks, planCreated, listCreated } = useHousehold();
+  const { status, household, ticks, emergencies, planCreated, listCreated } = useHousehold();
   const router = useRouter();
 
   const incomplete = status === "ready" && household?.status !== "complete";
@@ -40,5 +42,5 @@ export function useCompleteProfile(locale: AppLocale): CompleteProfile {
 
   if (status === "unavailable") return { status: "unavailable" };
   if (status === "loading" || !household || incomplete) return { status: "held" };
-  return { status: "ready", household, ticks, planCreated, listCreated };
+  return { status: "ready", household, ticks, emergencies, planCreated, listCreated };
 }

@@ -2,7 +2,7 @@
   {
     "id": "blackout",
     "copy": {
-      "name": "Długotrwały brak prądu",
+      "name": "Brak prądu",
       "explanation": "Brak prądu może potrwać nawet kilka dni i odciąć od wody, ogrzewania, internetu, telefonu oraz płatności kartą. Na ten czas przydaje się zapasowe światło."
     },
     "intendedSource": "official",
@@ -11,6 +11,77 @@
       "quote": "Brak prądu – spowodowany katastrofą naturalną lub celowym działaniem – może potrwać nawet kilka dni.",
       "section": "Długotrwały brak prądu (blackout)"
     },
-    "items": ["candles-and-lighter"]
+    "items": ["candles-and-lighter", "walkie-talkies", "camping-stove"]
+  },
+  {
+    "id": "no-tap-water",
+    "copy": {
+      "name": "Brak wody w kranie",
+      "explanation": "Woda z kranu może przestać płynąć albo nie nadawać się do picia, na kilka godzin lub dni. Na ten czas potrzebny jest sposób na przyniesienie, przechowanie i uzdatnienie wody oraz awaryjna toaleta."
+    },
+    "intendedSource": "prepwise",
+    "items": ["bucket-with-bags", "water-purification-tablets", "water-canister"]
+  },
+  {
+    "id": "severe-weather",
+    "copy": {
+      "name": "Gwałtowna pogoda",
+      "explanation": "Burza, wichura, śnieżyca czy upał potrafią uszkodzić sieć energetyczną i utrudnić wyjście z domu. Często oznaczają brak prądu, zimno albo upał w mieszkaniu. Na ten czas przydaje się ochrona przed chłodem."
+    },
+    "intendedSource": "prepwise",
+    "items": ["thermal-blanket", "warm-clothing"]
+  },
+  {
+    "id": "flood",
+    "copy": {
+      "name": "Powódź",
+      "explanation": "Woda może szybko wejść do domu i odciąć drogę, a czasem trzeba zostawić dom z krótkim uprzedzeniem. Pomagają worki z piaskiem (w domu), ochrona dokumentów, sposób na zwrócenie uwagi ratowników i spakowany plecak ewakuacyjny."
+    },
+    "intendedSource": "official",
+    "evidence": {
+      "sourceId": "poradnik-bezpieczenstwa-portal",
+      "quote": "",
+      "section": "Powódź"
+    },
+    "items": [
+      "sandbags",
+      "waterproof-document-pouch",
+      "signal-cloths",
+      "evacuation-backpack",
+      "backpack-water",
+      "backpack-water-filter",
+      "backpack-first-aid",
+      "backpack-food",
+      "backpack-torch",
+      "backpack-radio",
+      "backpack-thermal-rain",
+      "backpack-documents-cash",
+      "backpack-hygiene"
+    ]
+  },
+  {
+    "id": "evacuation",
+    "copy": {
+      "name": "Ewakuacja",
+      "explanation": "Służby mogą zdecydować, że trzeba opuścić dom, często w krótkim czasie. Spakowany wcześniej plecak ewakuacyjny dla każdej osoby pozwala wyjść bez zwłoki i mieć przy sobie najpotrzebniejsze rzeczy."
+    },
+    "intendedSource": "official",
+    "evidence": {
+      "sourceId": "poradnik-bezpieczenstwa-portal",
+      "quote": "",
+      "section": "Ewakuacja"
+    },
+    "items": [
+      "evacuation-backpack",
+      "backpack-water",
+      "backpack-water-filter",
+      "backpack-first-aid",
+      "backpack-food",
+      "backpack-torch",
+      "backpack-radio",
+      "backpack-thermal-rain",
+      "backpack-documents-cash",
+      "backpack-hygiene"
+    ]
   }
 ]

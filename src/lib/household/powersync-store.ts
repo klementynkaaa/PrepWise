@@ -2,6 +2,8 @@ import type { LockContext, PowerSyncDatabase } from "@powersync/web";
 import {
   applyChanges,
   assemble,
+  emergenciesOf,
+  emergencyChanges,
   newHousehold,
   stepChanges,
   tickChanges,
@@ -21,7 +23,7 @@ import {
   LOCAL_TABLES,
   type SqliteRow,
 } from "./powersync-codec";
-import { TABLES, type HouseholdTickRow } from "./rows";
+import { TABLES, type HouseholdEmergencyRow, type HouseholdTickRow } from "./rows";
 import { defaultDeps, type SaveDeps } from "./save-step";
 import { HouseholdStoreError, type HouseholdStore, type LoadResult } from "./store";
 import type { Household } from "./types";
@@ -44,7 +46,7 @@ export type PowerSyncHouseholdStore = HouseholdStore & {
 };
 
 const WATCHED_TABLES = [...TABLES.map((table) => LOCAL_TABLES[table]), DEVICE_TABLE];
-const EMPTY: HouseholdRows = { household: null, needs: [], steps: [], ticks: [] };
+const EMPTY: HouseholdRows = { household: null, needs: [], steps: [], ticks: [], emergencies: [] };
 
 type DeviceState = {
   householdId: string | null;
@@ -93,6 +95,17 @@ function readableTicks(raw: readonly SqliteRow[]): HouseholdTickRow[] {
   });
 }
 
+/** The emergency rows that are valid, with the same rule as `readableTicks`. */
+function readableEmergencies(raw: readonly SqliteRow[]): HouseholdEmergencyRow[] {
+  return raw.flatMap((row) => {
+    try {
+      return [decodeRow("household_emergencies", row)];
+    } catch {
+      return [];
+    }
+  });
+}
+
 /** The device's household rows, each validated at this boundary. */
 async function readRows(ctx: LockContext): Promise<Read> {
   const { householdId: id, planCreatedAt, listCreatedAt } = await deviceState(ctx);
@@ -114,8 +127,12 @@ async function readRows(ctx: LockContext): Promise<Read> {
     `SELECT * FROM ${LOCAL_TABLES.household_ticks} WHERE household_id = ?`,
     [id],
   );
+  const emergencies = await ctx.getAll<SqliteRow>(
+    `SELECT * FROM ${LOCAL_TABLES.household_emergencies} WHERE household_id = ?`,
+    [id],
+  );
   if (households.length !== 1) return { kind: "invalid" };
-  let profile: Omit<HouseholdRows, "ticks">;
+  let profile: Omit<HouseholdRows, "ticks" | "emergencies">;
   try {
     profile = {
       household: decodeRow("households", households[0]),
@@ -127,7 +144,11 @@ async function readRows(ctx: LockContext): Promise<Read> {
   }
   return {
     kind: "found",
-    rows: { ...profile, ticks: readableTicks(ticks) },
+    rows: {
+      ...profile,
+      ticks: readableTicks(ticks),
+      emergencies: readableEmergencies(emergencies),
+    },
     planCreatedAt,
     listCreatedAt,
   };
@@ -149,9 +170,13 @@ async function writeChanges(tx: LockContext, changes: readonly RowChange[], next
       );
       continue;
     }
-    const merged = [next.household, ...next.needs, ...next.steps, ...next.ticks].find(
-      (r) => r?.id === change.id,
-    );
+    const merged = [
+      next.household,
+      ...next.needs,
+      ...next.steps,
+      ...next.ticks,
+      ...next.emergencies,
+    ].find((r) => r?.id === change.id);
     const { columns, values } = encodeColumns({ ...change.fields, field_ts: merged?.field_ts });
     await tx.execute(
       `UPDATE ${table} SET ${columns.map((c) => `${c} = ?`).join(", ")} WHERE id = ?`,
@@ -192,7 +217,12 @@ function importWriter(db: PowerSyncDatabase): V1ImportWrite {
       const id = rows.household.id;
       if (await alreadyImported(tx, id)) return;
       await tx.execute(`DELETE FROM ${LOCAL_TABLES.households} WHERE id = ?`, [id]);
-      for (const table of ["household_needs", "household_steps", "household_ticks"] as const) {
+      for (const table of [
+        "household_needs",
+        "household_steps",
+        "household_ticks",
+        "household_emergencies",
+      ] as const) {
         await tx.execute(`DELETE FROM ${LOCAL_TABLES[table]} WHERE household_id = ?`, [id]);
       }
       const changes: RowChange[] = [
@@ -311,6 +341,7 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
             kind: "found",
             household,
             ticks: ticksOf(read.rows),
+            emergencies: emergenciesOf(read.rows),
             planCreatedAt: read.planCreatedAt,
             listCreatedAt: read.listCreatedAt,
           }
@@ -375,6 +406,32 @@ export function createPowerSyncStore(options: PowerSyncStoreOptions = {}): Power
           for (const change of changes) {
             if (change.op !== "insert") continue;
             await tx.execute(`DELETE FROM ${LOCAL_TABLES.household_ticks} WHERE id = ?`, [
+              change.id,
+            ]);
+          }
+          await writeChanges(tx, changes, applyChanges(read.rows, changes));
+        });
+      } catch (error) {
+        throw toStoreError(error);
+      }
+    },
+
+    async setEmergencies(ids) {
+      try {
+        const db = await database();
+        // Read and write in ONE write transaction, as setTick does.
+        await db.writeTransaction(async (tx) => {
+          const read = await readRows(tx);
+          if (read.kind !== "found" || !read.rows.household) {
+            throw new HouseholdStoreError("invalid");
+          }
+          const changes = emergencyChanges(read.rows, read.rows.household.id, ids, deps.now());
+          if (changes.length === 0) return;
+          // An unreadable row of this emergency was left out of the read, but its
+          // id is still taken, and the tables are views with no upsert: remove it first.
+          for (const change of changes) {
+            if (change.op !== "insert") continue;
+            await tx.execute(`DELETE FROM ${LOCAL_TABLES.household_emergencies} WHERE id = ?`, [
               change.id,
             ]);
           }

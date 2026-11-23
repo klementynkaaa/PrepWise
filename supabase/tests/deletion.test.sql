@@ -62,6 +62,9 @@ values ('dddddddd-dddd-4ddd-8ddd-dddddddddddd:specialDiet', 'dddddddd-dddd-4ddd-
 insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
 values ('dddddddd-dddd-4ddd-8ddd-dddddddddddd:candles', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
   'candles', true, 2, now(), '{}');
+insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+values ('dddddddd-dddd-4ddd-8ddd-dddddddddddd:blackout', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  'blackout', true, now(), '{}');
 select t.logout();
 insert into public.household_members (household_id, user_id, role, joined_at) values
   ('11111111-1111-4111-8111-111111111111', '00000000-0000-4000-8000-0000000000c1', 'member', now() + interval '2 minutes'),
@@ -116,9 +119,11 @@ select is(
     + (select count(*)::integer from public.household_needs
        where household_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd')
     + (select count(*)::integer from public.household_ticks
+       where household_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd')
+    + (select count(*)::integer from public.household_emergencies
        where household_id = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
   0,
-  'their household and its rows, ticks included, are deleted'
+  'their household and its rows, ticks and emergencies included, are deleted'
 );
 
 select lives_ok($$set constraints household_members_one_owner_check immediate$$,

@@ -21,10 +21,11 @@ import { useOnline } from "@/features/shell/useOnline";
 import { localePath } from "@/i18n/paths";
 import type { AppLocale } from "@/i18n/routing";
 import { summarise, type Household, type HouseholdSummary, type Step } from "@/lib/household";
+import { knownEmergencies } from "@/lib/plan";
 import { HeldPage } from "./HeldPage";
 import { PEOPLE_GROUPS, PET_KINDS } from "./groups";
 import { SaveError } from "./SaveError";
-import { appHref, targetHref } from "./paths";
+import { appHref, emergenciesHref, targetHref } from "./paths";
 import { useCompleteProfile } from "./useCompleteProfile";
 import { useHousehold } from "./useHousehold";
 
@@ -37,6 +38,7 @@ export function Overview({ locale }: { locale: AppLocale }) {
   return (
     <OverviewScreen
       household={profile.household}
+      emergencies={profile.emergencies}
       planCreated={profile.planCreated}
       locale={locale}
     />
@@ -52,10 +54,12 @@ type Mode = "rows" | "generating" | "failed";
  */
 function OverviewScreen({
   household,
+  emergencies,
   planCreated,
   locale,
 }: {
   household: Household;
+  emergencies: string[];
   planCreated: boolean;
   locale: AppLocale;
 }) {
@@ -88,6 +92,7 @@ function OverviewScreen({
   return (
     <OverviewRows
       household={household}
+      emergencies={emergencies}
       planCreated={planCreated}
       locale={locale}
       onCreate={start}
@@ -115,18 +120,22 @@ function StorageUnavailable({ locale }: { locale: AppLocale }) {
 
 function OverviewRows({
   household,
+  emergencies,
   planCreated,
   locale,
   onCreate,
 }: {
   household: Household;
+  emergencies: string[];
   planCreated: boolean;
   locale: AppLocale;
   onCreate: () => void;
 }) {
   const t = useTranslations("overview");
   const online = useOnline();
-  const rows = overviewRows(summarise(household), t);
+  const tAll = useTranslations();
+  const names = knownEmergencies(emergencies).map((id) => tAll(`plan.emergencies.${id}.name`));
+  const rows = overviewRows(summarise(household), t, names);
 
   return (
     <PageShell>
@@ -144,7 +153,10 @@ function OverviewRows({
                 label={row.label}
                 value={row.value}
                 action={{
-                  href: targetHref(row.target, locale),
+                  href:
+                    row.target === "emergencies"
+                      ? emergenciesHref(locale)
+                      : targetHref(row.target, locale),
                   label: t("change"),
                   ariaLabel: t("changeLabel", { row: row.label }),
                 }}
@@ -167,11 +179,15 @@ function OverviewRows({
 
 type Translator = ReturnType<typeof useTranslations<"overview">>;
 
-/** Turns the plain summary into the four rows, with Polish plural forms. */
+/**
+ * Turns the plain summary into the rows, with Polish plural forms. The last row,
+ * "Sytuacje", lists the names of the chosen emergencies and leads to Plan's sheet.
+ */
 export function overviewRows(
   summary: HouseholdSummary,
   t: Translator,
-): { step: Step; target: Step; label: string; value: string }[] {
+  emergencyNames: readonly string[] = [],
+): { step: Step | "emergencies"; target: Step | "emergencies"; label: string; value: string }[] {
   const none = t("none");
 
   const groups = PEOPLE_GROUPS.filter((group) => summary.people[group] > 0).map((group) =>
@@ -209,6 +225,12 @@ export function overviewRows(
         summary.needs.length > 0
           ? summary.needs.map((need) => t(`needs.${need}`)).join(" · ")
           : none,
+    },
+    {
+      step: "emergencies",
+      target: "emergencies",
+      label: t("rows.emergencies"),
+      value: emergencyNames.length > 0 ? emergencyNames.join(", ") : t("noneEmergencies"),
     },
   ];
 }

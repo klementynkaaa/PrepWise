@@ -11,7 +11,7 @@ const defaultPlan = buildPlan(defaultSummary(), 3);
 /** Item ids per group, in the order the list shows them. */
 function outline(list: ShoppingList) {
   return list.groups.map((g) => [
-    g.kind === "tier" ? `tier${g.tier}` : `pets:${g.petKind}`,
+    g.kind === "tier" ? `tier${g.tier}` : g.kind === "pets" ? `pets:${g.petKind}` : "backpack",
     g.rows.map((r) => r.itemId),
   ]);
 }
@@ -115,6 +115,7 @@ describe("buildList — groups", () => {
       tiers: [],
       sections: [{ id: "smallChild", rows: [row] }],
       itemCount: 1,
+      emergencyItemCount: 0,
     };
     expect(() => buildList(plan, [])).toThrow(/no tier/);
   });
@@ -208,5 +209,95 @@ describe("buildList — the done rule", () => {
       false,
     );
     expect(rowOf(buildList(longer, ticked(longer, "pet-water")), "pet-water").done).toBe(true);
+  });
+});
+
+describe("buildList — the evacuation backpack", () => {
+  const backpackPlan = buildPlan(defaultSummary(), 3, ["evacuation"]);
+  const backpackIds = backpackPlan.sections.flatMap((s) =>
+    s.id === "backpack" ? s.rows.map((r) => r.itemId) : [],
+  );
+
+  it("puts the backpack group last, after the pets", () => {
+    const list = buildList(backpackPlan, []);
+    expect(list.groups.map((g) => g.kind)).toEqual(["tier", "tier", "tier", "pets", "backpack"]);
+    expect(
+      list.groups
+        .at(-1)
+        ?.rows.map((r) => r.itemId)
+        .sort(),
+    ).toEqual([...backpackIds].sort());
+    expect(backpackIds.length).toBeGreaterThan(0);
+  });
+
+  it("splits the counts into home supplies and the backpack, and totals them", () => {
+    const list = buildList(backpackPlan, []);
+    const homeTotal = buildList(defaultPlan, []).progress.total;
+    expect(list.home).toEqual({ done: 0, total: homeTotal, left: homeTotal });
+    expect(list.backpack).toEqual({
+      done: 0,
+      total: backpackIds.length,
+      left: backpackIds.length,
+    });
+    expect(list.progress.total).toBe(homeTotal + backpackIds.length);
+    expect(list.progress.total).toBe(backpackPlan.itemCount);
+  });
+
+  it("counts a ticked backpack item in the backpack and the total, not at home", () => {
+    const list = buildList(backpackPlan, ticked(backpackPlan, backpackIds[0]));
+    expect(list.backpack?.done).toBe(1);
+    expect(list.home.done).toBe(0);
+    expect(list.progress.done).toBe(1);
+    expect(list.groups.at(-1)).toMatchObject({ kind: "backpack", done: 1 });
+  });
+
+  it("has no backpack figure without a backpack, and home equals the total", () => {
+    const list = buildList(defaultPlan, []);
+    expect(list.backpack).toBeNull();
+    expect(list.home).toEqual(list.progress);
+    expect(list.groups.some((g) => g.kind === "backpack")).toBe(false);
+  });
+
+  it("is complete only when both home supplies and the backpack are fully ticked", () => {
+    const all = buildList(backpackPlan, []).groups.flatMap((g) => g.rows.map((r) => r.itemId));
+    const homeOnly = all.filter((id) => !backpackIds.includes(id));
+    const homeDone = buildList(backpackPlan, ticked(backpackPlan, ...homeOnly));
+    expect(homeDone.home.left).toBe(0);
+    expect(homeDone.progress.left).toBe(backpackIds.length);
+
+    const backpackDone = buildList(backpackPlan, ticked(backpackPlan, ...backpackIds));
+    expect(backpackDone.backpack?.left).toBe(0);
+    expect(backpackDone.progress.left).toBe(homeOnly.length);
+
+    const both = buildList(backpackPlan, ticked(backpackPlan, ...all));
+    expect(both.progress.left).toBe(0);
+    expect(firstRows(both)).toEqual([]);
+  });
+
+  it("marks 'Najpierw' on the first not-done row of the whole list, backpack included", () => {
+    const all = buildList(backpackPlan, []).groups.flatMap((g) => g.rows.map((r) => r.itemId));
+    const homeOnly = all.filter((id) => !backpackIds.includes(id));
+    const list = buildList(backpackPlan, ticked(backpackPlan, ...homeOnly));
+    const first = firstRows(list);
+    expect(first).toHaveLength(1);
+    expect(backpackIds).toContain(first[0].itemId);
+  });
+
+  it("carries the row's emergencies to the detail source", () => {
+    const row = buildList(backpackPlan, []).groups.at(-1)?.rows[0];
+    expect(row?.detailSource.emergencies).toEqual(["evacuation"]);
+  });
+
+  it("hides a removed emergency's ticks and brings them back with it", () => {
+    const ticks = ticked(backpackPlan, ...backpackIds);
+    const removed = buildList(defaultPlan, ticks);
+    expect(removed.backpack).toBeNull();
+    expect(removed.progress.done).toBe(0);
+    const restored = buildList(backpackPlan, ticks);
+    expect(restored.backpack).toEqual({
+      done: backpackIds.length,
+      total: backpackIds.length,
+      left: 0,
+    });
   });
 });

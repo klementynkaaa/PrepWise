@@ -31,28 +31,32 @@ describe("ProgressPanel", () => {
     expect(screen.getByRole("heading", { name: "Gotowość na 72 godziny" })).toBeInTheDocument();
   });
 
-  it("shows a large ring with the short count instead of the bar", () => {
-    render(
-      <ProgressPanel {...props} barLabel="Postęp listy zakupów" ring={{ fraction: "7/22" }} />,
-    );
-    expect(screen.getByRole("img", { name: "Postęp listy zakupów" }).tagName).toBe("svg");
-    expect(screen.getByText("7/22")).toBeInTheDocument();
-    expect(screen.getByText("Gotowe 7 z 22")).toBeVisible();
-    expect(screen.getByText("Zostało 15 rzeczy do odhaczenia.")).toBeVisible();
-  });
+  describe("with parts", () => {
+    const parts = [
+      { label: "Zapasy w domu", count: "Gotowe 7 z 27", done: 7, total: 27, barLabel: "Zapasy" },
+      {
+        label: "Plecak ewakuacyjny",
+        count: "Gotowe 1 z 10",
+        done: 1,
+        total: 10,
+        barLabel: "Plecak",
+      },
+    ];
 
-  it("keeps the ring out of the link's name when the ring panel is a link", () => {
-    render(
-      <ProgressPanel
-        {...props}
-        barLabel="Postęp listy zakupów"
-        ring={{ fraction: "7/22" }}
-        href="/pl/list"
-      />,
-    );
-    expect(screen.getByRole("link")).toHaveAccessibleName(
-      "Gotowe 7 z 22 Zostało 15 rzeczy do odhaczenia.",
-    );
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    it("draws one named bar per part with its own count", () => {
+      render(<ProgressPanel parts={parts} />);
+      expect(screen.getByRole("img", { name: "Zapasy" })).toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Plecak" })).toBeInTheDocument();
+      expect(screen.getByText("Zapasy w domu")).toBeVisible();
+      expect(screen.getByText("Gotowe 1 z 10")).toBeVisible();
+    });
+
+    it("hides the bars from screen readers when the panel is a link", () => {
+      render(<ProgressPanel parts={parts} title="Gotowość na 72 godziny" href="/pl/list" />);
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByRole("link")).toHaveAccessibleName(
+        "Gotowość na 72 godziny Zapasy w domu Gotowe 7 z 27 Plecak ewakuacyjny Gotowe 1 z 10",
+      );
+    });
   });
 });

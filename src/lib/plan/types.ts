@@ -24,7 +24,7 @@ export const CATEGORIES = [
 export type CategoryId = (typeof CATEGORIES)[number];
 
 /** Member-specific sections shown after the three tiers, in display order. */
-export const SECTIONS = ["smallChild", "pets"] as const;
+export const SECTIONS = ["smallChild", "pets", "backpack"] as const;
 export type SectionId = (typeof SECTIONS)[number];
 
 /** "dog" when the only pets are dogs ("Dla psa"), otherwise "animals" ("Dla zwierząt"). */
@@ -71,8 +71,11 @@ export type Trigger =
   | { hasPet: PetKind | "dog" | "any" }
   | { need: Need }
   | { housing: HousingType }
-  /** An emergency scenario the household picked. Never holds until S-03 lets them pick one. */
-  | { emergency: EmergencyId };
+  /**
+   * Emergency scenarios the household picked. Holds when any listed one is chosen and, if
+   * `housing` is given, the housing matches.
+   */
+  | { emergency: readonly EmergencyId[]; housing?: HousingType };
 
 export type Source = "official" | "prepwise";
 
@@ -114,7 +117,7 @@ export type SourceClaim = {
 export type Scenario = SourceClaim & {
   /** Permanent kebab-case slug. */
   id: string;
-  /** Slugs of the items it adds; each has `when: { emergency: id }`. */
+  /** Slugs of the items it adds; each has this scenario's id in `when.emergency`. */
   items: readonly string[];
 };
 
@@ -160,6 +163,8 @@ export type PlanRowData = {
   diet?: true;
   /** The item's tier, on section rows that keep one ("priorytet 1"). */
   tier?: TierLevel;
+  /** The chosen emergencies that brought the row in, in content order. Emergency items only. */
+  emergencies?: EmergencyId[];
 };
 
 export type PlanCategory = { id: CategoryId; rows: PlanRowData[] };
@@ -167,7 +172,9 @@ export type PlanTier = { tier: TierLevel; categories: PlanCategory[] };
 
 export type PlanSection =
   | { id: "smallChild"; rows: PlanRowData[] }
-  | { id: "pets"; petKind: PetSectionKind; rows: PlanRowData[] };
+  | { id: "pets"; petKind: PetSectionKind; rows: PlanRowData[] }
+  /** The evacuation backpack; `emergencies` holds the chosen ones that brought it in. */
+  | { id: "backpack"; emergencies: EmergencyId[]; rows: PlanRowData[] };
 
 export type Plan = {
   days: number;
@@ -175,6 +182,8 @@ export type Plan = {
   sections: PlanSection[];
   /** Real items only; pointer rows are not counted. */
   itemCount: number;
+  /** Items that hold only because of a chosen emergency; each item counted once. */
+  emergencyItemCount: number;
 };
 
 /**

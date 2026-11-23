@@ -167,7 +167,7 @@
     },
     "roundStep": 1,
     "when": {
-      "emergency": "blackout"
+      "emergency": ["blackout"]
     },
     "intendedSource": "prepwise",
     "copy": {
@@ -560,6 +560,480 @@
     "copy": {
       "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
       "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
+    }
+  },
+  {
+    "id": "walkie-talkies",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "communication"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["blackout"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Krótkofalówki",
+      "listName": "Krótkofalówki",
+      "note": "łączność w domu i z sąsiadami, gdy nie działa telefon ani internet"
+    }
+  },
+  {
+    "id": "camping-stove",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "warmth"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["blackout"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Kuchenka turystyczna z kartuszem",
+      "listName": "Kuchenka turystyczna",
+      "note": "do podgrzania jedzenia i wody; używana tylko w przewiewnym miejscu"
+    }
+  },
+  {
+    "id": "bucket-with-bags",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "hygiene"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["no-tap-water"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Wiadro z workami na odpady",
+      "listName": "Wiadro z workami",
+      "note": "awaryjna toaleta, gdy nie ma wody do spłukiwania"
+    }
+  },
+  {
+    "id": "water-purification-tablets",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "waterFood"
+    },
+    "unit": "pack",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["no-tap-water"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Tabletki do uzdatniania wody",
+      "listName": "Tabletki do wody",
+      "note": "do wody z innego źródła niż kran; stosuje się według instrukcji na opakowaniu"
+    }
+  },
+  {
+    "id": "water-canister",
+    "placement": {
+      "kind": "tier",
+      "tier": 1,
+      "category": "waterFood"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["no-tap-water"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Kanister na wodę",
+      "listName": "Kanister na wodę",
+      "note": "do przyniesienia i przechowania wody, gdy kran nie działa"
+    }
+  },
+  {
+    "id": "thermal-blanket",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "warmth"
+    },
+    "unit": "piece",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["severe-weather"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Koc termiczny",
+      "listName": "Koce termiczne",
+      "note": "folia ratunkowa zatrzymuje ciepło ciała"
+    }
+  },
+  {
+    "id": "warm-clothing",
+    "placement": {
+      "kind": "tier",
+      "tier": 2,
+      "category": "warmth"
+    },
+    "unit": "set",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["severe-weather"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Ciepła odzież na zmianę",
+      "listName": "Ciepła odzież",
+      "note": "czapka, rękawiczki, ciepłe skarpety i sweter dla każdej osoby"
+    }
+  },
+  {
+    "id": "sandbags",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "tools"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 10
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood"],
+      "housing": "house"
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Worki z piaskiem",
+      "listName": "Worki z piaskiem",
+      "note": "do zabezpieczenia wejścia do domu przed napływającą wodą"
+    }
+  },
+  {
+    "id": "waterproof-document-pouch",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "documents"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Wodoszczelny pokrowiec na dokumenty",
+      "listName": "Pokrowiec na dokumenty",
+      "note": "chroni dowody osobiste i ważne papiery przed zamoczeniem"
+    }
+  },
+  {
+    "id": "signal-cloths",
+    "placement": {
+      "kind": "tier",
+      "tier": 3,
+      "category": "tools"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Kolorowe tkaniny do sygnalizowania",
+      "listName": "Tkaniny do sygnalizowania",
+      "note": "jaskrawa tkanina i gwizdek pomagają ratownikom zauważyć was z daleka"
+    }
+  },
+  {
+    "id": "evacuation-backpack",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "piece",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "official",
+    "copy": {
+      "name": "Plecak ewakuacyjny",
+      "listName": "Plecak ewakuacyjny",
+      "note": "jeden dla każdej osoby; plecak małego dziecka niesie dorosły"
+    },
+    "evidence": {
+      "sourceId": "psp-poznan-plecak-ewakuacyjny",
+      "quote": "",
+      "section": "Plecak ewakuacyjny"
+    }
+  },
+  {
+    "id": "backpack-water",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "l",
+    "amount": {
+      "perMember": {
+        "adults": 4,
+        "seniors": 4,
+        "children": 4,
+        "smallChildren": 4
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "official",
+    "copy": {
+      "name": "Woda do plecaka",
+      "listName": "Woda w plecaku",
+      "note": "około 4 litrów na osobę"
+    },
+    "evidence": {
+      "sourceId": "psp-poznan-plecak-ewakuacyjny",
+      "quote": "",
+      "section": "Plecak ewakuacyjny"
+    }
+  },
+  {
+    "id": "backpack-water-filter",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "pack",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Filtr lub tabletki do wody",
+      "listName": "Filtr do wody"
+    }
+  },
+  {
+    "id": "backpack-first-aid",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Mała apteczka do plecaka",
+      "listName": "Apteczka w plecaku"
+    }
+  },
+  {
+    "id": "backpack-food",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "portion",
+    "amount": {
+      "perMember": {
+        "adults": 3,
+        "seniors": 3,
+        "children": 3,
+        "smallChildren": 3
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Jedzenie do plecaka",
+      "listName": "Jedzenie w plecaku",
+      "note": "lekkie, niepsujące się, np. batony i konserwy z kluczykiem"
+    }
+  },
+  {
+    "id": "backpack-torch",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "piece",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Latarka do plecaka",
+      "listName": "Latarki w plecaku"
+    }
+  },
+  {
+    "id": "backpack-radio",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "piece",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Radio na baterie lub korbkę do plecaka",
+      "listName": "Radio w plecaku"
+    }
+  },
+  {
+    "id": "backpack-thermal-rain",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "set",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Folia termiczna i odzież przeciwdeszczowa",
+      "listName": "Folia i odzież przeciwdeszczowa"
+    }
+  },
+  {
+    "id": "backpack-documents-cash",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "set",
+    "amount": {
+      "fixed": 1
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Kopie dokumentów na pendrivie i gotówka",
+      "listName": "Dokumenty i gotówka"
+    }
+  },
+  {
+    "id": "backpack-hygiene",
+    "placement": {
+      "kind": "section",
+      "section": "backpack"
+    },
+    "unit": "set",
+    "amount": {
+      "perMember": {
+        "adults": 1,
+        "seniors": 1,
+        "children": 1,
+        "smallChildren": 1
+      }
+    },
+    "roundStep": 1,
+    "when": {
+      "emergency": ["flood", "evacuation"]
+    },
+    "intendedSource": "prepwise",
+    "copy": {
+      "name": "Przybory higieniczne do plecaka",
+      "listName": "Higiena w plecaku"
     }
   }
 ]

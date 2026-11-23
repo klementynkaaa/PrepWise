@@ -47,7 +47,8 @@ test("/pl lands on Start once a plan exists, and its tiles lead into the plan", 
   await page.goto("/pl");
   await expect(page).toHaveURL(/\/pl\/home$/);
   await expect(page.getByRole("heading", { level: 2, name: "Wasz dom" })).toBeVisible();
-  await expect(page.getByText("Plan gotowy — czas na kompletowanie")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Do zrobienia" })).toBeVisible();
+  await expect(page.getByText("Krok 2 z 2")).toBeVisible();
 
   await page.getByRole("link", { name: /^Priorytet 2:/ }).click();
   await expect(page).toHaveURL(/\/pl\/plan#tier-2$/);
@@ -110,11 +111,12 @@ test("Plan's Stwórz listę zakupów opens the list, the Lista tab leads to it, 
   // Start names the stage and shows the same count, leading to the list.
   await nav.getByRole("link", { name: "Start" }).click();
   await expect(page).toHaveURL(/\/pl\/home$/);
-  await expect(page.getByText("Teraz: kompletowanie zapasów")).toBeVisible();
+  await expect(page.getByText("Krok 2 z 2")).toBeVisible();
   await expect(
     page.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: new RegExp(`^Gotowe 1 z ${total}`) }).click();
+  await expect(page.getByText(`Gotowe 1 z ${total}`, { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Otwórz listę zakupów" }).click();
   await expect(page).toHaveURL(/\/pl\/list$/);
 
   // The Lista tab leads to the list from anywhere.

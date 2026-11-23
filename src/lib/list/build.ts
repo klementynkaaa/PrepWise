@@ -9,7 +9,7 @@ import {
   type PlanRowData,
   type TierLevel,
 } from "@/lib/plan/types";
-import type { ListGroup, ListRow, ShoppingList } from "./types";
+import type { ListGroup, ListProgress, ListRow, ShoppingList } from "./types";
 
 /**
  * An item is done when its tick is selected and the ticked quantity covers the
@@ -40,8 +40,8 @@ function group<G extends Omit<ListGroup, "rows" | "done" | "total">>(
 /**
  * Builds the shopping list from the plan and the saved ticks. Groups are tiers
  * 1–3, with the small child's items inside their tier at their category's
- * position (rows without a category close their tier), then the pets. Pointer
- * rows are dropped, ticks for items not in the plan are ignored, and exactly
+ * position (rows without a category close their tier), then the pets, then the
+ * evacuation backpack. Pointer rows are dropped, ticks for items not in the plan are ignored, and exactly
  * one not-done row is marked `first` ("Najpierw"), none when all are done.
  */
 export function buildList(
@@ -81,11 +81,16 @@ export function buildList(
     }
   }
   const petGroups: ListGroup[] = [];
+  const backpackGroups: ListGroup[] = [];
   for (const section of plan.sections) {
     if (section.id === "pets") {
       petGroups.push(
         group({ kind: "pets", petKind: section.petKind }, section.rows.map(toListRow)),
       );
+      continue;
+    }
+    if (section.id === "backpack") {
+      backpackGroups.push(group({ kind: "backpack" }, section.rows.map(toListRow)));
       continue;
     }
     for (const row of section.rows) {
@@ -102,11 +107,19 @@ export function buildList(
     return rows.length > 0 ? [group({ kind: "tier", tier }, rows.map(toListRow))] : [];
   });
 
-  const groups = [...tierGroups, ...petGroups];
+  const groups = [...tierGroups, ...petGroups, ...backpackGroups];
   const firstOpen = groups.flatMap((g) => g.rows).find((r) => !r.done);
   if (firstOpen) firstOpen.first = true;
 
-  const total = groups.reduce((sum, g) => sum + g.total, 0);
-  const done = groups.reduce((sum, g) => sum + g.done, 0);
-  return { groups, progress: { done, total, left: total - done } };
+  const progressOf = (of: ListGroup[]): ListProgress => {
+    const total = of.reduce((sum, g) => sum + g.total, 0);
+    const done = of.reduce((sum, g) => sum + g.done, 0);
+    return { done, total, left: total - done };
+  };
+  return {
+    groups,
+    progress: progressOf(groups),
+    home: progressOf([...tierGroups, ...petGroups]),
+    backpack: backpackGroups.length > 0 ? progressOf(backpackGroups) : null,
+  };
 }

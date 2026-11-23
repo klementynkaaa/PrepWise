@@ -4,7 +4,7 @@
 -- idempotent.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(40);
 
 -- Test helpers, rolled back with the test.
 create schema t;
@@ -352,6 +352,38 @@ select throws_ok(
       '11111111-1111-4111-8111-111111111111', 'candles', true, 'Infinity', now(), '{}')$$,
   '23514', null,
   'a tick quantity is never infinite'
+);
+
+-- --- emergency rows: selected merges per field ---------------------------------------------
+
+insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+values ('11111111-1111-4111-8111-111111111111:blackout', '11111111-1111-4111-8111-111111111111',
+  'blackout', true, now(), '{"emergency": "2026-01-01T00:00:00.000Z",
+  "selected": "2026-01-01T00:00:00.000Z"}');
+
+-- One device removes the emergency; another, whose older edit selects it, loses.
+update public.household_emergencies
+set selected = false, field_ts = '{"selected": "2026-01-03T00:00:00.000Z"}'
+where id = '11111111-1111-4111-8111-111111111111:blackout';
+update public.household_emergencies
+set selected = true, field_ts = '{"selected": "2026-01-02T00:00:00.000Z"}'
+where id = '11111111-1111-4111-8111-111111111111:blackout';
+select is((select selected from public.household_emergencies), false,
+  'emergencies merge by timestamp: the newer selected wins');
+
+select throws_ok(
+  $$insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:Blackout',
+      '11111111-1111-4111-8111-111111111111', 'Blackout', true, now(), '{}')$$,
+  '23514', null,
+  'an emergency must be a kebab-case slug'
+);
+select throws_ok(
+  $$insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      '11111111-1111-4111-8111-111111111111', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', true, now(), '{}')$$,
+  '23514', null,
+  'an emergency is at most 64 characters'
 );
 
 -- --- entity rows: delete wins (a test-only table with the shared triggers) ----------------

@@ -170,7 +170,8 @@
       "people": "Domownicy",
       "pets": "Zwierzęta",
       "housing": "Miejsce zamieszkania",
-      "needs": "Szczególne potrzeby"
+      "needs": "Szczególne potrzeby",
+      "emergencies": "Sytuacje"
     },
     "peopleLine": "{groups} · razem {total, plural, one {# osoba} few {# osoby} many {# osób} other {# osoby}}",
     "counts": {
@@ -203,7 +204,8 @@
       "lead": "Wszystko jest gotowe do planu. Plan liczy się na tym telefonie.",
       "create": "Stwórz plan",
       "show": "Pokaż plan"
-    }
+    },
+    "noneEmergencies": "Żadna — plan na 72 godziny"
   },
   "saveError": {
     "title": "Nie udało się zapisać",
@@ -303,7 +305,8 @@
     },
     "sections": {
       "smallChild": "Dla małego dziecka",
-      "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+      "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}",
+      "backpack": "Plecak ewakuacyjny"
     },
     "formula": {
       "perDay": "{amount} × {who} × {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
@@ -321,6 +324,45 @@
       },
       "diet": "zgodne z dietą",
       "tier": "priorytet {tier}"
+    },
+    "emergencies": {
+      "ui": {
+        "lead": "dodane na sytuację:",
+        "captionFor": "na {names}",
+        "accusative": {
+          "blackout": "brak prądu",
+          "no-tap-water": "brak wody w kranie",
+          "severe-weather": "gwałtowną pogodę",
+          "flood": "powódź",
+          "evacuation": "ewakuację"
+        },
+        "panel": {
+          "emptyTitle": "Sytuacje",
+          "emptyBody": "Plan na 72 godziny sprawdza się w każdej sytuacji. Wybrane sytuacje dokładają rzeczy, które w nich szczególnie się przydają.",
+          "add": "Dodaj sytuację",
+          "chosenTitle": "Sytuacje w planie",
+          "change": "Zmień",
+          "changeLabel": "Zmień sytuacje w planie",
+          "added": "{count, plural, one {Dodano # rzecz do planu.} few {Dodano # rzeczy do planu.} many {Dodano # rzeczy do planu.} other {Dodano # rzeczy do planu.}}"
+        },
+        "sheet": {
+          "title": "Sytuacje",
+          "close": "Zamknij",
+          "lead": "Każda sytuacja dokłada do planu własne rzeczy. Plan na 72 godziny zostaje podstawą.",
+          "openDetails": "Co dodaje?",
+          "closeDetails": "Zwiń",
+          "adds": "Dodaje do planu",
+          "sourceOfficial": "Źródło: oficjalny poradnik",
+          "sourcePrepwise": "Źródło: rekomendacja PREPWISE",
+          "countNone": "Bez sytuacji plan zostaje podstawą na 72 godziny.",
+          "count": "{count, plural, one {W planie z sytuacji: # rzecz.} few {W planie z sytuacji: # rzeczy.} many {W planie z sytuacji: # rzeczy.} other {W planie z sytuacji: # rzeczy.}}",
+          "done": "Gotowe",
+          "saving": "Zapisywanie…",
+          "errorTitle": "Nie udało się zapisać sytuacji",
+          "errorBody": "Wybór nie został zapisany, a zaznaczone sytuacje czekają w oknie. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+          "retry": "Spróbuj ponownie"
+        }
+      }
     }
   },
   "nav": {
@@ -354,25 +396,48 @@
     },
     "todo": {
       "title": "Do zrobienia",
-      "ready": {
-        "title": "Plan gotowy — czas na kompletowanie",
-        "body": "Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka.",
-        "action": "Otwórz plan"
+      "progress": "Krok {current} z {total}",
+      "status": {
+        "done": "zrobione",
+        "current": "teraz",
+        "later": "później"
       },
-      "collecting": {
-        "title": "Teraz: kompletowanie zapasów",
-        "body": "Lista zakupów jest gotowa do odhaczania.",
-        "action": "Otwórz listę"
+      "plan": {
+        "name": "Plan gotowy",
+        "caption": "Policzony dla Waszego domu."
+      },
+      "supplies": {
+        "name": "Skompletuj zapasy",
+        "ready": "Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka.",
+        "left": "{count, plural, one {Została # rzecz z listy zakupów.} few {Zostały # rzeczy z listy zakupów.} many {Zostało # rzeczy z listy zakupów.} other {Zostało # rzeczy z listy zakupów.}}",
+        "done": "Wszystko z listy zakupów odhaczone.",
+        "openPlan": "Otwórz plan",
+        "openList": "Otwórz listę zakupów"
+      },
+      "backpack": {
+        "name": "Spakuj plecak ewakuacyjny",
+        "later": "{count, plural, one {# rzecz na szybkie wyjście.} few {# rzeczy na szybkie wyjście.} many {# rzeczy na szybkie wyjście.} other {# rzeczy na szybkie wyjście.}}",
+        "left": "{count, plural, one {Została # rzecz do spakowania.} few {Zostały # rzeczy do spakowania.} many {Zostało # rzeczy do spakowania.} other {Zostało # rzeczy do spakowania.}}",
+        "done": "Plecak spakowany.",
+        "open": "Otwórz listę zakupów"
       },
       "complete": {
         "title": "Zapasy na 72 godziny gotowe",
-        "body": "Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków.",
-        "action": "Otwórz listę"
+        "body": "Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków."
       }
     },
     "readiness": {
       "title": "Gotowość na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
-      "plan": "Plan"
+      "plan": "Plan",
+      "note": {
+        "empty": "{backpack, select, yes {Zacznij od zapasów w domu — plecak spakujesz potem.} other {Zacznij od najważniejszych rzeczy z listy.}}",
+        "progress": "Dobrze idzie. {count, plural, one {Została # rzecz.} few {Zostały # rzeczy.} many {Zostało # rzeczy.} other {Zostało # rzeczy.}}",
+        "complete": "Wszystko odhaczone."
+      },
+      "rows": {
+        "supplies": "Zapasy w domu",
+        "backpack": "Plecak ewakuacyjny"
+      }
     },
     "plan": {
       "title": "Plan na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}}",
@@ -384,7 +449,8 @@
       },
       "sections": {
         "smallChild": "Dla dziecka",
-        "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}"
+        "pets": "{kind, select, dog {Dla psa} other {Dla zwierząt}}",
+        "backpack": "Plecak ewakuacyjny"
       }
     }
   },
@@ -400,7 +466,8 @@
   "progress": {
     "count": "{done} z {total}",
     "done": "Gotowe {done} z {total}",
-    "fraction": "{done}/{total}"
+    "fraction": "{done}/{total}",
+    "percent": "{percent}%"
   },
   "list": {
     "metaTitle": "Lista zakupów",
@@ -408,7 +475,11 @@
     "line": "Na {hours, plural, one {# godzinę} few {# godziny} many {# godzin} other {# godziny}} · dla {who}",
     "progress": {
       "left": "{count, plural, =0 {Wszystko odhaczone.} one {Została # rzecz do odhaczenia.} few {Zostały # rzeczy do odhaczenia.} many {Zostało # rzeczy do odhaczenia.} other {Zostało # rzeczy do odhaczenia.}}",
-      "bar": "Postęp listy zakupów"
+      "bar": "Postęp listy zakupów",
+      "home": "Zapasy w domu",
+      "backpack": "Plecak ewakuacyjny",
+      "homeBar": "Postęp zapasów w domu",
+      "backpackBar": "Postęp plecaka ewakuacyjnego"
     },
     "empty": {
       "title": "Lista jeszcze nie powstała",
@@ -425,6 +496,9 @@
       "retry": "Spróbuj jeszcze raz"
     },
     "loading": "Wczytywanie listy",
-    "saveFailed": "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie."
+    "saveFailed": "Nie udało się zapisać odhaczenia. Zwykle pomaga otwarcie aplikacji w zwykłym, nie prywatnym oknie.",
+    "sections": {
+      "backpack": "Plecak ewakuacyjny"
+    }
   }
 }

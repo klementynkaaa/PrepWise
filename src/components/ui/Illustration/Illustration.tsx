@@ -68,10 +68,21 @@ export const bannerIllustrationNames = illustrationNames.filter(
 /**
  * `cover` makes the art fill the height of its parent and crop from the left
  * instead of keeping its own ratio. Banner uses it so a tall text block never
- * leaves a strip under the art.
+ * leaves a strip under the art. `thumb` shrinks item art to 52px for a row.
  */
-export function Illustration({ name, cover }: { name: IllustrationName; cover?: boolean }) {
-  const { width, height, look } = groups[illustrations[name]];
+export function Illustration({
+  name,
+  cover,
+  thumb,
+}: {
+  name: IllustrationName;
+  cover?: boolean;
+  /** A 52px item picture for the start of a row (item art only). */
+  thumb?: boolean;
+}) {
+  const group = illustrations[name];
+  const { width, height, look } = groups[group];
+  const size = thumb && group === "item" ? "size-thumb" : look;
   return (
     // A static SVG from public/: next/image needs a server-side loader, which
     // the static export doesn't have.
@@ -85,7 +96,7 @@ export function Illustration({ name, cover }: { name: IllustrationName; cover?: 
       className={cn(
         "block shrink-0 self-center",
         cover ? "h-full object-cover object-right" : "h-auto",
-        look,
+        size,
       )}
     />
   );

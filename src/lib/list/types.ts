@@ -9,7 +9,7 @@ export type ListRow = {
   /** The plan's current quantity for the item. */
   quantity: number;
   unit: Unit;
-  /** The plan row the detail line is formatted from. */
+  /** The plan row the detail line is formatted from; its `emergencies` name what added the row. */
   detailSource: PlanRowData;
   /** Ticked, and the ticked quantity still covers what the plan needs now. */
   done: boolean;
@@ -25,12 +25,17 @@ type GroupCounts = { rows: ListRow[]; done: number; total: number };
  */
 export type ListGroup =
   | ({ kind: "tier"; tier: TierLevel } & GroupCounts)
-  | ({ kind: "pets"; petKind: PetSectionKind } & GroupCounts);
+  | ({ kind: "pets"; petKind: PetSectionKind } & GroupCounts)
+  | ({ kind: "backpack" } & GroupCounts);
 
 export type ListProgress = { done: number; total: number; left: number };
 
 export type ShoppingList = {
   groups: ListGroup[];
-  /** Plan items only; `total` equals the plan's `itemCount`. */
+  /** Plan items only, home supplies and backpack together; `left === 0` means complete. */
   progress: ListProgress;
+  /** Everything but the evacuation backpack. */
+  home: ListProgress;
+  /** The evacuation backpack; null when the plan has no backpack section. */
+  backpack: ListProgress | null;
 };

@@ -78,3 +78,17 @@ export async function createPlanThroughUi(page: Page) {
   await page.getByRole("button", { name: "Stwórz plan" }).click();
   await expect(page).toHaveURL(/\/pl\/plan$/);
 }
+
+/**
+ * Picks emergencies the way a person does: opens the "Sytuacje" sheet on Plan,
+ * ticks the named ones and saves with "Gotowe". The seed record is a v1 import
+ * with no emergencies, and the selection lives in the local database, so the
+ * UI is the way to set one. Needs the plan to be open (createPlanThroughUi).
+ */
+export async function chooseEmergenciesThroughUi(page: Page, names: string[]) {
+  const sheet = page.getByRole("dialog", { name: "Sytuacje" });
+  await page.getByRole("button", { name: /^(Dodaj sytuację|Zmień sytuacje w planie)$/ }).click();
+  for (const name of names) await sheet.getByRole("checkbox", { name }).check();
+  await sheet.getByRole("button", { name: "Gotowe" }).click();
+  await expect(sheet).toBeHidden();
+}

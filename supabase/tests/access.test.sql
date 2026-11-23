@@ -3,7 +3,7 @@
 -- through create_household().
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(38);
 
 -- Test helpers, rolled back with the test.
 create schema t;
@@ -47,7 +47,7 @@ $$;
 
 grant execute on all functions in schema t to authenticated;
 
--- A (anonymous) owns household H with a need, a step and a tick. X (signed in with an
+-- A (anonymous) owns household H with a need, a step, a tick and an emergency. X (signed in with an
 -- email, not anonymous) has no household. Y owns another household.
 select t.user('00000000-0000-4000-8000-0000000000a1');
 select t.user('00000000-0000-4000-8000-0000000000b1', false);
@@ -64,6 +64,9 @@ values ('11111111-1111-4111-8111-111111111111:people',
 insert into public.household_ticks (id, household_id, item, selected, quantity, updated_at, field_ts)
 values ('11111111-1111-4111-8111-111111111111:drinking-water',
   '11111111-1111-4111-8111-111111111111', 'drinking-water', true, 4, now(), '{}');
+insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+values ('11111111-1111-4111-8111-111111111111:blackout',
+  '11111111-1111-4111-8111-111111111111', 'blackout', false, now(), '{}');
 select public.create_invite('11111111-1111-4111-8111-111111111111');
 
 select t.login('00000000-0000-4000-8000-0000000000c1');
@@ -79,6 +82,8 @@ select is((select count(*)::integer from public.households), 1,
 select is((select count(*)::integer from public.household_needs), 1, 'an anonymous member reads needs');
 select is((select count(*)::integer from public.household_steps), 1, 'an anonymous member reads steps');
 select is((select count(*)::integer from public.household_ticks), 1, 'an anonymous member reads ticks');
+select is((select count(*)::integer from public.household_emergencies), 1,
+  'an anonymous member reads emergencies');
 select is((select count(*)::integer from public.household_members), 1, 'a member reads the member list');
 select is((select count(*)::integer from public.household_invites), 1, 'a member reads the invites');
 
@@ -114,6 +119,16 @@ select is(
   4.5::double precision,
   'the tick update is stored, fraction included');
 
+select lives_ok(
+  $$insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+    values ('11111111-1111-4111-8111-111111111111:flood',
+      '11111111-1111-4111-8111-111111111111', 'flood', true, now(), '{}')$$,
+  'an anonymous member adds an emergency');
+select lives_ok(
+  $$update public.household_emergencies set selected = true
+    where id = '11111111-1111-4111-8111-111111111111:blackout'$$,
+  'an anonymous member selects an emergency again');
+
 select throws_ok(
   $$insert into public.household_needs (id, household_id, need, selected, updated_at, field_ts)
     values ('22222222-2222-4222-8222-222222222222:specialDiet',
@@ -127,6 +142,13 @@ select throws_ok(
   '42501', null,
   'a member cannot tick items of another household');
 
+select throws_ok(
+  $$insert into public.household_emergencies (id, household_id, emergency, selected, updated_at, field_ts)
+    values ('22222222-2222-4222-8222-222222222222:flood',
+      '22222222-2222-4222-8222-222222222222', 'flood', true, now(), '{}')$$,
+  '42501', null,
+  'a member cannot add emergencies to another household');
+
 -- --- a non-member sees nothing -----------------------------------------------------
 
 select t.login('00000000-0000-4000-8000-0000000000b1', false);
@@ -136,16 +158,18 @@ select is(
     + (select count(*)::integer from public.household_needs)
     + (select count(*)::integer from public.household_steps)
     + (select count(*)::integer from public.household_ticks)
+    + (select count(*)::integer from public.household_emergencies)
     + (select count(*)::integer from public.household_members)
     + (select count(*)::integer from public.household_invites),
   0,
-  'a non-member sees no household, need, step, tick, member or invite');
+  'a non-member sees no household, need, step, tick, emergency, member or invite');
 
 select is_empty($$select * from public.my_household()$$, 'a non-member has no household');
 
 update public.households set name = 'Hacked' where id = '11111111-1111-4111-8111-111111111111';
 update public.household_needs set selected = false;
 update public.household_ticks set selected = false;
+update public.household_emergencies set selected = false;
 
 select t.logout();
 select is(
@@ -160,6 +184,10 @@ select is(
   (select count(*)::integer from public.household_ticks where not selected),
   0,
   'a non-member''s update of ticks changes nothing');
+select is(
+  (select count(*)::integer from public.household_emergencies where not selected),
+  0,
+  'a non-member''s update of emergencies changes nothing');
 
 -- --- no client DELETE and no client household insert -------------------------------
 
@@ -173,6 +201,8 @@ select throws_ok($$delete from public.household_steps$$, '42501', null,
   'a member cannot DELETE a step');
 select throws_ok($$delete from public.household_ticks$$, '42501', null,
   'a member cannot DELETE a tick');
+select throws_ok($$delete from public.household_emergencies$$, '42501', null,
+  'a member cannot DELETE an emergency');
 select throws_ok($$delete from public.household_members$$, '42501', null,
   'a member cannot DELETE a membership');
 select throws_ok($$delete from public.household_invites$$, '42501', null,

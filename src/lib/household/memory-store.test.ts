@@ -35,6 +35,7 @@ describe("memory store", () => {
       kind: "found",
       household: done,
       ticks: [],
+      emergencies: [],
       planCreatedAt: null,
       listCreatedAt: null,
     });
@@ -100,6 +101,7 @@ describe("memory store", () => {
       kind: "found",
       household: completeHousehold(),
       ticks: [],
+      emergencies: [],
       planCreatedAt: null,
       listCreatedAt: null,
     });
@@ -270,6 +272,76 @@ describe("memory store", () => {
       await store.setTick("candles", true, 2);
       await store.setTick("candles", true, 2);
       await store.setTick("matches", false, 1);
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("emergencies", () => {
+    const emergencies = async (store: ReturnType<typeof createMemoryStore>) => {
+      const loaded = await store.load();
+      return loaded.kind === "found" ? loaded.emergencies : undefined;
+    };
+
+    it("starts with none", async () => {
+      expect(await emergencies(createMemoryStore(completeHousehold()))).toEqual([]);
+    });
+
+    it("sets the selection exactly, and deselected ones leave it", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setEmergencies(["flood", "blackout"]);
+      expect(await emergencies(store)).toEqual(["flood", "blackout"]);
+      await store.setEmergencies(["blackout"]);
+      expect(await emergencies(store)).toEqual(["blackout"]);
+      await store.setEmergencies(["flood"]);
+      expect(await emergencies(store)).toEqual(["flood"]);
+      await store.setEmergencies([]);
+      expect(await emergencies(store)).toEqual([]);
+    });
+
+    it("keeps the selection across a step save, and leaves the profile as it was", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setEmergencies(["flood"]);
+      const saved = await store.saveStep("housing", { housingType: "house" });
+      expect(await emergencies(store)).toEqual(["flood"]);
+      const loaded = await store.load();
+      expect(loaded.kind === "found" && loaded.household).toEqual(saved);
+    });
+
+    it("is removed by clear", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setEmergencies(["flood"]);
+      await store.clear();
+      await store.saveStep("housing", { housingType: "flat" });
+      expect(await emergencies(store)).toEqual([]);
+    });
+
+    it("rejects without a household, or with a bad id, and stores nothing", async () => {
+      await expect(createMemoryStore(null, deps()).setEmergencies(["flood"])).rejects.toMatchObject(
+        { code: "invalid" },
+      );
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setEmergencies(["flood"]);
+      await expect(store.setEmergencies(["blackout", "Flood"])).rejects.toBeInstanceOf(
+        HouseholdStoreError,
+      );
+      expect(await emergencies(store)).toEqual(["flood"]);
+    });
+
+    it("returns copies, so callers cannot change the stored selection", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      await store.setEmergencies(["flood"]);
+      const first = await emergencies(store);
+      first?.push("blackout");
+      expect(await emergencies(store)).toEqual(["flood"]);
+    });
+
+    it("notifies subscribers on a change, not on a save that changes nothing", async () => {
+      const store = createMemoryStore(completeHousehold(), deps());
+      const listener = vi.fn();
+      store.subscribe(listener);
+      await store.setEmergencies(["flood"]);
+      await store.setEmergencies(["flood"]);
+      await store.setEmergencies(["flood", "flood"]);
       expect(listener).toHaveBeenCalledTimes(1);
     });
   });

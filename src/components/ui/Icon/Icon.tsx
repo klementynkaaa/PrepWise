@@ -13,6 +13,7 @@ export type IconName =
   | "info"
   | "offline"
   | "back"
+  | "forward"
   | "plus"
   | "minus"
   | "check"
@@ -58,6 +59,7 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   back: <path d="M15 18l-6-6 6-6" />,
+  forward: <path d="M9 6l6 6-6 6" />,
   plus: <path d="M12 5v14M5 12h14" />,
   minus: <path d="M5 12h14" />,
   check: <path d="M5 12.5l4.5 4.5L19 7" />,
@@ -67,10 +69,10 @@ const paths: Record<IconName, ReactNode> = {
 type IconProps = {
   name: IconName;
   /**
-   * "md" is 20px (controls, notices), "lg" is 24px (tab bar), "xl" is 32px
+   * "sm" is 16px (the check in a step marker), "md" is 20px (controls, notices), "lg" is 24px (tab bar), "xl" is 32px
    * (the check inside the large progress ring).
    */
-  size?: "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl";
 };
 
 export function Icon({ name, size = "md" }: IconProps) {
@@ -84,7 +86,10 @@ export function Icon({ name, size = "md" }: IconProps) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={cn("shrink-0", size === "xl" ? "size-8" : size === "lg" ? "size-6" : "size-5")}
+      className={cn(
+        "shrink-0",
+        size === "xl" ? "size-8" : size === "lg" ? "size-6" : size === "sm" ? "size-4" : "size-5",
+      )}
     >
       {paths[name]}
     </svg>

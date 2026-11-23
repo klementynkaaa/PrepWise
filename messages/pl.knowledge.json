@@ -85,12 +85,118 @@
       "pet-kit": {
         "name": "{kind, select, dog {Miska, smycz i książeczka zdrowia} other {Miski, smycze, kuweta i książeczki zdrowia}}",
         "listName": "{kind, select, dog {Miska i smycz} other {Miski, smycze i kuweta}}"
+      },
+      "walkie-talkies": {
+        "name": "Krótkofalówki",
+        "listName": "Krótkofalówki",
+        "note": "łączność w domu i z sąsiadami, gdy nie działa telefon ani internet"
+      },
+      "camping-stove": {
+        "name": "Kuchenka turystyczna z kartuszem",
+        "listName": "Kuchenka turystyczna",
+        "note": "do podgrzania jedzenia i wody; używana tylko w przewiewnym miejscu"
+      },
+      "bucket-with-bags": {
+        "name": "Wiadro z workami na odpady",
+        "listName": "Wiadro z workami",
+        "note": "awaryjna toaleta, gdy nie ma wody do spłukiwania"
+      },
+      "water-purification-tablets": {
+        "name": "Tabletki do uzdatniania wody",
+        "listName": "Tabletki do wody",
+        "note": "do wody z innego źródła niż kran; stosuje się według instrukcji na opakowaniu"
+      },
+      "water-canister": {
+        "name": "Kanister na wodę",
+        "listName": "Kanister na wodę",
+        "note": "do przyniesienia i przechowania wody, gdy kran nie działa"
+      },
+      "thermal-blanket": {
+        "name": "Koc termiczny",
+        "listName": "Koce termiczne",
+        "note": "folia ratunkowa zatrzymuje ciepło ciała"
+      },
+      "warm-clothing": {
+        "name": "Ciepła odzież na zmianę",
+        "listName": "Ciepła odzież",
+        "note": "czapka, rękawiczki, ciepłe skarpety i sweter dla każdej osoby"
+      },
+      "sandbags": {
+        "name": "Worki z piaskiem",
+        "listName": "Worki z piaskiem",
+        "note": "do zabezpieczenia wejścia do domu przed napływającą wodą"
+      },
+      "waterproof-document-pouch": {
+        "name": "Wodoszczelny pokrowiec na dokumenty",
+        "listName": "Pokrowiec na dokumenty",
+        "note": "chroni dowody osobiste i ważne papiery przed zamoczeniem"
+      },
+      "signal-cloths": {
+        "name": "Kolorowe tkaniny do sygnalizowania",
+        "listName": "Tkaniny do sygnalizowania",
+        "note": "jaskrawa tkanina i gwizdek pomagają ratownikom zauważyć was z daleka"
+      },
+      "evacuation-backpack": {
+        "name": "Plecak ewakuacyjny",
+        "listName": "Plecak ewakuacyjny",
+        "note": "jeden dla każdej osoby; plecak małego dziecka niesie dorosły"
+      },
+      "backpack-water": {
+        "name": "Woda do plecaka",
+        "listName": "Woda w plecaku",
+        "note": "około 4 litrów na osobę"
+      },
+      "backpack-water-filter": {
+        "name": "Filtr lub tabletki do wody",
+        "listName": "Filtr do wody"
+      },
+      "backpack-first-aid": {
+        "name": "Mała apteczka do plecaka",
+        "listName": "Apteczka w plecaku"
+      },
+      "backpack-food": {
+        "name": "Jedzenie do plecaka",
+        "listName": "Jedzenie w plecaku",
+        "note": "lekkie, niepsujące się, np. batony i konserwy z kluczykiem"
+      },
+      "backpack-torch": { "name": "Latarka do plecaka", "listName": "Latarki w plecaku" },
+      "backpack-radio": {
+        "name": "Radio na baterie lub korbkę do plecaka",
+        "listName": "Radio w plecaku"
+      },
+      "backpack-thermal-rain": {
+        "name": "Folia termiczna i odzież przeciwdeszczowa",
+        "listName": "Folia i odzież przeciwdeszczowa"
+      },
+      "backpack-documents-cash": {
+        "name": "Kopie dokumentów na pendrivie i gotówka",
+        "listName": "Dokumenty i gotówka"
+      },
+      "backpack-hygiene": {
+        "name": "Przybory higieniczne do plecaka",
+        "listName": "Higiena w plecaku"
       }
     },
     "emergencies": {
       "blackout": {
-        "name": "Długotrwały brak prądu",
+        "name": "Brak prądu",
         "explanation": "Brak prądu może potrwać nawet kilka dni i odciąć od wody, ogrzewania, internetu, telefonu oraz płatności kartą. Na ten czas przydaje się zapasowe światło."
+      },
+      "no-tap-water": {
+        "name": "Brak wody w kranie",
+        "explanation": "Woda z kranu może przestać płynąć albo nie nadawać się do picia, na kilka godzin lub dni. Na ten czas potrzebny jest sposób na przyniesienie, przechowanie i uzdatnienie wody oraz awaryjna toaleta."
+      },
+      "severe-weather": {
+        "name": "Gwałtowna pogoda",
+        "explanation": "Burza, wichura, śnieżyca czy upał potrafią uszkodzić sieć energetyczną i utrudnić wyjście z domu. Często oznaczają brak prądu, zimno albo upał w mieszkaniu. Na ten czas przydaje się ochrona przed chłodem."
+      },
+      "flood": {
+        "name": "Powódź",
+        "explanation": "Woda może szybko wejść do domu i odciąć drogę, a czasem trzeba zostawić dom z krótkim uprzedzeniem. Pomagają worki z piaskiem (w domu), ochrona dokumentów, sposób na zwrócenie uwagi ratowników i spakowany plecak ewakuacyjny."
+      },
+      "evacuation": {
+        "name": "Ewakuacja",
+        "explanation": "Służby mogą zdecydować, że trzeba opuścić dom, często w krótkim czasie. Spakowany wcześniej plecak ewakuacyjny dla każdej osoby pozwala wyjść bez zwłoki i mieć przy sobie najpotrzebniejsze rzeczy."
       }
     },
     "sourceRegister": {

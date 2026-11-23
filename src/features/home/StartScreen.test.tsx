@@ -43,14 +43,22 @@ describe("start screen", () => {
     );
   });
 
-  it("shows the one thing to do, derived from the plan's stage", async () => {
+  it("shows the steps to do, the current one leading to the plan before the list exists", async () => {
     renderStart(await storeWithPlan(defaultHousehold()));
     expect(
       await screen.findByRole("heading", { level: 2, name: "Do zrobienia" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Plan gotowy — czas na kompletowanie")).toBeInTheDocument();
+    expect(screen.getByText("Krok 2 z 2")).toBeInTheDocument();
+    const steps = within(screen.getByText("Plan gotowy").closest("ol")!).getAllByRole("listitem");
+    expect(steps).toHaveLength(2);
+    expect(steps[0]).toHaveTextContent("Plan gotowy");
+    expect(within(steps[0]).getByText("zrobione")).toBeInTheDocument();
+    expect(within(steps[1]).getByText("Skompletuj zapasy")).toBeInTheDocument();
+    expect(within(steps[1]).getByText("teraz")).toBeInTheDocument();
     expect(
-      screen.getByText("Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka."),
+      within(steps[1]).getByText(
+        "Najpierw rzeczy z priorytetu 1: woda, jedzenie, leki i apteczka.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Otwórz plan" })).toHaveAttribute("href", "/pl/plan");
   });
@@ -76,7 +84,7 @@ describe("start screen", () => {
     expect(within(tile(/^Dla dziecka/)).getByText(/^\d+ rzecz/).textContent).toMatch(/^[1-9]/);
   });
 
-  it("names the collecting stage and shows the list's readiness once the list exists", async () => {
+  it("shows the readiness panel and the current step once the list exists", async () => {
     const store = await storeWithPlan(defaultHousehold());
     await store.markListCreated();
     // Water counts; food ticked at less than it needs now does not.
@@ -84,32 +92,97 @@ describe("start screen", () => {
     await store.setTick("shelf-stable-food", true, 0);
     renderStart(store);
 
-    expect(await screen.findByText("Teraz: kompletowanie zapasów")).toBeInTheDocument();
-    expect(screen.getByText("Lista zakupów jest gotowa do odhaczania.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Otwórz listę" })).toHaveAttribute("href", "/pl/list");
-    expect(screen.queryByText("Plan gotowy — czas na kompletowanie")).not.toBeInTheDocument();
-
-    expect(
-      screen.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" }),
-    ).toBeInTheDocument();
+    const readiness = await screen.findByRole("heading", {
+      level: 2,
+      name: "Gotowość na 72 godziny",
+    });
     // The section's header link "Plan", besides the tab of the same name.
     const planLinks = screen.getAllByRole("link", { name: "Plan" });
     expect(planLinks.filter((link) => !link.closest("nav"))).toHaveLength(1);
     for (const link of planLinks) expect(link).toHaveAttribute("href", "/pl/plan");
-    const panel = screen.getByRole("link", { name: /^Gotowe 1 z 22/ });
-    expect(panel).toHaveAttribute("href", "/pl/list");
-    expect(within(panel).getByText("Zostało 21 rzeczy do odhaczenia.")).toBeInTheDocument();
-    // A ring with the short count, at the top: right after the banner, before "Do zrobienia".
-    expect(within(panel).getByText("1/22")).toBeInTheDocument();
-    const readiness = screen.getByRole("heading", { level: 2, name: "Gotowość na 72 godziny" });
+
+    // A ring with the percentage, the count in words and a short sentence; no rows without a backpack.
+    expect(screen.getByText("4%")).toBeInTheDocument();
+    expect(screen.getByText("Gotowe 1 z 22")).toBeInTheDocument();
+    expect(screen.getByText("Dobrze idzie. Zostało 21 rzeczy.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Zapasy w domu/ })).not.toBeInTheDocument();
+
+    // Right after the banner, before "Do zrobienia".
     const todo = screen.getByRole("heading", { level: 2, name: "Do zrobienia" });
     expect(readiness.compareDocumentPosition(todo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The tiles give way to the one panel.
+    expect(screen.getByText("Krok 2 z 2")).toBeInTheDocument();
+    expect(screen.getByText("Zostało 21 rzeczy z listy zakupów.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Otwórz listę zakupów" })).toHaveAttribute(
+      "href",
+      "/pl/list",
+    );
+    expect(screen.queryByText("Najpierw rzeczy z priorytetu 1", { exact: false })).toBeNull();
+    // The tiles give way to the panel.
     expect(screen.queryByRole("heading", { name: "Plan na 72 godziny" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^Priorytet \d:/ })).not.toBeInTheDocument();
   });
 
-  it("marks the stage as done once every supply on the list is ticked", async () => {
+  it("starts the sentence with where to begin when nothing is ticked", async () => {
+    const store = await storeWithPlan(defaultHousehold());
+    await store.markListCreated();
+    renderStart(store);
+    expect(await screen.findByText("Gotowe 0 z 22")).toBeInTheDocument();
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(screen.getByText("Zacznij od najważniejszych rzeczy z listy.")).toBeInTheDocument();
+  });
+
+  it("shows a row per part, each its own link to the list, when the plan has a backpack", async () => {
+    const store = await storeWithPlan(defaultHousehold());
+    await store.markListCreated();
+    await store.setEmergencies(["evacuation"]);
+    await store.setTick("drinking-water", true, 27);
+    renderStart(store);
+
+    const home = await screen.findByRole("link", { name: /^Zapasy w domu 1 z 22$/ });
+    expect(home).toHaveAttribute("href", "/pl/list");
+    const backpack = screen.getByRole("link", { name: /^Plecak ewakuacyjny 0 z \d+$/ });
+    expect(backpack).toHaveAttribute("href", "/pl/list");
+    expect(screen.getByText(/^Gotowe 1 z \d+$/)).toBeInTheDocument();
+    expect(screen.getByText("Krok 2 z 3")).toBeInTheDocument();
+    const steps = within(screen.getByText("Plan gotowy").closest("ol")!).getAllByRole("listitem");
+    expect(steps).toHaveLength(3);
+    expect(within(steps[2]).getByText("później")).toBeInTheDocument();
+    expect(within(steps[2]).getByText(/rzeczy na szybkie wyjście\.$/)).toBeInTheDocument();
+  });
+
+  it("makes the backpack the current step once home supplies are ticked, and is not complete yet", async () => {
+    const household = defaultHousehold();
+    const store = await storeWithPlan(household);
+    await store.markListCreated();
+    await store.setEmergencies(["evacuation"]);
+    const list = buildList(buildPlan(summarise(household), PLAN_DAYS, ["evacuation"]), []);
+    for (const row of list.groups.filter((g) => g.kind !== "backpack").flatMap((g) => g.rows)) {
+      await store.setTick(row.itemId, true, row.quantity);
+    }
+    renderStart(store);
+    expect(await screen.findByText("Krok 3 z 3")).toBeInTheDocument();
+    const steps = within(screen.getByText("Plan gotowy").closest("ol")!).getAllByRole("listitem");
+    expect(within(steps[1]).getByText("zrobione")).toBeInTheDocument();
+    expect(within(steps[2]).getByText("teraz")).toBeInTheDocument();
+    expect(within(steps[2]).getByRole("link", { name: "Otwórz listę zakupów" })).toHaveAttribute(
+      "href",
+      "/pl/list",
+    );
+    expect(screen.queryByText("Zapasy na 72 godziny gotowe")).not.toBeInTheDocument();
+  });
+
+  it("links the backpack tile to its section before the list exists", async () => {
+    const store = await storeWithPlan(defaultHousehold());
+    await store.setEmergencies(["evacuation"]);
+    renderStart(store);
+    expect(await screen.findByRole("link", { name: /^Plecak ewakuacyjny/ })).toHaveAttribute(
+      "href",
+      "/pl/plan#section-backpack",
+    );
+    expect(screen.getByText("Krok 2 z 3")).toBeInTheDocument();
+  });
+
+  it("marks every step done once everything on the list is ticked", async () => {
     const household = defaultHousehold();
     const store = await storeWithPlan(household);
     await store.markListCreated();
@@ -123,11 +196,13 @@ describe("start screen", () => {
     expect(
       screen.getByText("Raz na pół roku warto sprawdzić daty ważności wody, jedzenia i leków."),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Teraz: kompletowanie zapasów")).not.toBeInTheDocument();
-    const panel = screen.getByRole("link", { name: /^Gotowe 22 z 22/ });
-    // The full ring shows a check mark instead of "22/22".
-    expect(within(panel).queryByText("22/22")).not.toBeInTheDocument();
-    expect(within(panel).getByText("Wszystko odhaczone.")).toBeInTheDocument();
+    expect(screen.queryByText(/^Krok \d z \d$/)).not.toBeInTheDocument();
+    const steps = within(screen.getByText("Plan gotowy").closest("ol")!).getAllByRole("listitem");
+    for (const step of steps) expect(within(step).getByText("zrobione")).toBeInTheDocument();
+    expect(screen.getByText("Gotowe 22 z 22")).toBeInTheDocument();
+    expect(screen.getByText("Wszystko odhaczone.", { selector: "p" })).toBeInTheDocument();
+    // The full ring shows a check mark instead of the percentage.
+    expect(screen.queryByText("100%")).not.toBeInTheDocument();
   });
 
   it("leaves the section tiles out when the plan has no sections", async () => {
